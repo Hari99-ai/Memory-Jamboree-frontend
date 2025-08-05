@@ -1,0 +1,810 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+"use client"
+
+import { useEffect, useState, useRef } from "react"
+import clsx from "clsx"
+import { submitPracticeScore } from "../../lib/submitPracticeScore"
+import type { DisciplineData } from "../../types/index"
+import CountdownOverlay from "../../practiceTests/CountdownOverlay"
+
+const ROWS = 5
+const COLS = 5
+
+interface Props {
+  time: number
+  highlightColor?: string
+  onRestart: () => void
+  images: string[] // Make sure this prop is required
+  disciplineName: string
+  allDisciplines: DisciplineData[]
+  onGameComplete?: (score: number) => void
+}
+
+// Keep this existing utility function at the top of the file
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+export default function ImagesGame({
+  onRestart,
+  time,
+  highlightColor = "#60a5fa",
+  images,
+  disciplineName,
+  allDisciplines,
+  onGameComplete,
+}: Props) {
+  const [_, setTotalImages] = useState(0)
+  const [pages, setPages] = useState(0)
+
+  const [originalImagesByRow, setOriginalImagesByRow] = useState<string[][]>([])
+  const [shuffledImagesByRow, setShuffledImagesByRow] = useState<string[][]>([])
+  const [showOriginal, setShowOriginal] = useState(true)
+  const [countdownStarted, setCountdownStarted] = useState(false)
+  const [positionInputs, setPositionInputs] = useState<{ [key: string]: string }>({})
+  const [showPopup, setShowPopup] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(time * 60)
+  const [recallTimeLeft, setRecallTimeLeft] = useState(10 * 60) // <-- Set recall phase to 10 minutes
+  const recallIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [score, setScore] = useState<{ total: number; rows: number[] } | null>(null)
+  const [activeImagePos, setActiveImagePos] = useState<[number, number]>([0, 0]) // [rowIdx, colIdx]
+  const [activeRecallPos, setActiveRecallPos] = useState<[number, number]>([0, 0])
+  const [resultPage, setResultPage] = useState(0) // <-- Add this line
+
+  const inputRefs = useRef<HTMLInputElement[][]>([])
+
+  const [localImages, setLocalImages] = useState<string[]>(() => {
+    const stored = sessionStorage.getItem("imagesGameImages")
+    return stored ? JSON.parse(stored) : images
+    console.log(localImages);
+    
+  })
+
+  // Initial image fetch and game setup
+  useEffect(() => {
+    if (sessionStorage.getItem("imagesGameImages")) {
+      // Already loaded, use stored images
+
+      setLocalImages(JSON.parse(sessionStorage.getItem("imagesGameImages")!))
+      ;(async () => {
+        await restart()
+      })()
+      return
+    }
+    ;(async () => {
+      await restart()
+      sessionStorage.setItem("imagesGameImages", JSON.stringify(images))
+      setLocalImages(images)
+    })()
+  }, [images])
+
+  // Handle recall start with countdown
+  const handleRecallStart = () => {
+    setCountdownStarted(true)
+
+    // Reshuffle images for recall phase
+    const newShuffled = originalImagesByRow.map((row) => {
+      let shuffled = [...row]
+      do {
+        shuffled = shuffleArray(row)
+      } while (shuffled.join() === row.join()) // Retry if identical
+      return shuffled
+    })
+    setShuffledImagesByRow(newShuffled)
+
+    // After 5 seconds, start the recall phase
+    setTimeout(() => {
+      setShowOriginal(false)
+      setCurrentPage(0)
+      setRecallTimeLeft(10 * 60)
+      setCountdownStarted(false)
+
+      // Focus management
+      setTimeout(() => inputRefs.current[0]?.[0]?.focus(), 0)
+
+      // Recall timer
+      recallIntervalRef.current = setInterval(() => {
+        setRecallTimeLeft((rt) => (rt <= 1 ? 0 : rt - 1))
+      }, 1000)
+    }, 5000)
+  }
+
+  // Original viewing phase timer
+  useEffect(() => {
+    if (showOriginal && timeLeft > 0 && !countdownStarted) {
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            handleRecallStart()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(interval)
+    }
+  }, [showOriginal, timeLeft, countdownStarted, originalImagesByRow])
+
+  // Keyboard navigation between inputs and phase change on Enter
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showPopup) return
+
+      if (e.key === "Enter") {
+        e.preventDefault()
+        // For memorization phase
+        if (showOriginal && !countdownStarted) {
+          if (window.confirm("Are you sure you want to move to the Recall phase?")) {
+            handleRecallStart()
+          }
+        }
+        // For recall phase - similar to NumberGame
+        else if (!showOriginal && score === null) {
+          if (window.confirm("Are you sure you want to submit your answers?")) {
+            if (recallIntervalRef.current) {
+              clearInterval(recallIntervalRef.current)
+            }
+            ;(async () => {
+              const finalScore = await handleSubmit()
+              setScore(finalScore)
+            })()
+          }
+        }
+        return
+      }
+
+      if (showOriginal) {
+        const [row, col] = activeImagePos
+        const isLastPage = currentPage === pages - 1
+        const isLastRow = row === ROWS - 1
+        const isLastCol = col === COLS - 1
+        const isFirstPage = currentPage === 0
+        const isFirstRow = row === 0
+        const isFirstCol = col === 0
+
+        switch (e.key) {
+          case "ArrowRight":
+            // Stop at last image of last page
+            if (isLastPage && isLastRow && isLastCol) {
+              // Do nothing
+            } else if (col < COLS - 1) {
+              setActiveImagePos([row, col + 1])
+            } else if (row < ROWS - 1) {
+              setActiveImagePos([row + 1, 0])
+            } else if (currentPage < pages - 1) {
+              setCurrentPage(currentPage + 1)
+              setTimeout(() => setActiveImagePos([0, 0]), 0)
+            }
+            break
+          case "ArrowLeft":
+            // Stop at first image of first page
+            if (isFirstPage && isFirstRow && isFirstCol) {
+              // Do nothing
+            } else if (col > 0) {
+              setActiveImagePos([row, col - 1])
+            } else if (row > 0) {
+              setActiveImagePos([row - 1, COLS - 1])
+            } else if (currentPage > 0) {
+              setCurrentPage(currentPage - 1)
+              setTimeout(() => setActiveImagePos([ROWS - 1, COLS - 1]), 0)
+            }
+            break
+          case "ArrowDown":
+            if (row < ROWS - 1) {
+              setActiveImagePos([row + 1, col])
+            }
+            break
+          case "ArrowUp":
+            if (row > 0) {
+              setActiveImagePos([row - 1, col])
+            }
+            break
+          default:
+            return
+        }
+        e.preventDefault()
+        return
+      }
+
+      // Recall phase: input navigation (unchanged)
+      const flatRefs = inputRefs.current.flat()
+      let activeIndex = flatRefs.findIndex((ref) => ref === document.activeElement)
+      if (activeIndex === -1) activeIndex = 0
+
+      const rowCount = ROWS
+      const colCount = COLS
+      let row = Math.floor(activeIndex / colCount)
+      let col = activeIndex % colCount
+
+      switch (e.key) {
+        case "ArrowRight":
+          if (col + 1 < colCount) {
+            col++
+          } else if (row + 1 < rowCount) {
+            row++
+            col = 0
+          } else if (currentPage + 1 < pages) {
+            setCurrentPage(currentPage + 1)
+            setTimeout(() => inputRefs.current[0]?.[0]?.focus(), 0)
+            return
+          }
+          break
+        case "ArrowLeft":
+          if (col - 1 >= 0) {
+            col--
+          } else if (row - 1 >= 0) {
+            row--
+            col = colCount - 1
+          } else if (currentPage > 0) {
+            setCurrentPage(currentPage - 1)
+            setTimeout(() => inputRefs.current[ROWS - 1]?.[COLS - 1]?.focus(), 0)
+            return
+          }
+          break
+        case "ArrowDown":
+          if (row + 1 < rowCount) {
+            row++
+          }
+          break
+        case "ArrowUp":
+          if (row - 1 >= 0) {
+            row--
+          }
+          break
+        default:
+          if (
+            e.key === "Backspace" &&
+            flatRefs[activeIndex] &&
+            flatRefs[activeIndex].value === "" // Only if current input is empty
+          ) {
+            if (activeIndex > 0) {
+              const prevRef = flatRefs[activeIndex - 1]
+              prevRef?.focus()
+              e.preventDefault()
+              return
+            }
+          }
+          return
+      }
+      e.preventDefault()
+      inputRefs.current[row]?.[col]?.focus()
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [
+    activeImagePos,
+    inputRefs,
+    showOriginal,
+    showPopup,
+    currentPage,
+    pages,
+    score,
+    time,
+    recallIntervalRef,
+    countdownStarted,
+  ])
+
+  // Restart the game (fetch images, reset state)
+  const restart = async () => {
+    try {
+      // Use prefetched images and shuffle them
+      let fetchedImages = shuffleArray(images)
+      fetchedImages = shuffleArray(fetchedImages) // Shuffle again
+
+      // Remove duplicates globally
+      const uniqueImages = Array.from(new Set(fetchedImages))
+
+      // Calculate how many pages are needed, rounding up
+      const imagesPerPage = ROWS * COLS
+      const pageCount = Math.ceil(uniqueImages.length / imagesPerPage) // <-- UPDATED LOGIC
+      const selected = uniqueImages
+
+      // Build the grid for all pages
+      const byRows: string[][] = []
+      for (let i = 0; i < selected.length; i += COLS) {
+        const row = selected.slice(i, i + COLS)
+        // Ensure uniqueness in row (should always be true)
+        if (new Set(row).size === row.length) {
+          byRows.push(row)
+        }
+      }
+
+      // Shuffle each row for recall phase, but ensure no duplicates in a row
+      const shuffledRows = byRows.map((row) => {
+        let shuffled: string[] = []
+        do {
+          shuffled = shuffleArray(row)
+        } while (shuffled.join() === row.join()) // Retry if not changed
+        return shuffled
+      })
+
+      setOriginalImagesByRow(byRows)
+      setShuffledImagesByRow(shuffledRows)
+      setTotalImages(selected.length)
+      setPages(pageCount)
+      setShowOriginal(true)
+      setPositionInputs({})
+      setScore(null)
+      setShowPopup(false)
+      setTimeLeft(time * 60)
+      setRecallTimeLeft(10 * 60)
+      setCurrentPage(0)
+    } catch (error) {
+      console.error("Error loading images:", error)
+    }
+  }
+
+  // Format seconds to MM:SS
+  const formatTime = (seconds: number) => {
+    const min = Math.floor(seconds / 60)
+    const sec = seconds % 60
+    return `${min}:${sec.toString().padStart(2, "0")}`
+  }
+
+  // Handle input of positions (1–5 only)
+  const handleInput = (img: string, value: string) => {
+    if (/^[1-5]?$/.test(value)) {
+      setPositionInputs((prev) => ({ ...prev, [img]: value }))
+
+      if (/^[1-5]$/.test(value)) {
+        const flatRefs = inputRefs.current.flat()
+        const currentIndex = flatRefs.findIndex((ref) => ref === document.activeElement)
+
+        if (currentIndex === flatRefs.length - 1 && currentPage < pages - 1) {
+          setCurrentPage((prev) => prev + 1)
+          setTimeout(() => inputRefs.current[0]?.[0]?.focus(), 0)
+        } else if (currentIndex < flatRefs.length - 1) {
+          flatRefs[currentIndex + 1]?.focus()
+        }
+      }
+    }
+  }
+
+  // Submit answers and calculate score
+  const handleSubmit = async () => {
+    if (recallIntervalRef.current) clearInterval(recallIntervalRef.current)
+
+    let totalScore = 0
+    const rowScores: number[] = []
+
+    for (let r = 0; r < originalImagesByRow.length; r++) {
+      const originalRow = originalImagesByRow[r]
+      const recallRow = shuffledImagesByRow[r]
+      let rowCorrect = 0
+      let rowFilled = 0
+
+      for (let c = 0; c < COLS; c++) {
+        const img = recallRow[c]
+        const userInput = Number.parseInt(positionInputs[img], 10)
+
+        if (userInput && !isNaN(userInput)) {
+          rowFilled++
+          if (originalRow[userInput - 1] === img) {
+            rowCorrect++
+          }
+        }
+      }
+
+      let rowScore = 0
+      // Only score full rows
+      if (originalRow.length === COLS) {
+        if (rowCorrect === COLS) {
+          rowScore = 5
+        } else if (rowFilled === 0) {
+          rowScore = 0
+        } else {
+          rowScore = -1
+        }
+      }
+
+      rowScores.push(rowScore)
+      totalScore += rowScore
+    }
+
+    const finalScore = {
+      total: Math.max(0, totalScore),
+      rows: rowScores,
+    }
+
+    setScore(finalScore)
+    setShowPopup(true)
+    setCurrentPage(0)
+
+    if (onGameComplete) {
+      onGameComplete(finalScore.total)
+      return finalScore
+    }
+
+    try {
+      const userIdString = sessionStorage.getItem("userId")
+      const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined
+
+      if (!userId) {
+        console.warn("❌ Missing or invalid userId")
+        return finalScore
+      }
+
+      if (!Array.isArray(allDisciplines)) {
+        console.warn("❌ allDisciplines is not a valid array:", allDisciplines)
+        return finalScore
+      }
+
+      const matchedDiscipline = allDisciplines.find(
+        (d) =>
+          d?.discipline_name?.trim().toLowerCase() === disciplineName.trim().toLowerCase() &&
+          typeof d?.disc_id === "number",
+      )
+
+      if (!matchedDiscipline) {
+        console.warn("❌ No matching discipline found:", {
+          disciplineName,
+          allDisciplines,
+        })
+        return finalScore
+      }
+
+      const postData = {
+        user_id: userId,
+        disc_id: matchedDiscipline.disc_id as number,
+        score: finalScore.total,
+      }
+
+      console.log("📤 Submitting ImageGame score:", postData)
+      await submitPracticeScore(postData)
+      console.log("✅ ImageGame score submitted successfully!")
+    } catch (err) {
+      console.error("🚨 Failed to submit ImageGame score:", err)
+    }
+
+    return finalScore
+  }
+
+  // Helper to count total correct answers
+  const getTotalCorrect = () => {
+    if (!score) return 0
+    let correct = 0
+    for (let r = 0; r < originalImagesByRow.length; r++) {
+      const originalRow = originalImagesByRow[r]
+      const recallRow = shuffledImagesByRow[r]
+      for (let c = 0; c < COLS; c++) {
+        const img = recallRow[c]
+        const userInput = Number.parseInt(positionInputs[img], 10)
+        if (userInput && !isNaN(userInput) && originalRow[userInput - 1] === img) {
+          correct++
+        }
+      }
+    }
+    return correct
+  }
+
+  // Reset resultPage when showing popup
+  useEffect(() => {
+    if (showPopup) setResultPage(0)
+  }, [showPopup])
+
+  // Pagination logic (max 20 pages, sliding window)
+  const renderPagination = (isResult = false) => {
+    const windowSize = 5
+    const page = isResult ? resultPage : currentPage
+    const setPage = isResult ? setResultPage : setCurrentPage
+    let start = Math.max(0, page - 2)
+    const end = Math.min(pages, start + windowSize)
+
+    if (end - start < windowSize) {
+      start = Math.max(0, end - windowSize)
+    }
+
+    const pageButtons = []
+    if (start > 0) {
+      pageButtons.push(
+        <button
+          key={0}
+          onClick={() => setPage(0)}
+          className={clsx(
+            "px-3 py-1 rounded-full font-semibold",
+            page === 0 ? "bg-blue-600 text-white" : "bg-white text-black",
+          )}
+        >
+          1
+        </button>,
+      )
+      if (start > 1)
+        pageButtons.push(
+          <span key="start-ellipsis" className="px-2 text-black">
+            ...
+          </span>,
+        )
+    }
+    for (let i = start; i < end; i++) {
+      pageButtons.push(
+        <button
+          key={i}
+          onClick={() => setPage(i)}
+          className={clsx(
+            "px-3 py-1 rounded-full font-semibold",
+            page === i ? "bg-blue-600 text-white" : "bg-white text-black",
+          )}
+        >
+          {i + 1}
+        </button>,
+      )
+    }
+    if (end < pages) {
+      if (end < pages - 1)
+        pageButtons.push(
+          <span key="end-ellipsis" className="px-2 text-black">
+            ...
+          </span>,
+        )
+      pageButtons.push(
+        <button
+          key={pages - 1}
+          onClick={() => setPage(pages - 1)}
+          className={clsx(
+            "px-3 py-1 rounded-full font-semibold",
+            page === pages - 1 ? "bg-blue-600 text-white" : "bg-white text-black",
+          )}
+        >
+          {pages}
+        </button>,
+      )
+    }
+    return <div className="flex gap-2 mt-4">{pageButtons}</div>
+  }
+
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col items-center relative w-[900px] mx-auto">
+      {countdownStarted && <CountdownOverlay message="Recall Phase starts in..."/>}
+
+      {/* Title */}
+      <h2 className="text-3xl font-bold mb-4 text-black">🧠 5-Minute Images</h2>
+
+      {/* Timer & Instructions */}
+      <p className="text-lg text-gray-900 mb-4">
+        {showOriginal && !countdownStarted
+          ? `Memorize the following images (${formatTime(timeLeft)})`
+          : !showOriginal && !showPopup
+            ? `Enter the position (1–5) for each image as you remember (${formatTime(recallTimeLeft)})`
+            : ""}
+      </p>
+
+      {/* Image Grid */}
+      <div className="space-y-4">
+        {(showOriginal ? originalImagesByRow : shuffledImagesByRow)
+          .slice(currentPage * ROWS, currentPage * ROWS + ROWS)
+          .map((row, rowIdx) => (
+            <div key={rowIdx} className="flex items-center gap-6">
+              {" "}
+              {/* Use gap-6 for wider spacing */}
+              <div className="text-gray-900 w-6 mr-2 font-bold text-right">{rowIdx + 1 + currentPage * ROWS}</div>
+              {row.map((img, colIdx) => {
+                const inputVal = positionInputs[img]
+                const correctRow = originalImagesByRow[currentPage * ROWS + rowIdx]
+                const isCorrect =
+                  score !== null &&
+                  Number.parseInt(inputVal) - 1 >= 0 &&
+                  correctRow[Number.parseInt(inputVal) - 1] === img
+                const isWrong = score !== null && inputVal && !isCorrect
+
+                return (
+                  <div key={colIdx} className="relative flex flex-row items-center w-16 sm:w-24">
+                    {/* Input Field */}
+                    {!showOriginal && score === null && (
+                      <input
+                        ref={(el) => {
+                          if (!inputRefs.current[rowIdx]) inputRefs.current[rowIdx] = []
+                          inputRefs.current[rowIdx][colIdx] = el!
+                        }}
+                        value={inputVal || ""}
+                        onChange={(e) => handleInput(img, e.target.value)}
+                        onFocus={() => setActiveRecallPos([rowIdx, colIdx])}
+                        maxLength={1}
+                        className={clsx(
+                          "mt-1 w-8 h-8 text-xs text-center font-semibold rounded-sm bg-white border-2  focus:outline-none",
+                          isCorrect
+                            ? "border-green-500 text-green-800"
+                            : isWrong
+                              ? "border-red-500 text-red-800"
+                              : "border-gray-400 text-black focus:border-blue-500",
+                        )}
+                      />
+                    )}
+                    <img
+                      src={img || "/placeholder.svg"}
+                      alt={`img-${rowIdx}-${colIdx}`}
+                      onClick={() => {
+                        if (showOriginal) {
+                          setActiveImagePos([rowIdx, colIdx])
+                        }
+                      }}
+                      className={clsx(
+                        "w-20 h-20 object-cover rounded-xl shadow-md transition-transform duration-200 cursor-pointer",
+                        positionInputs[img] ? "scale-105" : "hover:scale-105",
+                      )}
+                      style={{
+                        border: `3px solid ${
+                          showOriginal
+                            ? activeImagePos[0] === rowIdx && activeImagePos[1] === colIdx
+                              ? highlightColor
+                              : "transparent"
+                            : score === null
+                              ? activeRecallPos[0] === rowIdx && activeRecallPos[1] === colIdx
+                                ? highlightColor
+                                : positionInputs[img]
+                                  ? isCorrect
+                                    ? "green"
+                                    : isWrong
+                                      ? "red"
+                                      : highlightColor
+                                  : "transparent"
+                              : isCorrect
+                                ? "green"
+                                : isWrong
+                                  ? "red"
+                                  : "yellow"
+                        }`,
+                        boxShadow: (
+                          showOriginal
+                            ? activeImagePos[0] === rowIdx && activeImagePos[1] === colIdx
+                            : score === null
+                              ? activeRecallPos[0] === rowIdx && activeRecallPos[1] === colIdx
+                              : false
+                        )
+                          ? `0 0 20px 0.5px ${highlightColor}`
+                          : "none",
+                      }}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+      </div>
+
+      {/* Pagination */}
+      {renderPagination()}
+
+      {/* Submit / Recall Buttons */}
+      {!showOriginal && score === null && (
+        <button
+          onClick={() => {
+            if (window.confirm("Are you sure you want to submit your answers?")) {
+              handleSubmit()
+            }
+          }}
+          className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Submit
+        </button>
+      )}
+
+      {showOriginal && !countdownStarted && (
+        <button
+          onClick={handleRecallStart}
+          className={clsx(
+            "w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700",
+            timeLeft > 50000 && "cursor-not-allowed opacity-50",
+          )}
+          disabled={timeLeft > 50000}
+        >
+          Recall
+        </button>
+      )}
+
+      {/* Result Popup   */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-start p-4 sm:p-8 overflow-auto">
+          {/* Score Display */}
+          <div className="bg-white border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 mb-4 sm:absolute sm:top-4 sm:right-6">
+            <span className="text-2xl font-bold flex items-center">
+              🏆 Score: <span className="text-4xl">{Math.max(0, score?.total || 0)}</span>
+            </span>
+            <span className="text-xl flex items-center">
+              ( <span className="text-2xl font-bold">{getTotalCorrect()}</span> correct)
+            </span>
+          </div>
+
+          {/* Result Image Grid */}
+          <div className="flex flex-col items-center justify-center space-y-4 mt-16">
+            {shuffledImagesByRow.slice(resultPage * ROWS, resultPage * ROWS + ROWS).map((row, rowIdx) => {
+              const globalRowIdx = resultPage * ROWS + rowIdx
+              const originalRow = originalImagesByRow[globalRowIdx]
+
+              return (
+                <div key={globalRowIdx} className="flex items-center gap-8">
+                  {/* Row number */}
+                  <div className="text-black w-6 mr-2 font-bold text-right">{globalRowIdx + 1}</div>
+                  {/* Images and answer boxes */}
+                  {row.map((img, colIdx) => {
+                    const userInput = positionInputs[img]
+                    const userInputNum = Number.parseInt(userInput, 10)
+
+                    const isCorrect =
+                      !isNaN(userInputNum) &&
+                      userInputNum >= 1 &&
+                      userInputNum <= COLS &&
+                      originalRow[userInputNum - 1] === img
+
+                    const isWrong = userInput && !isCorrect
+                    const isEmpty = !userInput
+
+                    return (
+                      <div key={colIdx} className="flex flex-row items-center gap-2 w-28 sm:w-32">
+                        {/* Answer Box */}
+                        <div className="-mr-2">
+                          {isCorrect && (
+                            <span className="inline-block w-8 h-8 rounded bg-green-500 text-white font-bold text-center leading-8 border-2 border-green-700 shadow text-base">
+                              {userInput}
+                            </span>
+                          )}
+                          {isWrong && (
+                            <div className="flex flex-col items-center space-x-1 ">
+                              <span className=" w-8 h-8 rounded bg-red-500 text-white font-bold text-center leading-8 border-2 border-red-700 shadow text-base relative ">
+                                <span
+                                  className="absolute inset-0 flex flex-col items-center justify-center"
+                                  style={{ textDecoration: "line-through" }}
+                                >
+                                  {userInput}
+                                </span>
+                              </span>
+                              <span className="text-black font-sm">{originalRow.indexOf(img) + 1}</span>
+                            </div>
+                          )}
+                          {isEmpty && (
+                            <span className="inline-block w-8 h-8 rounded bg-yellow-400 text-black font-bold text-center leading-8 border-2 border-yellow-600 shadow text-base">
+                              {originalRow.indexOf(img) + 1}
+                            </span>
+                          )}
+                        </div>
+                        {/* Image */}
+                        <img
+                          src={img || "/placeholder.svg"}
+                          alt={`result-img-${globalRowIdx}-${colIdx}`}
+                          className="w-20 h-20 object-cover rounded-xl shadow-md"
+                          style={{
+                            border: `4px solid ${isCorrect ? "green" : isWrong ? "red" : "yellow"}`,
+                          }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Result Pagination */}
+          <div className="flex gap-2 mt-8 justify-center">{renderPagination(true)}</div>
+
+          {/* Close Button */}
+          <div className="flex justify-center mt-8 mb-4">
+            <button
+              onClick={onRestart}
+              className="w-[100px] mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Force browser to decode and cache all images for instant display */}
+      {images.length > 0 && (
+        <div style={{ display: "none" }}>
+          {images.map((src, i) => (
+            <img key={i} src={src || "/placeholder.svg"} alt="" />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

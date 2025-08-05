@@ -1,0 +1,449 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
+import { Button } from "../../components/ui/button"
+import { Input } from "../../components/ui/input"
+import { Badge } from "../../components/ui/badge"
+import { Skeleton } from "../../components/ui/skeleton"
+import { Upload, X, ImageIcon, Loader2, RefreshCw, CloudUpload,  Plus } from "lucide-react"
+import { API_BASE_URL } from "../../lib/client"
+
+type ImageBase64 = {
+  file?: File
+  filename: string
+  base64: string
+}
+
+const IMAGES_PER_PAGE = 20
+const CACHE_KEY = "cached_images"
+const CACHE_TIMESTAMP_KEY = "cache_timestamp"
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+const imagesPool = async (): Promise<ImageBase64[]> => {
+  const response = await fetch(`${API_BASE_URL}/images`)
+  if (!response.ok) throw new Error("Failed to fetch images")
+
+  const data: { filename: string }[] = await response.json()
+  const baseURL = `${API_BASE_URL}/uploads/Images`
+
+  return data.map((item) => ({
+    filename: item.filename,
+    base64: `${baseURL}/${item.filename}`,
+  }))
+}
+
+const ModernImageGallery = () => {
+  const [images, setImages] = useState<ImageBase64[]>([])
+  const [newUploadImages, setNewUploadImages] = useState<ImageBase64[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetchingImages, setFetchingImages] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [dragActive, setDragActive] = useState(false)
+
+  // Load images from cache or fetch from server
+  useEffect(() => {
+    const loadImages = async () => {
+      setFetchingImages(true)
+
+      try {
+        // Check cache first
+        const cachedImages = localStorage.getItem(CACHE_KEY)
+        const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+        const now = Date.now()
+
+        if (cachedImages && cacheTimestamp && now - Number.parseInt(cacheTimestamp) < CACHE_DURATION) {
+          // Use cached data
+          setImages(JSON.parse(cachedImages))
+          setFetchingImages(false)
+          return
+        }
+
+        // Fetch fresh data
+        const fetchedImages = await imagesPool()
+        setImages(fetchedImages)
+
+        // Cache the data
+        localStorage.setItem(CACHE_KEY, JSON.stringify(fetchedImages))
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, now.toString())
+      } catch (error) {
+        console.error("Error loading images:", error)
+      } finally {
+        setFetchingImages(false)
+      }
+    }
+
+    loadImages()
+  }, [])
+
+  const refreshImages = async () => {
+    setFetchingImages(true)
+    try {
+      const fetchedImages = await imagesPool()
+      setImages(fetchedImages)
+
+      // Update cache
+      const now = Date.now()
+      localStorage.setItem(CACHE_KEY, JSON.stringify(fetchedImages))
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, now.toString())
+
+      setCurrentPage(1)
+    } catch (error) {
+      console.error("Error refreshing images:", error)
+    } finally {
+      setFetchingImages(false)
+    }
+  }
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const fileArray = Array.from(files)
+    await processFiles(fileArray)
+  }
+
+  const processFiles = async (files: File[]) => {
+    const imagesWithBase64: ImageBase64[] = await Promise.all(
+      files.map(async (file) => ({
+        file,
+        filename: file.name,
+        base64: await fileToBase64(file),
+      })),
+    )
+
+    setNewUploadImages((prev) => [...prev, ...imagesWithBase64])
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const files = Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith("image/"))
+      if (files.length > 0) {
+        await processFiles(files)
+      }
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setNewUploadImages((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // const handleSubmit = async () => {
+  //   if (newUploadImages.length === 0) return
+
+  //   setLoading(true)
+  //   const formData = new FormData()
+  //   newUploadImages.forEach(({ file }) => {
+  //     if (file) formData.append("images", file)
+  //   })
+
+  //   try {
+  //     const token = sessionStorage.getItem("auth_token")
+  //     await axios.post(`${API_BASE_URL}/insert_images`, formData, {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //         Authorization: token ? `Bearer ${token}` : undefined,
+  //       },
+  //     })
+
+  //     // Update images list and cache
+  //     const uploadedImagePaths = newUploadImages.map(({ filename }) => ({
+  //       filename,
+  //       base64: `${API_BASE_URL}/uploads/Images/${filename}`,
+  //     }))
+
+  //     const updatedImages = [...uploadedImagePaths, ...images]
+  //     setImages(updatedImages)
+
+  //     // Update cache
+  //     const now = Date.now()
+  //     localStorage.setItem(CACHE_KEY, JSON.stringify(updatedImages))
+  //     localStorage.setItem(CACHE_TIMESTAMP_KEY, now.toString())
+
+  //     setNewUploadImages([])
+  //     setCurrentPage(1)
+  //   } catch (error) {
+  //     console.error("Upload error:", error)
+  //   }
+  //   setLoading(false)
+  // }
+
+
+  const handleSubmit = async () => {
+    if (newUploadImages.length === 0) return
+
+    setLoading(true)
+    const formData = new FormData()
+    newUploadImages.forEach(({ file }) => {
+      if (file) formData.append("images", file)
+    })
+
+    try {
+        const token = sessionStorage.getItem("auth_token")
+        await axios.post(`${API_BASE_URL}/insert_images`, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+        })
+
+        // Instead of appending manually, fetch latest clean images from backend
+        await refreshImages()
+        setNewUploadImages([])
+        setCurrentPage(1)
+    } catch (error) {
+        console.error("Upload error:", error)
+    }
+    setLoading(false)
+  }
+
+  const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE)
+  const start = (currentPage - 1) * IMAGES_PER_PAGE
+  const currentImages = images.slice(start, start + IMAGES_PER_PAGE)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl text-center text-[#245cab] ">Image Gallery</h1>
+          <p className="text-slate-600">Upload and manage your images with ease</p>
+        </div>
+
+        {/* Upload Section */}
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <CloudUpload className="w-5 h-5 text-[#245cab]" />
+              Upload Images
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Drag and Drop Zone */}
+            <div
+              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${
+                dragActive
+                  ? "border-blue-500 bg-blue-50 scale-[1.02]"
+                  : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/50"
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <div className="text-center space-y-4">
+               
+                <div>
+                 
+                  
+                  <div className="flex items-center justify-center gap-4">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        <Plus className="w-4 h-4" />
+                        Choose Images
+                      </div>
+                      <Input
+                        id="file-upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                 
+                </div>
+              </div>
+            </div>
+
+            {newUploadImages.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Selected Images
+                  </h3>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 px-3 py-1">
+                    {newUploadImages.length} selected
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {newUploadImages.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 border-2 border-slate-200 hover:border-blue-300 transition-colors">
+                        <img
+                          src={image.base64 || "/placeholder.svg"}
+                          alt={`Preview ${index}`}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="bg-black/70 text-white text-xs px-2 py-1 rounded truncate">
+                          {image.filename}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Uploading {newUploadImages.length} images...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 mr-2" />
+                      Upload {newUploadImages.length} Images
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Gallery Section */}
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <ImageIcon className="w-5 h-5 text-green-600" />
+                Image Gallery
+                {images.length > 0 && (
+                  <Badge variant="outline" className="ml-2">
+                    {images.length} images
+                  </Badge>
+                )}
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshImages}
+                disabled={fetchingImages}
+                className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 bg-transparent"
+              >
+                <RefreshCw className={`w-4 h-4 ${fetchingImages ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {fetchingImages ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-slate-600">Loading images...</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square rounded-xl" />
+                  ))}
+                </div>
+              </div>
+            ) : images.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <ImageIcon className="w-10 h-10 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-600 mb-2">No images found</h3>
+                <p className="text-slate-500">Upload some images to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {currentImages.map((image, index) => (
+                    <div key={start + index} className="group">
+                      <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm hover:shadow-md transition-all hover:border-blue-300">
+                        <img
+                          src={image.base64 || "/placeholder.svg"}
+                          alt={`Gallery ${start + index}`}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="mt-2 px-1">
+                        <p className="text-xs text-gray-600 truncate" title={image.filename}>
+                          {image.filename}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 pt-6 border-t border-gray-200">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-6"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-6"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+export default ModernImageGallery
