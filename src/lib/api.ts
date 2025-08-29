@@ -22,6 +22,7 @@ import {
   MessageData,
   setPasswordData,
   WindowLogs,
+  PhoneSendData,
   // MonitoringData,
 } from "../types";
 import axios from "axios";
@@ -68,6 +69,15 @@ export const message_form = async(data: MessageData) => {
 
 export const ForgetPasswords = async(email:string) => {
   const response = await api.post("/forget_password" , {email})
+  return response.data
+}
+
+export const RefreshTokenAPI = async(formData: FormData) => {
+  const response = await api.post('/reset_password' , formData , {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
   return response.data
 }
 
@@ -283,7 +293,14 @@ export const getUserById = async (
 export const getUser = async (
   user_id: string,
 ): Promise<RegisterUserInput> => {
-  const response = await api.get(`/admin/get-user/${user_id}`, {headers});
+  const token = sessionStorage.getItem("auth_token");
+
+  if (!token) throw new Error("No auth token found");
+  const response = await api.get(`/admin/get-user/${user_id}`, {
+    headers: {
+      "Authorization":`Bearer ${token}`
+    },
+  });
   return response.data.user;
 };
 
@@ -292,12 +309,15 @@ export const getUserDetails = async (user_id: string) => {
 
   if (!token) throw new Error("No auth token found");
   const response = await api.get(`/admin/get-user-details/${user_id}`, {
-    headers,
+    headers: {
+      "Authorization":`Bearer ${token}`
+    },
   });
   return response.data;
 };
 
 export const deleteUser = async (user_id: string) => {
+
   const response = await api.delete(`/delete-user/${user_id}`, {
     headers: {
       "Authorization":`Bearer ${token}`
@@ -443,8 +463,10 @@ export const updateEventDisciplines = async (
   event_id: string,
   disciplineIds: string[],
 ) => {
-  
-  console.log("Updating disciplines for event_id:", event_id, "and disciplineIds:", disciplineIds);
+  const token = sessionStorage.getItem("auth_token");
+
+  if (!token) throw new Error("No auth token found");
+  // console.log("Updating disciplines for event_id:", event_id, "and disciplineIds:", disciplineIds);
   const res = await api.patch(`/admin/event/${event_id}/discipline`, disciplineIds, {
     headers,
   });
@@ -454,7 +476,10 @@ export const updateEventSchools = async (
   event_id: string,
   disciplineIds: number[],
 ) => {
-  console.log("Updating disciplines for event_id:", event_id, "and disciplineIds:", disciplineIds);
+  const token = sessionStorage.getItem("auth_token");
+
+  if (!token) throw new Error("No auth token found");
+  // console.log("Updating disciplines for event_id:", event_id, "and disciplineIds:", disciplineIds);
   const res = await api.patch(`/admin/event/${event_id}/school`, disciplineIds, {
     headers,
   });
@@ -466,13 +491,11 @@ export const updateEventCategory = async (
   categoryIds: number[],
 ) => {
   const token = sessionStorage.getItem("auth_token");
-  if (!token) throw new Error("No auth token found");
 
+  if (!token) throw new Error("No auth token found");
   // console.log("Updating disciplines for event_id:", event_id, "and disciplineIds:", disciplineIds);
   const res = await api.patch(`/admin/event/${event_id}/category`, categoryIds, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-  },
+    headers,
   });
   return res.data;
 };
@@ -487,8 +510,8 @@ export const DeleteUsersEvent = async ({
   monitoring: any;
 }) => {
   const token = sessionStorage.getItem("auth_token");
-  if (!token) throw new Error("No auth token found");
 
+  if (!token) throw new Error("No auth token found");
   const response = await api.delete(`/delete-event-users/${event_id}`, {
     data: { user_id, monitoring },
     headers: {
@@ -511,16 +534,15 @@ export const updateEventUsers = async({
   monitoring: any;
 }) => {
   const token = sessionStorage.getItem("auth_token");
-  if (!token) throw new Error("No auth token found");
 
-  const response = await api.patch(
-      `/update-event-users/${event_id}`,
-      { user_id , monitoring },
-      { headers: {
-      Authorization: `Bearer ${token}`,
-  } }
-    );
-    return response.data;
+  if (!token) throw new Error("No auth token found");
+  const response = await api.patch(`/update-event-users/${event_id}`,{ user_id , monitoring },
+    { headers: {
+      ...headers,
+      Authorization: `Bearer ${sessionStorage.getItem("auth_token")}`,
+    }}
+  );
+  return response.data;
 
 }
 
@@ -541,7 +563,7 @@ export const getParticipatedUsers = async (event_id: string) => {
  
 
 export const GetUsersEvent = async ({event_id}: {event_id: string;}) => {
-   const token = sessionStorage.getItem("auth_token");
+  const token = sessionStorage.getItem("auth_token");
 
   if (!token) throw new Error("No auth token found");
   const response = await api.get(`/admin/get-event-users/${event_id}`, { 
@@ -586,6 +608,7 @@ export const getUserEventDetails = async (event_id: number ) => {
 
 // SETTINGS/MASTERS
 export const AddSchool = async (data: SchoolsMasterData) => {
+  
   const res = await api.post("/schools", data, { headers });
   return res.data;
 };
@@ -830,15 +853,27 @@ export const monioring_logs = async (): Promise<MonitoringData[]> => {
 
 
 export const deleteMonitorings = async (email: string, discipline_id: string) => {
-  const res = await api.delete('/delete-logs', {
-    headers,
-    data: {
-      email,
-      discipline_id,
-    },
-  });
-  return res.data;
+  const token = sessionStorage.getItem("auth_token");
+
+  if (!token) throw new Error("No auth token found");
+
+  try {
+    const res = await api.post(
+      '/delete-logs',
+      { email, discipline_id },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error: any) {
+    console.error("Failed to delete monitoring logs:", error);
+    throw new Error(error.response?.data?.message || "Failed to delete logs");
+  }
 };
+
 
 
 export const window_events = async (data: WindowData) => {
@@ -889,7 +924,9 @@ export const getAllAvgScores = async (): Promise<DisciplineAvg[]> => {
   return res.data
 }
 
+
 //  Admin Dashboard Hero
+
 
 export const admin_dashboard_data = async () => {
    const token = sessionStorage.getItem("auth_token");
@@ -1016,3 +1053,32 @@ export const StudentEventsReport = async () => {
   return response.data;
 }
 
+
+
+
+export const sendPhoneLinkedMail = async(data: PhoneSendData) => {
+  const token = sessionStorage.getItem("auth_token");
+  if (!token) throw new Error("No auth token found");
+
+  const response = await api.post("/send-mail" , data , {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type":"application/json"
+    }
+  })
+  return response.data
+}
+
+
+export const publishResult = async (event_id:string) => {
+  const token = sessionStorage.getItem("auth_token");
+  if (!token) throw new Error("No auth token found");
+
+  const response = await api.post(`/publish_result` ,{event_id}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type":"application/json"
+    }
+  });
+  return response.data;
+};
