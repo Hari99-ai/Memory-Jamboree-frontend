@@ -32,6 +32,7 @@ export default function PhoneStreamFrameCapture({ videoRef, discipline_id, event
       canvas.height = videoRef.current.videoHeight;
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
+      
       const frame = canvas.toDataURL("image/jpeg", 0.5);
         wsRef.current.send(JSON.stringify({
         type: "frame",
