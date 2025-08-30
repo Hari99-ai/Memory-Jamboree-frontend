@@ -1,75 +1,146 @@
-import { useState } from "react";
+import { useState } from "react"
 
 interface Props {
-  onStart: (config: Record<string, string>) => void;
+  onStart: (config: Record<string, string>) => void
 }
 
 export default function FifteenMinNamesFaces({ onStart }: Props) {
   const [formState, setFormState] = useState({
-    highlightColor: "#00ffcc", // Default color
-  });
+    highlightColor: "#FF99B3", // Default color
+  })
 
-  const colors = [
-  "#FF9999", // Darker Red
-  "#FF99B3", // Darker Pink
-  "#B3B3FF", // Darker Lavender
-  "#E5B3FF", // Darker Purple
-  "#99D6FF", // Darker Sky Blue
-  "#9999FF", // Darker Blue
-  "#99FF99", // Darker Green
-  "#FFB380"  // Darker Orange/Peach
-];
+  const [gameStarted, setGameStarted] = useState(false)
+
+  const presetColors = [
+    "#FF9999", // Darker Red
+    "#FF99B3", // Darker Pink
+    "#B3B3FF", // Darker Lavender
+    "#E5B3FF", // Darker Purple
+    "#99D6FF", // Darker Sky Blue
+    "#9999FF", // Darker Blue
+    "#99FF99", // Darker Green
+    "#FFB380", // Darker Orange/Peach
+  ]
 
   const handleChange = (color: string) => {
-    setFormState({ highlightColor: color });
-  };
+    setFormState({ highlightColor: color })
+  }
+
+  const startGame = () => {
+    setGameStarted(true)
+    onStart(formState)
+  }
 
   return (
-    <div className="space-y-8 mb-10">
-      {/* Instructions Box */}
-      <div className="bg-white border rounded-lg p-6 shadow text-sm">
-        <h2 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-          📘 How to Play
-        </h2>
-        <ul className="list-disc list-inside text-gray-700 space-y-1">
-          <li>You will be shown a grid of binary digits (0s and 1s) for 30 minutes.</li>
-          <li>Try to memorize as many digits in order as possible.</li>
-          <li>
-            After memorization, you will be asked to recall and input the exact digits in the
-            same sequence.
-          </li>
-          <li>
-            You can choose your preferred <span className="text-blue-600 underline cursor-pointer">highlight color</span> to help you focus during memorization and recall.
-          </li>
-          <li>Your score will be based on the number of correct consecutive digits.</li>
-        </ul>
-      </div>
+    <div className="space-y-6">
+      {!gameStarted ? (
+        <>
+          {/* Instructions Section */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-blue-800 mb-3">📘 How to Play</h2>
 
-      {/* Highlight Color Picker */}
-     <div className="flex space-x-4">
-  {colors.map((color) => (
-    <button
-      key={color}
-      onClick={() => handleChange(color)}
-      style={{
-        backgroundColor: color,
-        border: formState.highlightColor === color ? "2px solid black" : "2px solid white",
-      }}
-      className="w-10 h-10 rounded-full shadow-md hover:scale-110 transition-transform"
-    />
-  ))}
-</div>
+            <div className="space-y-3">
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">🎯 Game Layout</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>
+                    Game consists of <span className="font-medium">5 pages</span>
+                  </li>
+                  <li>
+                    Each page shows <span className="font-medium">12 faces</span> (3 rows × 4 columns)
+                  </li>
+                  <li>
+                    Total of <span className="font-medium">60 faces and names</span> to memorize
+                  </li>
+                </ul>
+              </div>
 
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">⏱ Game Phases</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>
+                    <span className="font-medium">Memorization (15 minutes):</span> Study the faces and their names
+                  </li>
+                  <li>
+                    <span className="font-medium">Recall (15 minutes):</span> Enter the names of faces shown in random order
+                  </li>
+                  <li>
+                    <span className="font-medium">5-second countdown</span> between memorization and recall phases
+                  </li>
+                </ul>
+              </div>
 
-      {/* Start Test Button */}
-      <div className="text-right">
-        <button
-          onClick={() => onStart(formState)}
-          className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-        >
-          Start 
-        </button>
-      </div>
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">💯 Scoring System</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>+2 points for each completely correct full name</li>
+                  <li>+1 point for correct first name only</li>
+                  <li>No points for incorrect or empty answers</li>
+                  <li>Names are not case-sensitive for scoring</li>
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">⚙️ Game Settings</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>
+                    <span className="font-medium">Highlight Colour:</span> Choose a highlight color to help you focus during memorization and recall.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">⌨️ Keyboard Controls</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>
+                    <span className="font-medium">Arrow Keys:</span> Navigate between faces/input fields
+                  </li>
+                  <li>
+                    <span className="font-medium">Enter:</span> Move to recall phase during memorization
+                  </li>
+                  <li>
+                    <span className="font-medium">Tab:</span> Move to next input field during recall
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Section */}
+          <div className="bg-white rounded-lg p-6 shadow-sm space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 block">Select Highlight Color</label>
+              <div className="flex space-x-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => handleChange(color)}
+                    style={{
+                      backgroundColor: color,
+                      border: formState.highlightColor === color ? "2px solid black" : "2px solid white",
+                    }}
+                    className="w-10 h-10 rounded-full shadow-md hover:scale-110 transition-transform"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Start Button */}
+          <div className="flex justify-end pr-4">
+            <button
+              onClick={startGame}
+              className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+            >
+              Start
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-center">Game in Progress...</h2>
+        </div>
+      )}
     </div>
-  );
+  )
 }

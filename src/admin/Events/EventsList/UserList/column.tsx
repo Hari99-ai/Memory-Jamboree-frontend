@@ -121,7 +121,7 @@ export const columns = (
       const name = `${row.original.fname} ${row.original.lname}`;
       return (
         <NavLink
-          to={`/admin-dashboard/user/${id}`}
+          to={`/admin/user/${id}`}
           className="text-blue-600 hover:underline"
         >
           {name}

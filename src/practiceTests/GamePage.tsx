@@ -42,16 +42,16 @@ function GamePage() {
     allDisciplines={state.allDisciplines || []}
   />
         );
-      case "30-Minute Binary":
-        return (
-          <BinaryGame
-            time={formattedTime}
-            onRestart={() => navigate("/dashboard/practiceTests")}
-              disciplineName={discipline}
+      case "5-Minute Binary":
+  return (
+    <BinaryGame
+      time={formattedTime}
+      onRestart={() => navigate("/dashboard/practiceTests")}
+      config={config}
+      disciplineName={discipline}
       allDisciplines={state.allDisciplines || []}
-            {...config}
-          />
-        );
+    />
+  );
       case "5-Minute Images":
   return (
     <ImagesGame
@@ -86,12 +86,14 @@ function GamePage() {
     allDisciplines={state.allDisciplines || []}
           />
         );
-      case "15-Minute Names & Faces":
+      case "5-Minute Names & Faces":
         return (
           <FacesGame
             time={formattedTime}
             onRestart={() => navigate("/dashboard/practiceTests")}
             highlightColor={config.highlightColor}
+            disciplineName={discipline}
+    allDisciplines={state.allDisciplines || []}
           />
         );
       default:

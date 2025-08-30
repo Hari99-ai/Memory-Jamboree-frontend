@@ -39,8 +39,9 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [timeFilter, setTimeFilter] = useState<string>('all'); // 'all', 'daily', 'weekly', 'monthly'
 
-  // Fetches practice data for the selected user from the API
+  // Fetches and sorts practice data for the selected user from the API
   const fetchPracticeData = async () => {
     setLoading(true);
     setError(null);
@@ -63,7 +64,11 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
       }
 
       const result = await response.json();
-      setPracticeData(result.data || []); // API nests the array in a 'data' key
+      // Sort data by date in descending order (latest first) before setting state
+      const sortedData = (result.data || []).sort((a: PracticeRecord, b: PracticeRecord) => 
+        new Date(b.createdat).getTime() - new Date(a.createdat).getTime()
+      );
+      setPracticeData(sortedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
@@ -77,27 +82,60 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
     }
   }, [userId]);
 
-  // Memoized summary statistics from all practice data
+  // Reset to the first page whenever the filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [timeFilter]);
+
+  // Memoized filtered data based on the selected time filter
+  const filteredData = useMemo(() => {
+    if (timeFilter === 'all') {
+      return practiceData;
+    }
+    const now = new Date();
+    // Set time to 00:00:00 to compare dates accurately
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    return practiceData.filter(record => {
+      const recordDate = new Date(record.createdat);
+      switch (timeFilter) {
+        case 'daily':
+          return recordDate.getTime() >= today.getTime();
+        case 'weekly':
+          const lastWeek = new Date(today);
+          lastWeek.setDate(today.getDate() - 7);
+          return recordDate >= lastWeek;
+        case 'monthly':
+          const lastMonth = new Date(today);
+          lastMonth.setDate(today.getDate() - 30);
+          return recordDate >= lastMonth;
+        default:
+          return true;
+      }
+    });
+  }, [practiceData, timeFilter]);
+
+  // Memoized summary statistics from the filtered practice data
   const summaryStats = useMemo(() => {
-    if (practiceData.length === 0) {
+    if (filteredData.length === 0) {
       return { totalTests: 0, avgScore: 0, highestScore: 0 };
     }
-    const totalTests = practiceData.length;
-    const totalScore = practiceData.reduce((acc, record) => acc + parseFloat(record.score), 0);
+    const totalTests = filteredData.length;
+    const totalScore = filteredData.reduce((acc, record) => acc + parseFloat(record.score), 0);
     const avgScore = totalScore / totalTests;
-    const highestScore = Math.max(...practiceData.map(record => parseFloat(record.score)));
+    const highestScore = Math.max(...filteredData.map(record => parseFloat(record.score)));
     
     return {
       totalTests,
       avgScore: parseFloat(avgScore.toFixed(2)) || 0,
       highestScore: parseFloat(highestScore.toFixed(2)) || 0,
     };
-  }, [practiceData]);
+  }, [filteredData]);
 
-  // Memoized discipline-wise summary
+  // Memoized discipline-wise summary from the filtered data
   const disciplineSummary = useMemo<DisciplineSummary>(() => {
       const summary: { [key: string]: { scores: number[] } } = {};
-      practiceData.forEach(record => {
+      filteredData.forEach(record => {
           if (!summary[record.discipline_name]) {
               summary[record.discipline_name] = { scores: [] };
           }
@@ -116,15 +154,15 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
           };
       }
       return finalSummary;
-  }, [practiceData]);
+  }, [filteredData]);
 
-  // Memoized data for the current page
+  // Memoized paginated data from the filtered data
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-    return practiceData.slice(startIndex, startIndex + ROWS_PER_PAGE);
-  }, [practiceData, currentPage]);
+    return filteredData.slice(startIndex, startIndex + ROWS_PER_PAGE);
+  }, [filteredData, currentPage]);
 
-  const totalPages = Math.ceil(practiceData.length / ROWS_PER_PAGE);
+  const totalPages = Math.ceil(filteredData.length / ROWS_PER_PAGE);
 
   // Function to render pagination buttons
   const renderPagination = () => {
@@ -161,10 +199,10 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
        <Card className="text-center p-10 bg-gray-50 border-gray-200">
               <CardHeader className="flex flex-col items-center">
                   <BookOpenCheck className="h-16 w-16 text-gray-400" />
-                  <CardTitle className="text-2xl mt-4 text-gray-700">No Practice Data Found</CardTitle>
+                  <CardTitle className="text-2xl mt-4 text-gray-700">Error Fetching Data</CardTitle>
               </CardHeader>
               <CardContent>
-                  <p className="text-gray-500">This user has not completed any practice tests yet.</p>
+                  <p className="text-gray-500">{error}</p>
               </CardContent>
           </Card>
     );
@@ -200,14 +238,20 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {Object.entries(disciplineSummary).map(([name, stats]) => (
-                            <TableRow key={name}>
-                                <TableCell className="font-medium">{name}</TableCell>
-                                <TableCell className="text-center">{stats.totalTests}</TableCell>
-                                <TableCell className="text-center">{stats.avgScore}</TableCell>
-                                <TableCell className="text-center font-bold text-green-600">{stats.highestScore}</TableCell>
-                            </TableRow>
-                        ))}
+                        {Object.entries(disciplineSummary).length > 0 ? (
+                          Object.entries(disciplineSummary).map(([name, stats]) => (
+                              <TableRow key={name}>
+                                  <TableCell className="font-medium">{name}</TableCell>
+                                  <TableCell className="text-center">{stats.totalTests}</TableCell>
+                                  <TableCell className="text-center">{stats.avgScore}</TableCell>
+                                  <TableCell className="text-center font-bold text-green-600">{stats.highestScore}</TableCell>
+                              </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-gray-500 py-4">No data available for the selected period.</TableCell>
+                          </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
@@ -225,22 +269,36 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
 
       {/* Practice History Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <CardTitle className="text-xl">Practice History</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button variant={timeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setTimeFilter('all')}>All Time</Button>
+            <Button variant={timeFilter === 'daily' ? 'default' : 'outline'} size="sm" onClick={() => setTimeFilter('daily')}>Daily</Button>
+            <Button variant={timeFilter === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setTimeFilter('weekly')}>Weekly</Button>
+            <Button variant={timeFilter === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setTimeFilter('monthly')}>Monthly</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow><TableHead>Discipline ID</TableHead><TableHead>Discipline Name</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {paginatedData.map((record) => (
-                    <TableRow key={record.pid}>
-                      <TableCell>#{record.disc_id}</TableCell>
-                      <TableCell className="font-medium text-black">{record.discipline_name}</TableCell>
-                      <TableCell>{new Date(record.createdat).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right font-bold text-blue-600">{record.score}</TableCell>
+                  {paginatedData.length > 0 ? (
+                    paginatedData.map((record) => (
+                      <TableRow key={record.pid}>
+                        <TableCell>#{record.disc_id}</TableCell>
+                        <TableCell className="font-medium text-black">{record.discipline_name}</TableCell>
+                        <TableCell>{new Date(record.createdat).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right font-bold text-blue-600">{record.score}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-gray-500 py-8">
+                        No practice records found for this period.
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { getRole } from "../lib";
 import { API_BASE_URL } from "../lib/client";
+import { isMobile } from "react-device-detect";
 
 export default function GooglLogin() {
   const [loading , setLoading] = useState(false)
@@ -42,7 +43,7 @@ export default function GooglLogin() {
         );
         console.log("backend response:", response.data);
         sessionStorage.setItem("auth_token", response.data.access_token);
-        // sessionStorage.setItem("email",  .email);
+        sessionStorage.setItem("email", email);
         sessionStorage.setItem("userId", response.data.user_id);
         setToken(response.data.access_token);
 
@@ -54,7 +55,11 @@ export default function GooglLogin() {
             navigate('/admin', { replace: true });
           } 
           if (role === 'user') {
-            navigate('/dashboard', { replace: true });
+            if (isMobile) {
+              navigate("/event", { replace: true });
+            } else {
+              navigate("/dashboard", { replace: true });
+            }
           }
         setLoading(false)
       } else {

@@ -1,1023 +1,5 @@
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { useEffect, useState, useRef } from "react";
-// import { Button } from "../../components/ui/button";
-// import { Label } from "../../components/ui/label";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "../../components/ui/select";
-// import { useForm } from "react-hook-form";
-
-// import "react-phone-input-2/lib/style.css";
-// import {
-//   getCountries,
-//   getCities,
-//   getStates,
-
-// } from "../../lib/select";
-// import { toast } from "react-hot-toast";
-// import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-// import { useNavigate } from "react-router-dom";
-// import { getUserById, update_image, UpdateProfile } from "../../lib/api";
-// import Loader2 from "../../components/Loader2";
-// import { ImgUrl } from "../../lib/client";
-// import { ArrowLeft, Pencil } from "lucide-react";
-// import { formSchema ,   getAllClasses} from "../../types/schema";
-// import z from "zod";
-// // import { RegisterUserInput } from "../../types";
-// import { zodResolver } from "@hookform/resolvers/zod";
-
-// type FormValues = z.infer<typeof formSchema>;
-// type Country = {
-//   name: string;
-//   iso2: string;
-// };
-
-// type City = {
-//   id: string | number; // whatever your city ID type is
-//   name: string;
-// };
-
-// type State = {
-//   iso2: string;
-//   name: string;
-// };
-
 export const defaultImg =
-  "data:image/jpeg;base64,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";
-
-// export function ProfileView() {
-
-//   const [userId, setUserId] = useState<string | null>(null);
-//   // const [id, setId] = useState(() => sessionStorage.getItem("userId"));
-//   const [token, setToken] = useState(() => sessionStorage.getItem("auth_token"));
-
-//   useEffect(() => {
-//     const id = sessionStorage.getItem("userId");
-//     const token = sessionStorage.getItem('auth_token')
-//     if (id || token){
-//       setUserId(id);
-//       setToken(token)
-//     } 
-//   }, []);
-//   // const id = sessionStorage.getItem("userId");
-//   // console.log(userId);
-//   const navigate = useNavigate();
-//   const [countries, setCountries] = useState<Country[]>([]);
-//   const [states, setStates] = useState<State[]>([]);
-//   const [cities, setCities] = useState<City[]>([]);
-//   const [selectedCountry, setSelectedCountry] = useState("");
-//   const [selectedState, setSelectedState] = useState("");
-//   const [selectedCity, setSelectedCity] = useState("");
-//   const [selectedClass, setSelectedClass] = useState("");
-//   const [selectedGender, setSelectedGender] = useState("");
-//   const [loadingStates, setLoadingStates] = useState(false);
-//   const [loadingCities, setLoadingCities] = useState(false);
-//   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-//   const [isEditMode, setIsEditMode] = useState(false);
-
-//   const fileInputRef = useRef<HTMLInputElement>(null);
-
-//   const {
-//     register,
-//     handleSubmit,
-//     setValue,
-//     // watch,
-//     reset,
-//     formState: {errors, isSubmitting },
-//   } = useForm<FormValues>({
-//     resolver: zodResolver(formSchema),
-//     defaultValues: {
-//       country: "IN",
-//       state: "",
-//       city: "",
-//       mobile: "",
-//     },
-//     mode: "onChange",
-//   });
-
-//   // Fetch user data
-//   const { data: userData, isLoading } = useQuery({
-//     queryKey: ["user", userId],
-//     queryFn: () => getUserById(userId! , token!),
-//     refetchOnWindowFocus: true,
-//     enabled: !!userId && !!userId, 
-//   });
-
-//   // Format date for input[type="date"]
-//   const formatBirthDate = (dateString: string | number | Date) => {
-//     if (!dateString) return "";
-//     const date = new Date(dateString);
-//     if (isNaN(date.getTime())) return "";
-
-//     const year = date.getFullYear();
-//     const month = String(date.getMonth() + 1).padStart(2, "0");
-//     const day = String(date.getDate()).padStart(2, "0");
-
-//     return `${year}-${month}-${day}`;
-//   };
-
-//   // Load user data into form
-//   useEffect(() => {
-//     if (userData) {
-//       console.log("User data loaded:", userData);
-      
-     
-//         const resetData: FormValues = {
-//           ...userData,
-//           fname: userData.fname ?? "",
-//           lname: userData.lname ?? "",
-//           email: userData.email ?? "",
-//           mobile: userData.mobile ?? "",
-//           birth_date: formatBirthDate(userData.birth_date),
-//           // password: "", 
-//           image: userData.image ?? undefined,
-//           gender: userData.gender ?? "",
-//           country: userData.country ?? "",
-//           state: userData.state ?? "",
-//           city: userData.city ?? "",
-//           school_class: userData.school_class ?? "",
-//           mo_mobile: userData.mo_mobile ?? ""
-//         };
-
-//         reset(resetData);
-
-//         setSelectedGender(userData.gender ?? "");
-//         setSelectedCountry(userData.country ?? "");
-//         setSelectedState(userData.state ?? "");
-//         setSelectedCity(userData.city ?? "");
-//         setSelectedClass(userData.school_class ?? "");
-
-//         if (typeof userData?.image === "string" && userData.image) {
-//           const fullImageUrl = userData.image.startsWith("http")
-//             ? userData.image
-//             : `${ImgUrl}/${userData.image}`;
-//           setPreviewImage(fullImageUrl);
-//         }
-
-      
-     
-
-//       console.log(userData.gender);
-
-//       // Set dropdown values
-//       if (userData.gender) {
-//         setSelectedGender(userData.gender);
-//       }
-
-//       // if (userData.country) {
-//       //   setSelectedCountry(userData.country);
-//       // }
-
-//       // if (userData.state) {
-//       //   console.log("state" , userData.state)
-//       //   setSelectedState(userData.state);
-//       // }
-
-//       // if (userData.city) {
-//       //   setSelectedCity(userData.city);
-//       // }
-
-//       if (userData.school_class) {
-//         setSelectedClass(userData.school_class);
-//       }
-
-//       // Set profile image
-//       if (typeof userData?.image === "string" && userData.image) {
-//         const fullImageUrl = userData.image.startsWith("http")
-//           ? userData.image
-//           : `${ImgUrl}/${userData.image}`;
-
-//         // console.log("img Url" ,fullImageUrl)
-//         setPreviewImage(fullImageUrl);
-//       }
-//     }
-//   }, [userData, reset]);
-
-//   useEffect(() => {
-//     if (userData?.country && countries.length > 0) {
-//       setSelectedCountry(userData.country);
-//     }
-//   }, [userData?.country, countries]);
-
-//   useEffect(() => {
-//     if (userData?.state && states.length > 0) {
-//       setSelectedState(userData.state);
-//     }
-//   }, [userData?.state, states]);
-
-//   useEffect(() => {
-//     if (userData?.city && cities.length > 0) {
-//       setSelectedCity(userData.city);
-//     }
-//   }, [userData?.city, cities]);
-
-//   // Load countries on mount
-//   useEffect(() => {
-//     const loadCountries = async () => {
-//       try {
-//         const data = await getCountries();
-//         setCountries(data);
-//       } catch (error) {
-//         console.error("Failed to load countries:", error);
-//         toast.error("Failed to load countries");
-//       }
-//     };
-//     loadCountries();
-//   }, []);
-
-//   // Load states when country changes
-//   useEffect(() => {
-//     if (!selectedCountry) return;
-
-//     const loadStates = async () => {
-//       setLoadingStates(true);
-//       try {
-//         const data = await getStates(selectedCountry);
-//         setStates(data);
-//       } catch (error) {
-//         console.error("Failed to load states:", error);
-//         toast.error("Failed to load states");
-//       } finally {
-//         setLoadingStates(false);
-//       }
-//     };
-//     loadStates();
-//   }, [selectedCountry]);
-
-//   // Load cities when state changes
-//   useEffect(() => {
-//     if (!selectedCountry || !selectedState) return;
-
-//     const loadCities = async () => {
-//       setLoadingCities(true);
-//       try {
-//         const data = await getCities(selectedCountry, selectedState);
-//         setCities(data);
-//       } catch (error) {
-//         console.error("Failed to load cities:", error);
-//         toast.error("Failed to load cities");
-//       } finally {
-//         setLoadingCities(false);
-//       }
-//     };
-//     loadCities();
-//   }, [selectedState, selectedCountry]);
-
-//   const { mutate: UpdateImg } = useMutation({
-//     mutationKey: ['update_img'],
-//     mutationFn: update_image,
-//     onSuccess: () => {
-//       // toast.success("Image removed");
-//       // queryClient.invalidateQueries(["user", String(id)]);
-//       console.log("image removed")
-//     },
-//     onError: (error) => {
-//       toast.error("Failed to remove image");
-//       console.error(error);
-//     },
-//   });
-
-
-//   const handleRemoveImage = () => {
-//     UpdateImg(String(userId));
-//     setPreviewImage(null);
-//     setValue("image", undefined , { shouldValidate: true });
-//     setIsEditMode(true); // allow upload after removal
-//   };
-
-//   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = e.target.files?.[0];
-//     if (file) {
-//       setValue("image", file, { shouldValidate: true });
-//       const reader = new FileReader();
-//       reader.onload = () => {
-//         setPreviewImage(reader.result as string);
-//       };
-//       reader.readAsDataURL(file);
-//       setIsEditMode(true);
-//     }
-//   };
-
-  
-
-//   const openFilePicker = () => {
-//     fileInputRef.current?.click();
-//   };
-
-//   const queryClient = useQueryClient();
-
-//   const { mutate, isPending } = useMutation({
-//     mutationKey: ["update-user"],
-//     mutationFn: (formData: FormData) => UpdateProfile(userId!, formData),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["user", userId] });
-//       queryClient.invalidateQueries({ queryKey: ["user"] });
-//       toast.success("User updated successfully");
-//       navigate("/dashboard");
-//     },
-//     onError: (error: any) => {
-//       console.error("Update error:", error);
-//       const errorMessage =
-//         error?.response?.data?.message ||
-//         error?.message ||
-//         "Update failed. Please try again.";
-//       toast.error(errorMessage);
-//     },
-//   });
-
-//   const onSubmit = async (values: FormValues) => {
-//     if (!userId) {
-//       toast.error("User ID is missing. Cannot update.");
-//       return;
-//     }
-
-//     console.log("values" , values)
-
-//     try {
-//       const formData = new FormData();
-//       console.log("image in values:", values.image);
-
-//       // Append fields to FormData
-//       Object.entries(values).forEach(([key, value]) => {
-//         if (value !== undefined && value !== null && value !== "") {
-//           if (value instanceof File) {
-//             formData.append(key, value);
-//           } else if (key === "birth_date" && typeof value === "string") {
-//             const date = new Date(value);
-//             const formattedDate = date.toISOString().split("T")[0];
-//             formData.append(key, formattedDate);
-//           } else {
-//             formData.append(key, String(value));
-//           }
-//         } else {
-//           if (key === "image") {
-//             // Force send empty value if image was removed
-//             formData.append("image", "");
-//           }
-//         }
-//       });
-
-//       // Append dropdown selections
-//       if (selectedGender) formData.append("gender", selectedGender);
-//       if (selectedCountry) formData.append("country", selectedCountry);
-//       if (selectedState) formData.append("state", selectedState);
-//       if (selectedCity) formData.append("city", selectedCity);
-//       if (selectedClass) formData.append("school_class", selectedClass);
-
-//       console.log("Submitting FormData:");
-//       for (const [key, value] of formData.entries()) {
-//         console.log(key, value instanceof File ? `File: ${value.name}` : value);
-//       }
-
-//       // Pass formData, NOT raw values
-
-//       mutate(formData);
-
-//     } catch (error) {
-//       console.error("Form submission error:", error);
-//       toast.error(
-//         error instanceof Error ? error.message : "Failed to update user"
-//       );
-//     }
-//   };
-
-// //   const onError = (errors: FieldErrors<FormValues>) => {
-// //   console.log("Errors:", errors);
-// // };
-
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex justify-center items-center h-screen">
-//         <Loader2 />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-5xl mx-auto p-4 md:p-8 bg-white rounded-lg shadow-lg">
-//       <div className="mb-4 flex justify-between items-center">
-//         <button
-//           onClick={() => navigate("/dashboard")}
-//           className="flex items-center text-sm gap-2 text-blue-600 hover:underline"
-//         >
-//           <ArrowLeft size={16} />
-//           Back to Dashboard
-//         </button>
-//         {!isEditMode && (
-//           <button
-//             onClick={() => setIsEditMode(true)}
-//             className="flex  text-sm text-blue-600 bg-blue-100 border p-2 rounded-full hover:underline"
-//           >
-//             <Pencil className="mr-2 size-4" /> Edit
-//           </button>
-//         )}
-//       </div>
-//       <h2 className="text-3xl font-bold mb-5 text-center text-gray-800">
-//         {isEditMode ? "Edit Profile" : "Profile"}
-//       </h2>
-
-//       <div className="flex px-6 mb-2 justify-center">
-//         <div className="relative">
-//           {!isEditMode ? (
-//             <img
-//               src={previewImage || defaultImg}
-      
-//               alt="Profile Avatar"
-//               loading="lazy"
-//               className="w-20 h-20 rounded-full object-cover border-4 border-blue-500 shadow-md"
-//             />
-//           ) : (
-//             <div>
-//               <img
-//               src={previewImage || defaultImg}
-//               alt="Profile Avatar"
-//               loading="lazy"
-//               className="w-20 h-20 rounded-full object-cover border-4 border-blue-500 shadow-md"
-//             />
-//               <button
-//                 type="button"
-//                 onClick={handleRemoveImage}
-//                 className="absolute top-0 right-0 bg-white rounded-full p-1 shadow-md text-red-600 hover:text-red-800 transition-colors"
-//                 aria-label="Remove image"
-//                 title="Remove image"
-//               >
-//                 <svg
-//                   xmlns="http://www.w3.org/2000/svg"
-//                   className="w-5 h-5"
-//                   fill="none"
-//                   viewBox="0 0 24 24"
-//                   stroke="currentColor"
-//                   strokeWidth={2}
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                 >
-//                   <line x1="18" y1="6" x2="6" y2="18" />
-//                   <line x1="6" y1="6" x2="18" y2="18" />
-//                 </svg>
-//               </button>
-//               <button
-//                 type="button"
-//                 onClick={openFilePicker}
-//                 className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-md transition-colors"
-//                 aria-label="Upload image"
-//                 title="Upload image"
-//               >
-//                 <svg
-//                   xmlns="http://www.w3.org/2000/svg"
-//                   className="w-5 h-5"
-//                   viewBox="0 0 24 24"
-//                   fill="none"
-//                   stroke="currentColor"
-//                   strokeWidth={2}
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                 >
-//                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-//                   <circle cx="12" cy="13" r="4" />
-//                 </svg>
-//               </button>
-
-//               <input
-//                 type="file"
-//                 id="image"
-//                 required
-//                 accept="image/*"
-//                 className="hidden"
-//                 onChange={handleImageChange}
-//                 ref={fileInputRef}
-//               />
-
-//               {errors.image && (
-//               <p className="text-red-500 text-xs mt-1">
-//               {errors.image.message}
-//             </p>
-//           )}
-//             </div>
-//           )}
-//           {/* Camera upload button */}
-//         </div>
-//       </div>
-
-//       <form
-//         onSubmit={handleSubmit(onSubmit)}
-//         className="grid grid-cols-1 md:grid-cols-2 gap-4"
-//       >
-//         {/* Personal Information */}
-//         <div className="space-y-1">
-//           <Label htmlFor="fname" className="text-sm font-medium">
-//             First Name <span className="text-red-500">*</span>
-//           </Label>
-//           <input
-//             id="fname"
-//             disabled={!isEditMode}
-//             // required
-//             placeholder="First Name"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("fname")}
-//           />
-//           {errors.fname && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.fname.message}
-//             </p>
-//           )}
-
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="lname" className="text-sm font-medium">
-//             Last Name
-//           </Label>
-//           <input
-//             id="lname"
-//             disabled={!isEditMode}
-//             placeholder="Last Name"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("lname")}
-//           />
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="gender" className="text-sm font-medium">
-//             Gender
-//           </Label>
-//           <Select
-//             value={selectedGender}
-//             // required
-//             disabled={!isEditMode}
-//             onValueChange={(value) => {
-//               setSelectedGender(value);
-//               setValue("gender", value);
-//             }}
-//           >
-//             <SelectTrigger id="gender" className="w-full text-sm">
-//               <SelectValue placeholder="Select Gender" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               <SelectItem value="Male">Male</SelectItem>
-//               <SelectItem value="Female">Female</SelectItem>
-//               <SelectItem value="Other">Other</SelectItem>
-//             </SelectContent>
-//           </Select>
-//           {errors.gender && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.gender.message}
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="birth_date" className="text-sm font-medium">
-//             Birth Date <span className="text-red-500">*</span>
-//           </Label>
-//           <input
-//             id="birth_date"
-//             disabled={!isEditMode}
-//             type="date"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("birth_date")}
-//           />
-//           {errors.birth_date && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.birth_date.message}
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="email" className="text-sm font-medium">
-//             Email <span className="text-red-500">*</span>
-//           </Label>
-//           <input
-//             id="email"
-//             type="email"
-//             disabled
-//             placeholder="Email"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("email")}
-//           />
-
-//           {errors.email && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.email.message}
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="mobile" className="text-sm font-medium">
-//             Mobile Number <span className="text-red-500">*</span>
-//           </Label>
-//           <input
-//             type="tel"
-//             maxLength={10}
-//             disabled={!isEditMode}
-//             inputMode="numeric"
-//             pattern="[0-9]*"
-//             onInput={(e) => {
-//               e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ""); // remove all non-digits
-//             }}
-//             className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm`}
-//             {...register("mobile", {
-//               required: "Mobile number is required",
-//               pattern: {
-//                 value: /^[0-9]{10}$/,
-//                 message: "Mobile number must be exactly 10 digits",
-//               },
-//             })}
-//           />
-//         </div>
-
-//         <div className="md:col-span-2 mt-4 mb-2">
-//           <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-//             School Information
-//           </h3>
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="school_name" className="text-sm font-medium">
-//             School Name
-//           </Label>
-//           <input
-//             id="school_name"
-//             disabled={!isEditMode}
-//             placeholder="School Name"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("school_name")}
-//           />
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="school_class" className="text-sm font-medium">
-//             Class/Grade <span className="text-red-500">*</span>
-//           </Label>
-//           <Select
-//             value={selectedClass}
-//             disabled={!isEditMode}
-//             onValueChange={(value) => {
-//               setSelectedClass(value);
-//               setValue("school_class", value);
-//             }}
-//           >
-//             <SelectTrigger id="school_class" className="w-full text-sm">
-//               <SelectValue placeholder="Select Class/Grade" />
-//             </SelectTrigger>
-//             <SelectContent className="max-h-60">
-//               {getAllClasses().map((className) => (
-//                 <SelectItem key={className} value={className}>
-//                   {className}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-
-//           {errors.school_class && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.school_class.message}
-//             </p>
-//           )}
-//         </div>
-
-//         {/* Parent Information */}
-//         <div className="md:col-span-2 mt-4 mb-2">
-//           <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-//             Parents/Guardian Information
-//           </h3>
-//         </div>
-
-//         {/* Father's Information */}
-//         <div className="space-y-1">
-//           <Label htmlFor="fa_name" className="text-sm font-medium">
-//             Parents/Guardian Name
-//           </Label>
-//           <input
-//             id="fa_name"
-//             disabled={!isEditMode}
-//             placeholder="Enter Name"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("fa_name")}
-//           />
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="fa_mobile" className="text-sm font-medium">
-//             Parents/Guardian Mobile
-//           </Label>
-//           <input
-//             id="fa_mobile"
-//             disabled={!isEditMode}
-//             type="tel"
-//             maxLength={10}
-//             inputMode="numeric"
-//             pattern="[0-9]*"
-//             placeholder="Enter Mobile"
-//             onInput={(e) => {
-//               e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "");
-//             }}
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("fa_mobile" , {
-//               pattern: {
-//                 value: /^[0-9]{10}$/,
-//                 message: "Mobile number must be exactly 10 digits",
-//               },
-//             })}
-//           />
-//           {errors.fa_mobile && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.fa_mobile.message}
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="fa_email" className="text-sm font-medium">
-//             Parents/Guardian Email
-//           </Label>
-//           <input
-//             id="fa_email"
-//             type="email"
-//             disabled={!isEditMode}
-//             placeholder="Enter Email"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("fa_email" )}
-//           />
-//           {errors.fa_email && (
-//             <p className="text-red-500 text-xs mt-1">
-//               {errors.fa_email.message}
-//             </p>
-//           )}
-//         </div>
-
-
-//         <div className="space-y-1">
-//           <Label htmlFor="mo_mobile" className="text-sm font-medium">
-//             Alternate Mobile
-//           </Label>
-//           <input
-//             id="mo_mobile"
-//             type="tel"
-//             maxLength={10}
-//             inputMode="numeric"
-//             pattern="[0-9]*"
-//             disabled={!isEditMode}
-//             onInput={(e) => {
-//               e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "");
-//             }}
-//             placeholder="Enter Alternate Mobile"
-//             className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm`}
-//             {...register("mo_mobile")}
-//           />
-//         </div>
-
-//         {/* Mother's Information */}
-//         {/* <div className="space-y-1">
-//           <Label htmlFor="mo_name" className="text-sm font-medium">
-//             Mother's Name
-//           </Label>
-//           <input
-//             id="mo_name"
-//             disabled={!isEditMode}
-//             placeholder="Mother's Name"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("mo_name")}
-
-//           />
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="mo_mobile" className="text-sm font-medium">
-//             Mother's Mobile
-//           </Label>
-//           <input
-//             id="mo_mobile"
-//             disabled={!isEditMode}
-//             placeholder="Mother's Mobile"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("mo_mobile")}
-//           />
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="mo_email" className="text-sm font-medium">
-//             Mother's Email
-//           </Label>
-//           <input
-//             id="mo_email"
-//             type="email"
-//             disabled={!isEditMode}
-//             placeholder="Mother's Email"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("mo_email")}
-//           />
-//         </div> */}
-
-//         {/* Address Information */}
-//         <div className="md:col-span-2 mt-4 mb-2">
-//           <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-//             Address Information
-//           </h3>
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="country" className="text-sm font-medium">
-//             Country
-//           </Label>
-//           <Select
-//             value={selectedCountry}
-//             onValueChange={(value) => {
-//               setSelectedCountry(value);
-//               setValue("country", value);
-//               setSelectedState("");
-//               setSelectedCity("");
-//               setValue("state", "");
-//               setValue("city", "");
-//             }}
-//             disabled={!isEditMode}
-//           >
-//             <SelectTrigger id="country" className="w-full text-sm">
-//               <SelectValue placeholder="Select Country" />
-//             </SelectTrigger>
-//             <SelectContent className="max-h-60">
-//               {countries.map((country) => (
-//                 <SelectItem key={country.iso2} value={country.iso2}>
-//                   {country.name}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="state" className="text-sm font-medium">
-//             State/Province
-//           </Label>
-//           <Select
-//             value={selectedState}
-//             onValueChange={(value) => {
-//               setSelectedState(value);
-//               setValue("state", value);
-//               setSelectedCity("");
-//               setValue("city", "");
-//             }}
-//             disabled={!selectedCountry || loadingStates || !isEditMode}
-//           >
-//             <SelectTrigger id="state" className="w-full text-sm">
-//               <SelectValue
-//                 placeholder={
-//                   loadingStates
-//                     ? "Loading states..."
-//                     : !selectedCountry
-//                     ? "Select country first"
-//                     : states.length === 0
-//                     ? "No states available"
-//                     : "Select State"
-//                 }
-//               />
-//             </SelectTrigger>
-//             <SelectContent className="max-h-60">
-//               {states.map((state) => (
-//                 <SelectItem key={state.iso2} value={state.iso2}>
-//                   {state.name}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="city" className="text-sm font-medium">
-//             City
-//           </Label>
-//           <Select
-//             value={selectedCity}
-//             onValueChange={(value) => {
-//               setSelectedCity(value);
-//               setValue("city", value);
-//             }}
-//             disabled={!selectedState || loadingCities || !isEditMode}
-//           >
-//             <SelectTrigger id="city" className="w-full text-sm">
-//               <SelectValue
-//                 placeholder={
-//                   loadingCities
-//                     ? "Loading cities..."
-//                     : !selectedState
-//                     ? "Select state first"
-//                     : cities.length === 0
-//                     ? "No cities available"
-//                     : "Select City"
-//                 }
-//               />
-//             </SelectTrigger>
-//             <SelectContent className="max-h-60">
-//               {cities.map((city) => (
-//                 <SelectItem key={city.id} value={city.name}>
-//                   {city.name}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="address" className="text-sm font-medium">
-//             Address
-//           </Label>
-//           <input
-//             id="address"
-//             disabled={!isEditMode}
-//             placeholder="Street address"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("address")}
-//           />
-          
-//         </div>
-
-//         <div className="space-y-1">
-//           <Label htmlFor="pincode" className="text-sm font-medium">
-//             Pincode/ZIP
-//           </Label>
-//           <input
-//             id="pincode"
-//             disabled={!isEditMode}
-//             type="text" // Use text to apply length limits
-//             inputMode="numeric" // Brings up numeric keyboard on mobile
-//             maxLength={6} // Restrict max length to 6
-//             placeholder="Pincode/ZIP"
-//             onInput={(e) => {
-//               e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 6);
-//             }}
-
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-//             {...register("pincode")}
-//           />
-//         </div>
-        
-
-//         {/* Account Security */}
-//         {/* <div className="md:col-span-2 mt-4 mb-2">
-//           <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-//             Account Security
-//           </h3>
-//         </div>
-
-//         <div className="space-y-1 md:col-span-2">
-//           <Label htmlFor="password" className="text-sm font-medium">
-//             New Password (leave blank to keep current)
-//           </Label>
-//           <input
-//             id="password"
-//             type="password"
-//             placeholder="Enter new password"
-//             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-//             {...register("password")}
-//           />
-//         </div> */}
-
-//         {/* Submit Button */}
-//         {/* <div > */}
-          
-
-//           {isEditMode && (
-//             <div className="md:col-span-2 mt-6 flex justify-center gap-4">
-//               <Button
-//             type="button"
-//             className="px-8 py-2 bg-white text-black rounded-md transition-colors border-2 border-blue-600"
-//             // disabled={!isEditMode}
-//             onClick={() => {
-//               // navigate('/dashboard')
-//               setIsEditMode(false);
-//             }}
-//           >
-//             Cancel
-//           </Button>
-            
-//           <Button
-//             type="submit"
-//             className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-//             disabled={isSubmitting || isPending}
-//           >
-//             {isSubmitting || isPending ? "Updating..." : "Update Profile"}
-//           </Button>
-//           </div>
-//           )}
-//         {/* </div> */}
-//       </form>
-//     </div>
-//   );
-// }
-
-// export default ProfileView;
-
-
-// export const defaultImg = "data:image/jpeg;base64,...";
-
+  "data:image/jpeg;base64,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";
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -1038,7 +20,7 @@ import {
 import { toast } from "react-hot-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getUserById, update_image, UpdateProfile } from "../../lib/api";
+import { getUserById, UpdateProfile } from "../../lib/api";
 import Loader2 from "../../components/Loader2";
 import { ImgUrl } from "../../lib/client";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -1051,16 +33,16 @@ import { CategoryMasterData } from "../../types";
 
 type FormValues = z.infer<typeof formSchema>;
 type Country = { name: string; iso2: string };
-type City = { id: string | number; name: string };
+type City = { id: string | number; name:string };
 type State = { iso2: string; name: string };
 
-export function ProfileView() {
+export default function ProfileView() {
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState(() => sessionStorage.getItem("auth_token"));
   const [countries, setCountries] = useState<Country[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("IN");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
@@ -1077,27 +59,20 @@ export function ProfileView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   const isOthersSelected = selectedClass?.startsWith("Others");
   const cleanedClass = isOthersSelected ? "Others" : null;
 
+  const [selectedCategoryName , setSelectedCategoryName] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
   const { data , isLoading: categorydata_loading , refetch } = useOthersCategory(cleanedClass);
 
-    useEffect(() => {
+  useEffect(() => {
     if (isOthersSelected) {
-      refetch(); 
+      refetch();
     }
   }, [isOthersSelected, refetch]);
-
-    // const finalClassName = isOthersSelected
-    //   ? selectedCategoryName || selectedClass
-    //   : selectedClass;
-
-    // Same for category_id and category_name (you got from useOthersCategory())
-    // const finalCategoryId = isOthersSelected ? selectedCategory : null;
-    // const finalCategoryName = isOthersSelected ? selectedCategoryName : null;
 
   const {
     register,
@@ -1132,6 +107,8 @@ export function ProfileView() {
     enabled: !!userId && !!userId,
   });
 
+  const isProfileFinalized = userData?.status === 1
+  
   const formatBirthDate = (dateString: string | number | Date) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -1152,7 +129,7 @@ export function ProfileView() {
         birth_date: formatBirthDate(userData.birth_date),
         image: userData.image ?? undefined,
         gender: userData.gender ?? "",
-        country: userData.country ?? "",
+        country: userData.country ?? "IN",
         state: userData.state ?? "",
         city: userData.city ?? "",
         school_class: userData.school_class ?? "",
@@ -1166,7 +143,7 @@ export function ProfileView() {
       };
       reset(resetData);
       setSelectedGender(userData.gender ?? "");
-      setSelectedCountry(userData.country ?? "");
+      setSelectedCountry(userData.country ?? "IN");
       setSelectedState(userData.state ?? "");
       setSelectedCity(userData.city ?? "");
       setSelectedClass(userData.school_class ?? "");
@@ -1244,29 +221,20 @@ export function ProfileView() {
 
   const queryClient = useQueryClient();
 
-  const { mutate: UpdateImg } = useMutation({
-    mutationKey: ['update_img'],
-    mutationFn: update_image,
-    onSuccess: () => {
-      console.log("image removed");
-    },
-    onError: (error) => {
-      toast.error("Failed to remove image");
-      console.error(error);
-    },
-  });
-
-  const handleRemoveImage = () => {
-    UpdateImg(String(userId));
-    setPreviewImage(null);
-    setValue("image", undefined, { shouldValidate: true });
-    setIsEditMode(true);
-  };
-
-  // Always open cropper modal when image is selected
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const minSize = 20 * 1024; // 20KB
+      const maxSize = 100 * 1024; // 100KB
+
+      if (file.size < minSize || file.size > maxSize) {
+        toast.error("Image size must be between 20KB and 100KB.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         setRawImage(reader.result as string);
@@ -1276,7 +244,6 @@ export function ProfileView() {
     }
   };
 
-  // Callback when cropping is done
   const handleCropComplete = (croppedBlob: Blob) => {
     const croppedFile = new File([croppedBlob], "profile.jpg", { type: "image/jpeg" });
     setValue("image", croppedFile, { shouldValidate: true });
@@ -1310,16 +277,62 @@ export function ProfileView() {
     },
   });
 
+  const onError = (errors: any) => {
+    const firstErrorMessage = Object.values(errors)
+      .map((e: any) => e?.message)
+      .find(Boolean);
+
+    if (firstErrorMessage) {
+      toast.error(firstErrorMessage as string);
+    } else {
+      toast.error("Please fill in all required fields to update your profile.");
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     if (!userId) {
       toast.error("User ID is missing. Cannot update.");
       return;
     }
+    
+    // Explicit validation for dropdowns to provide clear alerts
+    if (!selectedGender) {
+        toast.error("Please select a Gender.");
+        return;
+    }
+    if (!selectedClass) {
+      toast.error("Please select your Class/Grade.");
+      return;
+    }
+    if (!selectedCountry) {
+        toast.error("Please select a Country.");
+        return;
+    }
+    if (!selectedState) {
+        toast.error("Please select a State/Province.");
+        return;
+    }
+    if (!selectedCity) {
+        toast.error("Please select a City.");
+        return;
+    }
+
+
+    // Validation for Date of Birth
+    const today = new Date();
+    const birthDate = new Date(values.birth_date);
+    today.setHours(0, 0, 0, 0); 
+    birthDate.setHours(0, 0, 0, 0);
+
+    if (birthDate > today) {
+      toast.error("Birth Date cannot be in the future. Please select a valid date.");
+      return;
+    }
+
 
     try {
       const formData = new FormData();
 
-      // Append all form values, skip image if not file
       Object.entries(values).forEach(([key, value]) => {
         if (key === "image") {
           if (value instanceof File) {
@@ -1354,9 +367,6 @@ export function ProfileView() {
       );
     }
   };
-
-
-
 
   if (isLoading) {
     return (
@@ -1414,27 +424,7 @@ export function ProfileView() {
           />
           {isEditMode && (
             <>
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-0 right-0 bg-white rounded-full p-1 shadow-md text-red-600 hover:text-red-800 transition-colors"
-                aria-label="Remove image"
-                title="Remove image"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+             
               <button
                 type="button"
                 onClick={openFilePicker}
@@ -1469,10 +459,9 @@ export function ProfileView() {
           <div className="text-xs text-gray-600 ml-10 self-center">
             <p className="font-semibold mb-1">Image Guidelines:</p>
             <ul className="list-disc list-inside space-y-0.5">
-              <li>Optimal size: 20kb-100kb.</li>
+              <li>Image size must be between 20KB and 100KB.</li>
               <li>Image should be clear and not blurry.</li>
-              <li>Please use a clear, front-facing photo of yourself.</li>
-              <li>Click the camera icon to upload, or 'X' to remove.</li>
+              <li>Please upload potrait/passport size picture(user face should clearly visible)</li>
             </ul>
           </div>
         )}
@@ -1491,7 +480,7 @@ export function ProfileView() {
       {/* FORM */}
       {isEditMode ? (
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, onError)}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           {/* Personal Information */}
@@ -1526,14 +515,14 @@ export function ProfileView() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="gender" className="text-sm font-medium">
-              Gender
+              Gender <span className="text-red-500">*</span>
             </Label>
             <Select
               value={selectedGender}
               disabled={!isEditMode}
               onValueChange={(value) => {
                 setSelectedGender(value);
-                setValue("gender", value);
+                setValue("gender", value, { shouldValidate: true });
               }}
             >
               <SelectTrigger id="gender" className="w-full text-sm">
@@ -1632,60 +621,54 @@ export function ProfileView() {
               Class/Grade <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={selectedClass}
-              disabled={!isEditMode}
-              onValueChange={(value) => {
-                setSelectedClass(value);
-                setValue("school_class", value);
-              }}
-            >
-              <SelectTrigger id="school_class" className="w-full text-sm">
-                <SelectValue placeholder="Select Class/Grade" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {getAllClasses().map((className) => (
-                  <SelectItem key={className} value={className}>
-                    {className}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.school_class && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.school_class.message}
-              </p>
-            )}
-
-            {isOthersSelected && (
-              <div className="mt-4">
-                <h3 className="font-semibold text-sm mb-2">Others Categories (Select One):</h3>
-                {categorydata_loading ? (
-                  <p className="text-xs">Loading categories...</p>
-                ) : (
-                  <div className="text-xs text-gray-700 space-y-1">
-                    {data?.map((item: CategoryMasterData) => (
-                      <label key={item.cat_id} className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="others_category"
-                          checked={selectedCategory === item.cat_id}
-                          value={item.cat_id}
-                          onChange={() => {
-                            setSelectedCategory(item.cat_id);
-                            setSelectedCategoryName(item.category_name);
-                          }}
-                          className="accent-blue-500"
-                        />
-                        <span>{item.category_name}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                value={selectedClass}
+                disabled = {!isEditMode || isProfileFinalized}
+                onValueChange={(value) => {
+                  setSelectedClass(value);
+                  setValue("school_class", value, { shouldValidate: true });
+                }}
+              >
+                <SelectTrigger id="school_class" className="w-full">
+                  <SelectValue placeholder="Select Class/Grade" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {getAllClasses().map((className) => (
+                    <SelectItem key={className} value={className}>{className}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
 
+              {isOthersSelected && !isProfileFinalized &&  (
+                <div className="mt-4">
+                  <h3 className="font-semibold text-sm mb-2">Others Categories (Select One):</h3>
+                  {categorydata_loading ? (
+                    <p className="text-xs">Loading categories...</p>
+                  ) : (
+                    <div className="text-xs text-gray-700 space-y-1">
+                      {data?.map((item: CategoryMasterData) => (
+                        <label key={item.cat_id} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="others_category"
+                            checked={selectedCategory === item.cat_id}
+                            value={item.cat_id}
+                            onChange={() => {
+                              setSelectedCategory(item.cat_id);
+                              setSelectedCategoryName(item.category_name);
+                            }}
+                            className="accent-blue-500"
+                          />
+                          <span>{item.category_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            
           </div>
+          
           <div className="md:col-span-2 mt-4 mb-2">
             <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
               Parents/Guardian Information
@@ -1776,13 +759,13 @@ export function ProfileView() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="country" className="text-sm font-medium">
-              Country
+              Country <span className="text-red-500">*</span>
             </Label>
             <Select
               value={selectedCountry}
               onValueChange={(value) => {
                 setSelectedCountry(value);
-                setValue("country", value);
+                setValue("country", value, { shouldValidate: true });
                 setSelectedState("");
                 setSelectedCity("");
                 setValue("state", "");
@@ -1804,13 +787,13 @@ export function ProfileView() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="state" className="text-sm font-medium">
-              State/Province
+              State/Province <span className="text-red-500">*</span>
             </Label>
             <Select
               value={selectedState}
               onValueChange={(value) => {
                 setSelectedState(value);
-                setValue("state", value);
+                setValue("state", value, { shouldValidate: true });
                 setSelectedCity("");
                 setValue("city", "");
               }}
@@ -1840,13 +823,13 @@ export function ProfileView() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="city" className="text-sm font-medium">
-              City
+              City <span className="text-red-500">*</span>
             </Label>
             <Select
               value={selectedCity}
               onValueChange={(value) => {
                 setSelectedCity(value);
-                setValue("city", value);
+                setValue("city", value, { shouldValidate: true });
               }}
               disabled={!selectedState || loadingCities || !isEditMode}
             >
@@ -1990,5 +973,3 @@ export function ProfileView() {
     </div>
   );
 }
-
-export default ProfileView;

@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useState } from "react"
 
 type Config = {
@@ -16,7 +14,6 @@ type Props = {
 
 const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
   const [formState, setFormState] = React.useState(() => {
-    // Load saved preferences from localStorage if available
     const saved = localStorage.getItem("fiveMinNumbersPreferences")
     if (saved) {
       try {
@@ -25,11 +22,10 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
         // ignore parse errors
       }
     }
-    // Set default values
     return {
-      grouping: "3", // Default grouping of 3
-      highlightColor: "#facc15", // Default yellow color
-      drawLines: true, // Default to drawing lines
+      grouping: "3",
+      highlightColor: "#FF9999",
+      drawLines: false,
     }
   })
   const [gameStarted, setGameStarted] = useState(false)
@@ -52,7 +48,6 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
       highlightColor: formState.highlightColor,
     }
 
-    // Save preferences to localStorage
     localStorage.setItem("fiveMinNumbersPreferences", JSON.stringify(formState))
 
     setGameStarted(true)
@@ -112,32 +107,38 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
             <h2 className="text-xl font-semibold text-blue-800 mb-3">📘 How to Play</h2>
 
             <div className="space-y-3">
-              {/* Game Structure */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-blue-700 mb-2">🎯 Game Layout</h3>
+                <h3 className="font-medium text-blue-700 mb-2">🎯 Test Layout</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-1">
                   <li>
-                    Game consists of <span className="font-medium">2 pages</span>
+                    Test consists of <span className="font-medium">2 pages</span>
                   </li>
                   <li>
                     Each page shows <span className="font-medium">10 rows</span> with{" "}
                     <span className="font-medium">30 numbers</span> per row
                   </li>
-                  <li>
-                    Memorize numbers in the <span className="font-medium">exact same order</span> as shown
-                  </li>
+                  <li>You can shift between the pages using the prev and next button</li>
                 </ul>
               </div>
 
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-blue-700 mb-2">⏱ Game Phases</h3>
+                <h3 className="font-medium text-blue-700 mb-2">🎯 Test Objective</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>You need to memorise as many numbers as possible in the given time.</li>
+                  <li>Memorize numbers in the exact same order as shown</li>
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">⏱ Test Phases</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-1">
                   <li>
-                    <span className="font-medium">Memorization (5 minutes):</span>
-                    Study the numbers shown
+                    <span className="font-medium">Memorization (5 minutes):</span> You will see a grid of numbers. During
+                    this time, you will memorise the numbers in order.
                   </li>
                   <li>
-                    <span className="font-medium">Recall (10 minutes):</span> Enter the numbers you remember
+                    <span className="font-medium">Recall (15 minutes):</span> You will see empty text boxes on the screen.
+                    During this time, you will recall the numbers and fill them in the empty text boxes.
                   </li>
                 </ul>
               </div>
@@ -145,24 +146,46 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h3 className="font-medium text-blue-700 mb-2">💯 Scoring System</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                  <li>+1 point for each consecutive correct number</li>
-                  <li>+1 bonus point for every 10 consecutive correct numbers</li>
-                  <li>Score stops counting at first mistake in each row</li>
-                  <li>Each row must start correctly to score points</li>
+                  <li>Every row will be scored separately.</li>
+                  <li>+1 point for every correct number.</li>
+                  <li>+1 bonus point for every 10 consecutive correct numbers in a row.</li>
+                  <li>Scoring for a row stops at the first mistake found in the row.</li>
+                  <li>Each row must start correctly to score points.</li>
+                  <li>Final score will be the sum of all the scores in each row.</li>
+                  <li>No negative marking.</li>
                 </ul>
               </div>
 
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-blue-700 mb-2">⚙️ Game Settings</h3>
+                <h3 className="font-medium text-blue-700 mb-2">⚙️ Test Settings</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-1">
                   <li>
-                    <span className="font-medium">Grouping Size:</span> Choose how many numbers to group together (1-9)
+                    <span className="font-medium">Grouping:</span> You may group the numbers during memorisation phase (1-9).
                   </li>
                   <li>
-                    <span className="font-medium">Visual Lines:</span> Option to add separator lines between groups
+                    <span className="font-medium">Visual Lines:</span> Option to add separator lines between groups.
                   </li>
                   <li>
-                    <span className="font-medium">Highlight Color:</span> Select your preferred color for active groups
+                    <span className="font-medium">Highlight Colour:</span> Select your preferred colour for active
+                    groups during memorisation and recall phase.
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-medium text-blue-700 mb-2">⌨️ Keyboard Controls</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>
+                    <span className="font-medium">Arrow Keys:</span> Navigate between cells using all four arrow keys.
+                  </li>
+                  <li>
+                    <span className="font-medium">Enter:</span> Move to next phase (memorization to recall / recall to
+                    submit).
+                  </li>
+                  <li>
+                    <span className="font-medium">Backspace:</span> Clears the cell and moves to previous text box.
+                  </li>
+                  <li>
+                    <span className="font-medium">Numbers 0-9:</span> Input answers.
                   </li>
                 </ul>
               </div>
@@ -199,13 +222,11 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
               </button>
             </div>
 
-            {/* Preview */}
             <div className="mt-4">
               <div className="text-sm font-medium text-gray-600 mb-1">Preview</div>
               <div className="flex space-x-1 text-lg">{generatePreview()}</div>
             </div>
 
-            {/* Color Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 block">Highlight Color</label>
               <div className="flex space-x-2">
@@ -222,29 +243,10 @@ const FiveMinNumbers: React.FC<Props> = ({ onStart }) => {
                 ))}
               </div>
             </div>
-
-            {/* Keyboard Instructions */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-blue-700 mb-2">⌨️ Keyboard Controls</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                <li>
-                  <span className="font-medium">Arrow Keys:</span> Navigate between cells
-                </li>
-                <li>
-                  <span className="font-medium">Enter:</span> Move to next phase(eg. memorization to recall)
-                </li>
-                <li>
-                  <span className="font-medium">Backspace:</span> Clear and move back
-                </li>
-                <li>
-                  <span className="font-medium">Numbers 0-9:</span> Input answers
-                </li>
-              </ul>
-            </div>
           </div>
 
           {/* Start Button */}
-          <div className="flex justify-end mt-8">
+          <div className="flex justify-end pr-4">
             <button
               onClick={startGame}
               className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"

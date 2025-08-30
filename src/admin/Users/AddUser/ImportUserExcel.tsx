@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -10,7 +11,9 @@ export default function ImportUserExcel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [placeholder, setPlaceholder] = useState("Choose a file or drag it here");
+  const [placeholder, setPlaceholder] = useState(
+    "Choose a file or drag it here"
+  );
   const [tableData, setTableData] = useState<any[]>([]);
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const [userObjects, setUserObjects] = useState<any[]>([]);
@@ -18,7 +21,7 @@ export default function ImportUserExcel() {
   // const navigate = useNavigate();
 
   // Required fields validation
-  const requiredFields = ['fname', 'email', 'password', 'birth_date'];
+  const requiredFields = ["fname", "email", "password", "birth_date"];
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -53,32 +56,39 @@ export default function ImportUserExcel() {
   const validateAndSetFile = (file: File) => {
     // Check file type
     const validTypes = [
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.xls',
-      '.xlsx'
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/csv",
+      ".xls",
+      ".xlsx",
+      ".csv",
     ];
 
-    const fileExtension = file.name.toLowerCase().split('.').pop();
-    const isValidType = validTypes.some(type =>
-      file.type === type || fileExtension === type.replace('.', '')
+    const fileExtension = file.name.toLowerCase().split(".").pop();
+    const isValidType = validTypes.some(
+      (type) =>
+        file.type === type || fileExtension === type.replace(".", "")
     );
 
     if (!isValidType) {
-      toast.error("Please upload a valid Excel file (.xls or .xlsx format only)");
+      toast.error(
+        "Please upload a valid Excel (.xls, .xlsx) or CSV (.csv) file"
+      );
       return;
     }
 
     // Check file size (optional - e.g., max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      toast.error("File size is too large. Please upload a file smaller than 10MB");
+      toast.error(
+        "File size is too large. Please upload a file smaller than 10MB"
+      );
       return;
     }
 
     setSelectedFile(file);
     setPlaceholder(file.name);
-    parseExcel(file);
+    parseFile(file);
   };
 
   const handleClick = () => {
@@ -96,26 +106,35 @@ export default function ImportUserExcel() {
 
   const validateExcelStructure = (headers: string[], data: any[][]) => {
     // Check if required headers are present
-    const missingHeaders = requiredFields.filter(field =>
-      !headers.some(header => header.toLowerCase().trim() === field.toLowerCase())
+    const missingHeaders = requiredFields.filter(
+      (field) =>
+        !headers.some(
+          (header) => header.toLowerCase().trim() === field.toLowerCase()
+        )
     );
 
     if (missingHeaders.length > 0) {
-      toast.error(`Missing required columns: ${missingHeaders.join(', ')}. Please ensure your Excel file has the correct format.`);
+      toast.error(
+        `Missing required columns: ${missingHeaders.join(
+          ", "
+        )}. Please ensure your file has the correct format.`
+      );
       return false;
     }
 
     // Check if there's any data
     if (data.length === 0) {
-      toast.error("Excel file is empty. Please provide data to import.");
+      toast.error("File is empty. Please provide data to import.");
       return false;
     }
 
     return true;
   };
 
-  const parseExcel = (file: File) => {
+  const parseFile = (file: File) => {
     const reader = new FileReader();
+    const fileExtension = file.name.toLowerCase().split(".").pop();
+
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
@@ -124,25 +143,37 @@ export default function ImportUserExcel() {
           return;
         }
 
-        const workbook = XLSX.read(data, { type: "binary" });
+        let jsonData: any[];
 
-        if (!workbook.SheetNames.length) {
-          toast.error("Excel file contains no sheets. Please provide a valid Excel file.");
-          return;
+        if (fileExtension === "csv") {
+          const text = data as string;
+          const lines = text.split(/\r\n|\n/);
+          jsonData = lines.map((line) => line.split(","));
+        } else {
+          const workbook = XLSX.read(data, { type: "binary" });
+
+          if (!workbook.SheetNames.length) {
+            toast.error(
+              "Excel file contains no sheets. Please provide a valid Excel file."
+            );
+            return;
+          }
+
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         }
-
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         if (jsonData.length === 0) {
-          toast.error("Excel sheet is empty. Please provide data to import.");
+          toast.error("File is empty. Please provide data to import.");
           return;
         }
 
-        const headers = jsonData[0].map((header: any) => String(header).trim());
+        const headers = jsonData[0].map((header: any) =>
+          String(header).trim()
+        );
         const dataRows = jsonData.slice(1);
 
-        // Validate Excel structure
+        // Validate file structure
         if (!validateExcelStructure(headers, dataRows)) {
           deleteFile();
           return;
@@ -151,20 +182,30 @@ export default function ImportUserExcel() {
         setTableHeaders(headers);
         setTableData(dataRows);
 
-        const objects = dataRows.map((row) => {
-          const obj: any = {};
-          headers.forEach((key: string, idx: number) => {
-            obj[key] = row[idx] ? String(row[idx]).trim() : "";
+        const objects = dataRows
+          .filter((row) => {
+            // Check if at least one non-empty field exists
+            return row.some(
+              (cell: undefined) => cell !== undefined && String(cell).trim() !== ""
+            );
+          })
+          .map((row) => {
+            const obj: any = {};
+            headers.forEach((key: string, idx: number) => {
+              obj[key] = row[idx] ? String(row[idx]).trim() : "";
+            });
+            return obj;
           });
-          return obj;
-        });
 
         setUserObjects(objects);
-        toast.success(`Excel file parsed successfully. Found ${objects.length} users to import.`);
-
+        toast.success(
+          `File parsed successfully. Found ${objects.length} users to import.`
+        );
       } catch (error) {
-        console.error("Error parsing Excel:", error);
-        toast.error("Failed to parse Excel file. Please ensure it's a valid Excel format.");
+        console.error("Error parsing file:", error);
+        toast.error(
+          "Failed to parse file. Please ensure it's a valid format."
+        );
         deleteFile();
       }
     };
@@ -173,15 +214,19 @@ export default function ImportUserExcel() {
       toast.error("Error reading file. Please try again.");
     };
 
-    reader.readAsBinaryString(file);
+    if (fileExtension === "csv") {
+      reader.readAsText(file);
+    } else {
+      reader.readAsBinaryString(file);
+    }
   };
 
   const validateUserData = (user: any) => {
     const errors: string[] = [];
 
     // Check required fields
-    requiredFields.forEach(field => {
-      if (!user[field] || String(user[field]).trim() === '') {
+    requiredFields.forEach((field) => {
+      if (!user[field] || String(user[field]).trim() === "") {
         errors.push(`Missing ${field}`);
       }
     });
@@ -200,13 +245,21 @@ export default function ImportUserExcel() {
         /[A-Z]/.test(user.password);
 
       if (!isValid) {
-        errors.push("Weak password (must include number, uppercase, lowercase & min 6 chars)");
+        errors.push(
+          "Weak password (must include number, uppercase, lowercase & min 6 chars)"
+        );
       }
     }
 
-    // Validate date format
-    if (user.birth_date && !/^\d{2}-\d{2}-\d{4}$/.test(user.birth_date) && !/^\d{4}-\d{2}-\d{2}$/.test(user.birth_date)) {
-      errors.push("Invalid birth_date format (expected DD-MM-YYYY or YYYY-MM-DD)");
+    // Validate date format (allows DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, YYYY/MM/DD)
+    if (
+      user.birth_date &&
+      !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(user.birth_date) &&
+      !/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(user.birth_date)
+    ) {
+      errors.push(
+        "Invalid birth_date format (expected DD-MM-YYYY or YYYY-MM-DD)"
+      );
     }
 
     return errors;
@@ -214,7 +267,7 @@ export default function ImportUserExcel() {
 
   const handleSubmit = async () => {
     if (userObjects.length === 0) {
-      toast.error("No users to import. Please upload a valid Excel file first.");
+      toast.error("No users to import. Please upload a valid file first.");
       return;
     }
 
@@ -229,17 +282,27 @@ export default function ImportUserExcel() {
       // Validate user data
       const validationErrors = validateUserData(user);
       if (validationErrors.length > 0) {
-        const errorMsg = `(${user.fname || 'Unknown'}): ${validationErrors.join(', ')}`;
+        const errorMsg = `(${
+          user.fname || "Unknown"
+        }): ${validationErrors.join(", ")}`;
         errors.push(errorMsg);
         toast.error(errorMsg);
         errorCount++;
         continue;
       }
 
-      // Format birth_date if needed
-      if (user.birth_date && /^\d{2}-\d{2}-\d{4}$/.test(user.birth_date)) {
-        const [dd, mm, yyyy] = user.birth_date.split("-");
-        user.birth_date = `${yyyy}-${mm}-${dd}`;
+      // Standardize birth_date to YYYY-MM-DD for the API
+      if (user.birth_date) {
+        // Replace slashes with hyphens to simplify parsing
+        const sanitizedDate = user.birth_date.replace(/\//g, "-");
+        // If the format is DD-MM-YYYY, convert it to YYYY-MM-DD
+        if (/^\d{2}-\d{2}-\d{4}$/.test(sanitizedDate)) {
+          const [dd, mm, yyyy] = sanitizedDate.split("-");
+          user.birth_date = `${yyyy}-${mm}-${dd}`;
+        } else {
+          // It's already YYYY-MM-DD, so just ensure hyphens
+          user.birth_date = sanitizedDate;
+        }
       }
 
       const formData = new FormData();
@@ -260,7 +323,6 @@ export default function ImportUserExcel() {
 
         toast.success(`User ${user.fname} registered successfully`);
         successCount++;
-
       } catch (error: any) {
         errorCount++;
         let errorMessage = ` `;
@@ -269,12 +331,13 @@ export default function ImportUserExcel() {
         console.error(`Error for user ${user.fname}:`, {
           status: error.response?.status,
           data: error.response?.data,
-          message: error.message
+          message: error.message,
         });
 
         // Check for various error indicators
         const errorData = error.response?.data;
-        const errorMsg = errorData?.message || errorData?.error || error.message || '';
+        const errorMsg =
+          errorData?.message || errorData?.error || error.message || "";
         const statusCode = error.response?.status;
 
         // Check for user already exists scenarios
@@ -282,16 +345,18 @@ export default function ImportUserExcel() {
           statusCode === 409 ||
           statusCode === 400 ||
           statusCode === 422 ||
-          errorMsg.toLowerCase().includes('already') ||
-          errorMsg.toLowerCase().includes('exists') ||
-          errorMsg.toLowerCase().includes('duplicate') ||
-          errorMsg.toLowerCase().includes('email') && errorMsg.toLowerCase().includes('taken') ||
-          errorMsg.toLowerCase().includes('unique constraint') ||
-          errorMsg.toLowerCase().includes('violation')
+          errorMsg.toLowerCase().includes("already") ||
+          errorMsg.toLowerCase().includes("exists") ||
+          errorMsg.toLowerCase().includes("duplicate") ||
+          (errorMsg.toLowerCase().includes("email") &&
+            errorMsg.toLowerCase().includes("taken")) ||
+          errorMsg.toLowerCase().includes("unique constraint") ||
+          errorMsg.toLowerCase().includes("violation")
         ) {
-          errorMessage += "User already registered (duplicate email or user data)";
+          errorMessage +=
+            "User already registered (duplicate email or user data)";
         } else if (statusCode === 400) {
-          if (errorMsg.toLowerCase().includes('validation')) {
+          if (errorMsg.toLowerCase().includes("validation")) {
             errorMessage += "Validation failed - check data format";
           } else {
             errorMessage += errorMsg || "Bad request - invalid data format";
@@ -319,13 +384,14 @@ export default function ImportUserExcel() {
     }
 
     setLoading(false);
-
   };
 
   return (
     <div className="max-w-2xl p-6 mx-auto bg-white shadow-lg rounded-xl">
       <Backbutton label="Back To Dashboard" />
-      <h1 className="mb-2 text-2xl font-bold text-center text-gray-800">Import Users from Excel</h1>
+      <h1 className="mb-2 text-2xl font-bold text-center text-gray-800">
+        Import Users from Excel or CSV
+      </h1>
       <div className="flex justify-center gap-2 mb-6">
         <div className="w-10 h-1 bg-pink-500 rounded" />
         <div className="w-10 h-1 bg-yellow-400 rounded" />
@@ -333,20 +399,24 @@ export default function ImportUserExcel() {
 
       {/* Required format info */}
       <div className="p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50">
-        <h3 className="font-semibold text-blue-800">Required Excel Format:</h3>
+        <h3 className="font-semibold text-blue-800">Required File Format:</h3>
         <p className="text-sm text-blue-700">
-          Your Excel file must contain these columns: <strong>fname, email, password, birth_date</strong>
+          Your file must contain these columns:{" "}
+          <strong>fname, email, password, birth_date</strong>
         </p>
         <p className="mt-1 text-xs text-blue-600">
-          • Date format: DD-MM-YYYY (e.g., 15-03-1990)<br />
-          • Password: Min 6 chars with uppercase, lowercase & number<br />
-          • File types: .xls or .xlsx only
+          • Date format: DD-MM-YYYY or DD/MM/YYYY (e.g., 15-03-1990 or
+          15/03/2001)
+          <br />
+          • Password: Min 6 chars with uppercase, lowercase & number
+          <br />• File types: .xls, .xlsx, or .csv only
         </p>
       </div>
 
       <div
-        className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors duration-300 cursor-pointer ${dragOver ? "bg-blue-50 border-blue-400" : "bg-gray-50 border-gray-300"
-          }`}
+        className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors duration-300 cursor-pointer ${
+          dragOver ? "bg-blue-50 border-blue-400" : "bg-gray-50 border-gray-300"
+        }`}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -387,7 +457,7 @@ export default function ImportUserExcel() {
         )}
         <input
           type="file"
-          accept=".xls,.xlsx"
+          accept=".xls,.xlsx,.csv"
           ref={fileInputRef}
           className="hidden"
           onChange={handleFileChange}
@@ -416,7 +486,7 @@ export default function ImportUserExcel() {
                   {tableHeaders.map((_, colIdx) => (
                     <td
                       key={colIdx}
-                      className="px-4 py-2 text-center border-b border-gray-200"
+                      className="px-4 py-2 text-left border-b border-gray-200"
                     >
                       {row[colIdx]}
                     </td>
@@ -430,7 +500,7 @@ export default function ImportUserExcel() {
 
       {/* Sticky Submit Button */}
       {tableHeaders.length > 0 && (
-        <div className="sticky bottom-0 z-10 py-4 text-center bg-white shadow-md">
+        <div className="relatives z-10 py-4 text-center bg-white shadow-md">
           <button
             className="px-6 py-2 text-white transition duration-300 bg-blue-600 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             onClick={async (e) => {

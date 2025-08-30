@@ -1,29 +1,36 @@
-import ProtectedRoute from "../components/ProtectedRoute";
-import EventRegisterd from "../mobile/EventRegisterd";
-import MobileLogin from "../mobile/MobileLogin";
-import PhoneStream from "../mobile/PhoneStream";
+// import ProtectedRoute from "../components/ProtectedRoute";
+// import EventPhonePage from "../mobile/EventPhonePage";
+// import EventRegisterd from "../mobile/EventRegisterd";
+import PhoneStreamCam from "../mobile/PhoneStreamCam";
+// import FullScreenPhoneStream from "../mobile/PhoneStream";
+// import MobileLogin from "../mobile/MobileLogin";
 import MobileOnlyRoute from "./MobileRoute";
 
 const mobileRoutes = [
-  { path: "/mobile-login", element: <MobileLogin /> },
+  // // { path: "/mobile-login", element: <MobileLogin /> },
+  // {
+  //   path: "/event",
+  //   element: (
+  //     <ProtectedRoute>
+  //       <EventRegisterd />
+  //     </ProtectedRoute>
+  //   ),
+  // },
+  // {
+  //   path: "/mobile-event/:event_id",
+  //   element: (
+  //     <ProtectedRoute>
+  //       <EventPhonePage />
+  //     </ProtectedRoute>
+  //   ),
+  // },
   {
-    path: "/event",
+    path:"/monitor",
     element: (
-      <ProtectedRoute>
-        <EventRegisterd />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/stream",
-    element: (
-      <ProtectedRoute>
-        <PhoneStream />
-      </ProtectedRoute>
-    ),
-  },
+      <PhoneStreamCam/>
+    )
+  }
 ];
-
 
 export const mobileOnlyRoutes = mobileRoutes.map(({ path, element }) => ({
   path,

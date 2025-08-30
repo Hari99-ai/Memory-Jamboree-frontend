@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 const tabs = [
   { title: 'School Master', path: '/admin/settings/masters/schools' },
-  { title: 'Class Master', path: '/admin/settings/masters/classes' },
+  // { title: 'Class Master', path: '/admin/settings/masters/classes' },
   { title: 'Category Master', path: '/admin/settings/masters/categories' },
 ];
 

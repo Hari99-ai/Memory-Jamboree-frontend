@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
 import { Users, Eye, AlertCircle, ArrowLeft, Search } from "lucide-react";
 import { API_BASE_URL } from "../../lib/client";
-import PracticePerformanceView from "./PracticePerformanceView"; // <-- 1. IMPORT THE NEW COMPONENT
+import PracticePerformanceView from "./PracticePerformanceView";
 
 interface User {
   id: number;
@@ -77,11 +77,17 @@ const PracticePerformance = () => {
   };
   
   const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        `${user.fname} ${user.lname}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return users
+      .filter(
+        (user) =>
+          `${user.fname} ${user.lname}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        const nameA = `${a.fname} ${a.lname}`.toLowerCase();
+        const nameB = `${b.fname} ${b.lname}`.toLowerCase();
+        return nameA.localeCompare(nameB); // Sort alphabetically
+      });
   }, [users, searchQuery]);
 
   const currentUsers = useMemo(() => {
@@ -104,7 +110,6 @@ const PracticePerformance = () => {
             Practice Test History - {selectedUserName}
           </h2>
         </div>
-        {/* 2. RENDER THE NEW COMPONENT WITH PROPS */}
         <PracticePerformanceView userId={selectedUserId} userName={selectedUserName} />
       </div>
     );

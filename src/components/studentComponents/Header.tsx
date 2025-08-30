@@ -115,7 +115,7 @@ export default function Header() {
             {[
               { label: "My Profile", to: "/profile" },
               { label: "Change Password", to: "/change-password" },
-              { label: "Support / Help", to: "/support" },
+              // { label: "Support / Help", to: "/support" },
             ].map((item) => (
               <DropdownMenuItem
                 key={item.to}

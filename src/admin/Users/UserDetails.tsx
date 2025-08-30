@@ -1,22 +1,43 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { getUserDetails, getDisciplines } from "../../lib/api";
-import { FaUser, FaPhone, FaEnvelope, FaBirthdayCake, FaMapMarkerAlt, FaSchool } from "react-icons/fa";
+import { FaUser, FaPhone, FaEnvelope, FaBirthdayCake, FaMapMarkerAlt, FaSchool, FaUserGraduate, FaLayerGroup, FaMobileAlt, FaPhoneAlt, FaCity, FaGlobeAsia, FaFlag, FaLocationArrow } from "react-icons/fa";
 import { ImgUrl } from '../../lib/client';
 import { useNavigate } from "react-router-dom";
 import { Pencil, ArrowLeft } from "lucide-react";
 import { defaultImg } from "../../lib/select";
 
+// --- Helper for full names ---
+const countryMap: { [key: string]: string } = {
+  "IN": "India",
+  "USA": "United States of America",
+  // Add other country codes as needed
+};
 
+const stateMap: { [key: string]: string } = {
+  "MP": "Madhya Pradesh",
+  "MH": "Maharashtra",
+  "DL": "Delhi",
+  "KA": "Karnataka",
+  // Add other state codes as needed
+};
+
+const getFullName = (code: string, type: 'country' | 'state'): string => {
+  if (type === 'country' && countryMap[code]) {
+    return countryMap[code];
+  }
+  if (type === 'state' && stateMap[code]) {
+    return stateMap[code];
+  }
+  return code; // Fallback to the original code if not found
+};
+// -----------------------------
 
 interface UserEventDiscipline {
   disc_id: number;
   finalscore: string;
+  time_taken: string;
 }
-
-// interface UserEventItem {
-
-// }
 
 export interface UserEventsResponse {
   cat_rank: number;
@@ -53,6 +74,7 @@ interface User {
   mo_name: string;
   mo_mobile: string;
   mo_email: string;
+  category_name: string;
 }
 
 interface UserDetailsResponse {
@@ -71,34 +93,27 @@ export default function UserDetails() {
     enabled: !!user_id,
   });
 
-  const { data: disciplines, isLoading: isLoadingDisciplines } = useQuery({
+  const { data: disciplines } = useQuery({
     queryKey: ['disciplines'],
     queryFn: getDisciplines,
     retry: 1,
   });
 
-  // const { data: userEvent, isLoading: isLoadingEvents } = useQuery<UserEventsResponse[]>({
-  //   queryKey: ['user-events', user_id],
-  //   queryFn: () => getcertificates(Number(user_id)),
-  //   enabled: !!user_id,
-  //   retry: 1,
-  // });
-
   const useEvent = data?.events || [];
   const user = data?.user || {};
-
-
 
   console.log("user - ", user);
   console.log("disciplines - ", disciplines);
   console.log("userEvents - ", useEvent);
 
-
-
-  // Helper function to get discipline score for a specific event and discipline
   const getDisciplineScore = (eventItem: UserEventsResponse, discId: number): string => {
     const disciplineData = eventItem.disciplines?.find(d => d.disc_id === discId);
     return disciplineData ? parseFloat(disciplineData.finalscore).toFixed(2) : "-";
+  };
+
+  const getDisciplineTime = (eventItem: UserEventsResponse, discId: number): string => {
+    const disciplineData = eventItem.disciplines?.find(d => d.disc_id === discId);
+    return disciplineData ? disciplineData.time_taken : "-";
   };
 
   if (isLoading) {
@@ -136,12 +151,12 @@ export default function UserDetails() {
     fa_name,
     fa_mobile,
     fa_email,
-    mo_name,
     mo_mobile,
-    mo_email,
+    category_name
   } = data?.user || {};
 
   const formatDate = (dateString: string): string => {
+    if (!dateString) return "N/A";
     try {
       return new Date(dateString).toLocaleDateString();
     } catch {
@@ -168,7 +183,7 @@ export default function UserDetails() {
           <span className="hover:underline">Back</span>
         </button>
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-6">
             <img
               src={image ? `${ImgUrl}/${image}` : defaultImg}
@@ -182,9 +197,9 @@ export default function UserDetails() {
           </div>
           <button
             onClick={handleEditClick}
-            className="px-4 py-2 mt-4"
+            className="p-2 text-blue-600 rounded-full hover:bg-blue-100"
           >
-            <Pencil className="w-6 h-6 text-blue-600" />
+            <Pencil className="w-6 h-6" />
           </button>
         </div>
 
@@ -205,10 +220,10 @@ export default function UserDetails() {
             <h2 className="mb-2 text-lg font-semibold">Address Info</h2>
             <div className="space-y-2 text-black">
               <p><FaMapMarkerAlt className="inline mr-2 text-red-500" />{address}</p>
-              <p>City: {city}</p>
-              <p>State: {state}</p>
-              <p>Country: {country}</p>
-              <p>Pincode: {pincode}</p>
+              <p><FaCity className="inline mr-2 text-blue-500" />City: {city}</p>
+              <p><FaGlobeAsia className="inline mr-2 text-green-600" />State Name: {getFullName(state!, 'state')}</p>
+              <p><FaFlag className="inline mr-2 text-yellow-600" />Country Name: {getFullName(country!, 'country')}</p>
+              <p><FaLocationArrow className="inline mr-2 text-purple-600" />Pincode: {pincode}</p>
             </div>
           </div>
 
@@ -217,16 +232,21 @@ export default function UserDetails() {
             <h2 className="mb-2 text-lg font-semibold">School Info</h2>
             <div className="space-y-2 text-black">
               <p><FaSchool className="inline mr-2 text-indigo-500" />School: {school_name}</p>
-              <p>Class: {school_class}</p>
+              <p><FaUserGraduate className="inline mr-2 text-green-600" />Class: {school_class}</p>
+              <p><FaLayerGroup className="inline mr-2 text-pink-600" />Category: {category_name}</p>
             </div>
           </div>
 
           {/* Family Info */}
           <div className="p-4 bg-white border rounded-lg shadow-sm">
-            <h2 className="mb-2 text-lg font-semibold">Family Info</h2>
-            <div className="space-y-2 text-black">
-              <p><strong>Father:</strong> {fa_name} ({fa_mobile}, {fa_email})</p>
-              <p><strong>Mother:</strong> {mo_name} ({mo_mobile}, {mo_email})</p>
+            <h2 className="mb-2 text-lg font-semibold">Guardians Info</h2>
+            <div className="space-y-3 text-black">
+              <div>
+                <p className="pl-4"><FaUser className="inline mr-2 text-blue-600" />Name: {fa_name}</p>
+                <p className="pl-4"><FaMobileAlt className="inline mr-2 text-green-600" />Mobile: {fa_mobile}</p>
+                <p className="pl-4"><FaEnvelope className="inline mr-2 text-red-500" />Email: {fa_email}</p>
+                <p className="pl-4"><FaPhoneAlt className="inline mr-2 text-purple-500" />Alternate Mobile: {mo_mobile}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -234,82 +254,66 @@ export default function UserDetails() {
 
       {/* Events Section */}
       <div className="p-6 mx-auto mt-8 rounded-lg shadow-lg max-w-7xl bg-gradient-to-br from-white to-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className='text-xl font-bold text-black'>Participated Events</h4>
-          {isLoading && (
-            <span className="text-sm text-blue-500 animate-pulse">
-              Loading events...
-            </span>
-          )}
-          {isLoadingDisciplines && (
-            <span className="text-sm text-blue-500 animate-pulse">
-              Loading disciplines...
-            </span>
-          )}
-        </div>
-
+        <h4 className='text-xl font-bold text-black mb-4'>Participated Events</h4>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse table-auto min-w-max">
             <thead>
               <tr className="text-indigo-900 bg-indigo-200">
-                <th className="px-3 py-2 text-xs text-left border border-indigo-300">Event</th>
-                <th className="px-3 py-2 text-xs text-left border border-indigo-300">Category</th>
-                <th className="px-3 py-2 text-xs text-left border border-indigo-300">Overall Score</th>
-                <th className="px-3 py-2 text-xs text-left border border-indigo-300">Event Rank</th>
-                <th className="px-3 py-2 text-xs text-left border border-indigo-300">Category Rank</th>
+                <th rowSpan={2} className="px-3 py-2 text-xs text-left border-2 border-indigo-300">Event</th>
+                <th rowSpan={2} className="px-3 py-2 text-xs text-left border-2 border-indigo-300">Category</th>
+                <th rowSpan={2} className="px-3 py-2 text-xs text-left border-2 border-indigo-300">Overall Score</th>
+                <th rowSpan={2} className="px-3 py-2 text-xs text-left border-2 border-indigo-300">Event Rank</th>
+                <th rowSpan={2} className="px-3 py-2 text-xs text-left border-2 border-indigo-300">Category Rank</th>
                 {disciplines?.map((discipline) => (
-                  <th
-                    key={discipline.disc_id}
-                    className="border border-indigo-300 px-2 py-2 text-center text-xs max-w-[90px]"
-                    title={discipline.discipline_name}
-                  >
+                  <th key={discipline.disc_id} colSpan={2} className="border-t-2 border-l-2 border-r-2 border-b border-indigo-300 px-2 py-2 text-center text-xs max-w-[180px]" title={discipline.discipline_name}>
                     {discipline.discipline_name}
                   </th>
+                ))}
+              </tr>
+              <tr className="text-indigo-900 bg-indigo-200">
+                {disciplines?.map((discipline) => (
+                  <>
+                    <th key={`${discipline.disc_id}-score`} className="px-2 py-2 text-xs text-center border-l-2 border-r border-b border-indigo-300">Score</th>
+                    <th key={`${discipline.disc_id}-time`} className="px-2 py-2 text-xs text-center border-l border-r-2 border-b border-indigo-300">Recall Time</th>
+                  </>
                 ))}
               </tr>
             </thead>
             <tbody>
               {useEvent?.map((item, index) => (
-                <tr
-                  key={index}
-                  className={index % 2 === 0 ? "bg-white" : "bg-indigo-50"}
-                >
-                  <td className="px-3 py-2 text-xs border border-indigo-200">{item.event_name}</td>
-                  <td className="px-3 py-2 text-xs border border-indigo-200">{item.category_name}</td>
-                  <td className="px-3 py-2 text-xs font-semibold text-green-600 border border-indigo-200">
-                    {parseFloat(String(item.overall_score)).toFixed(2)}
-                  </td>
-                  <td className="px-3 py-2 text-xs font-semibold text-yellow-600 border border-indigo-200">
-                    {item.event_rank}
-                  </td>
-                  <td className="px-3 py-2 text-xs font-semibold text-blue-600 border border-indigo-200">
-                    {item.cat_rank}
-                  </td>
+                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-indigo-50"}>
+                  <td className="px-3 py-2 text-xs border-2 border-indigo-200">{item.event_name}</td>
+                  <td className="px-3 py-2 text-xs border-2 border-indigo-200">{item.category_name}</td>
+                  <td className="px-3 py-2 text-xs font-semibold text-green-600 border-2 border-indigo-200">{parseFloat(String(item.overall_score)).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-xs font-semibold text-yellow-600 border-2 border-indigo-200">{item.event_rank}</td>
+                  <td className="px-3 py-2 text-xs font-semibold text-blue-600 border-2 border-indigo-200">{item.cat_rank}</td>
                   {disciplines?.map((discipline) => (
-                    <td
-                      key={discipline.disc_id}
-                      className="px-2 py-2 text-xs text-center border border-indigo-200 "
-                    >
-                      <span className={getDisciplineScore(item, discipline.disc_id!) !== "-" ? "text-green-600 font-semibold" : "text-gray-400"}>
-                        {getDisciplineScore(item, discipline.disc_id!)}
-                      </span>
-                    </td>
+                    <>
+                      <td key={`${discipline.disc_id}-score`} className="px-2 py-2 text-xs text-center border-t border-b border-l-2 border-r border-indigo-200">
+                        <span className={getDisciplineScore(item, discipline.disc_id!) !== "-" ? "text-green-600 font-semibold" : "text-gray-400"}>
+                          {getDisciplineScore(item, discipline.disc_id!)}
+                        </span>
+                      </td>
+                      <td key={`${discipline.disc_id}-time`} className="px-2 py-2 text-xs text-center border-t border-b border-l border-r-2 border-indigo-200">
+                        <span className={getDisciplineTime(item, discipline.disc_id!) !== "-" ? "text-gray-600" : "text-gray-400"}>
+                          {getDisciplineTime(item, discipline.disc_id!)}
+                        </span>
+                      </td>
+                    </>
                   ))}
                 </tr>
               ))}
               {useEvent.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="flex items-center px-4 py-5 text-center text-gray-500">
+                  <td colSpan={5 + (disciplines?.length || 0) * 2} className="px-4 py-5 text-center text-gray-500">
                     No events found for this user.
                   </td>
-
                 </tr>
               )}
-
             </tbody>
           </table>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

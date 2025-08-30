@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-"use client"
+
 
 import { useEffect, useState, useRef } from "react"
 import clsx from "clsx"
@@ -18,6 +18,7 @@ interface Props {
   disciplineName: string
   allDisciplines: DisciplineData[]
   onGameComplete?: (score: number) => void
+  onRecallPhaseStart?: () => void
 }
 
 // Keep this existing utility function at the top of the file
@@ -38,6 +39,7 @@ export default function ImagesGame({
   disciplineName,
   allDisciplines,
   onGameComplete,
+  onRecallPhaseStart,
 }: Props) {
   const [_, setTotalImages] = useState(0)
   const [pages, setPages] = useState(0)
@@ -49,28 +51,25 @@ export default function ImagesGame({
   const [positionInputs, setPositionInputs] = useState<{ [key: string]: string }>({})
   const [showPopup, setShowPopup] = useState(false)
   const [timeLeft, setTimeLeft] = useState(time * 60)
-  const [recallTimeLeft, setRecallTimeLeft] = useState(10 * 60) // <-- Set recall phase to 10 minutes
+  const [recallTimeLeft, setRecallTimeLeft] = useState(15 * 60) // Recall phase is 15 minutes
   const recallIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [score, setScore] = useState<{ total: number; rows: number[] } | null>(null)
   const [activeImagePos, setActiveImagePos] = useState<[number, number]>([0, 0]) // [rowIdx, colIdx]
   const [activeRecallPos, setActiveRecallPos] = useState<[number, number]>([0, 0])
-  const [resultPage, setResultPage] = useState(0) // <-- Add this line
+  const [resultPage, setResultPage] = useState(0)
 
   const inputRefs = useRef<HTMLInputElement[][]>([])
 
-  const [localImages, setLocalImages] = useState<string[]>(() => {
+  const [, setLocalImages] = useState<string[]>(() => {
     const stored = sessionStorage.getItem("imagesGameImages")
     return stored ? JSON.parse(stored) : images
-    console.log(localImages);
-    
   })
 
   // Initial image fetch and game setup
   useEffect(() => {
     if (sessionStorage.getItem("imagesGameImages")) {
       // Already loaded, use stored images
-
       setLocalImages(JSON.parse(sessionStorage.getItem("imagesGameImages")!))
       ;(async () => {
         await restart()
@@ -102,36 +101,64 @@ export default function ImagesGame({
     setTimeout(() => {
       setShowOriginal(false)
       setCurrentPage(0)
-      setRecallTimeLeft(10 * 60)
+      setRecallTimeLeft(15 * 60) // Set initial display time
       setCountdownStarted(false)
 
-      // Focus management
-      setTimeout(() => inputRefs.current[0]?.[0]?.focus(), 0)
+      // Notify parent that recall phase has started
+      if (onRecallPhaseStart) {
+        onRecallPhaseStart()
+      }
+
+      // Set the absolute end time for the recall phase
+      const endTime = Date.now() + 15 * 60 * 1000
 
       // Recall timer
       recallIntervalRef.current = setInterval(() => {
-        setRecallTimeLeft((rt) => (rt <= 1 ? 0 : rt - 1))
+        const remaining = endTime - Date.now()
+        if (remaining <= 0) {
+          setRecallTimeLeft(0)
+          if (recallIntervalRef.current) {
+            clearInterval(recallIntervalRef.current)
+          }
+        } else {
+          setRecallTimeLeft(Math.ceil(remaining / 1000))
+        }
       }, 1000)
+
+      // Focus management
+      setTimeout(() => inputRefs.current[0]?.[0]?.focus(), 0)
     }, 5000)
   }
 
   // Original viewing phase timer
   useEffect(() => {
-    if (showOriginal && timeLeft > 0 && !countdownStarted) {
-      const interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval)
-            handleRecallStart()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
+    let interval: NodeJS.Timeout | null = null
 
-      return () => clearInterval(interval)
+    if (showOriginal && !countdownStarted) {
+      // Set the target end time based on the current timeLeft state
+      const endTime = Date.now() + timeLeft * 1000
+
+      interval = setInterval(() => {
+        const remainingMilliseconds = endTime - Date.now()
+
+        if (remainingMilliseconds <= 0) {
+          setTimeLeft(0)
+          if (interval) clearInterval(interval)
+          handleRecallStart() // Automatically transition to recall phase
+        } else {
+          // Update the UI with the remaining time
+          setTimeLeft(Math.ceil(remainingMilliseconds / 1000))
+        }
+      }, 1000)
     }
-  }, [showOriginal, timeLeft, countdownStarted, originalImagesByRow])
+
+    // Cleanup function to clear the interval
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [showOriginal, countdownStarted]) // Reruns only when the memorization phase starts or stops
 
   // Keyboard navigation between inputs and phase change on Enter
   useEffect(() => {
@@ -172,9 +199,7 @@ export default function ImagesGame({
 
         switch (e.key) {
           case "ArrowRight":
-            // Stop at last image of last page
             if (isLastPage && isLastRow && isLastCol) {
-              // Do nothing
             } else if (col < COLS - 1) {
               setActiveImagePos([row, col + 1])
             } else if (row < ROWS - 1) {
@@ -185,9 +210,7 @@ export default function ImagesGame({
             }
             break
           case "ArrowLeft":
-            // Stop at first image of first page
             if (isFirstPage && isFirstRow && isFirstCol) {
-              // Do nothing
             } else if (col > 0) {
               setActiveImagePos([row, col - 1])
             } else if (row > 0) {
@@ -293,6 +316,19 @@ export default function ImagesGame({
     countdownStarted,
   ])
 
+  // UPDATE: Auto-submit when recall timer ends
+  useEffect(() => {
+    if (!showOriginal && score === null && recallTimeLeft === 0) {
+      if (recallIntervalRef.current) {
+        clearInterval(recallIntervalRef.current)
+      }
+      ;(async () => {
+        console.log("Recall time finished. Submitting answers...")
+        await handleSubmit()
+      })()
+    }
+  }, [recallTimeLeft, showOriginal, score])
+
   // Restart the game (fetch images, reset state)
   const restart = async () => {
     try {
@@ -305,20 +341,32 @@ export default function ImagesGame({
 
       // Calculate how many pages are needed, rounding up
       const imagesPerPage = ROWS * COLS
-      const pageCount = Math.ceil(uniqueImages.length / imagesPerPage) // <-- UPDATED LOGIC
+      const pageCount = Math.ceil(uniqueImages.length / imagesPerPage)
       const selected = uniqueImages
 
-      // Build the grid for all pages
-      const byRows: string[][] = []
+      // Build the grid for all pages by creating a flat list of all rows
+      const allRows: string[][] = []
       for (let i = 0; i < selected.length; i += COLS) {
         const row = selected.slice(i, i + COLS)
         // Ensure uniqueness in row (should always be true)
         if (new Set(row).size === row.length) {
-          byRows.push(row)
+          allRows.push(row)
         }
       }
 
-      // Shuffle each row for recall phase, but ensure no duplicates in a row
+      // Group the flat list of rows into pages
+      const pagesArray: string[][][] = []
+      for (let i = 0; i < allRows.length; i += ROWS) {
+        pagesArray.push(allRows.slice(i, i + ROWS))
+      }
+
+      // Shuffle the array of pages to randomize page order for the memorization phase
+      const shuffledPagesArray = shuffleArray(pagesArray)
+
+      // Flatten the shuffled pages back into a single array of rows
+      const byRows = shuffledPagesArray.flat()
+
+      // Shuffle each individual row for the recall phase
       const shuffledRows = byRows.map((row) => {
         let shuffled: string[] = []
         do {
@@ -336,7 +384,7 @@ export default function ImagesGame({
       setScore(null)
       setShowPopup(false)
       setTimeLeft(time * 60)
-      setRecallTimeLeft(10 * 60)
+      setRecallTimeLeft(15 * 60)
       setCurrentPage(0)
     } catch (error) {
       console.error("Error loading images:", error)
@@ -382,7 +430,7 @@ export default function ImagesGame({
       let rowCorrect = 0
       let rowFilled = 0
 
-      for (let c = 0; c < COLS; c++) {
+      for (let c = 0; c < recallRow.length; c++) {
         const img = recallRow[c]
         const userInput = Number.parseInt(positionInputs[img], 10)
 
@@ -395,15 +443,12 @@ export default function ImagesGame({
       }
 
       let rowScore = 0
-      // Only score full rows
-      if (originalRow.length === COLS) {
-        if (rowCorrect === COLS) {
-          rowScore = 5
-        } else if (rowFilled === 0) {
-          rowScore = 0
-        } else {
-          rowScore = -1
-        }
+      if (rowCorrect === originalRow.length) {
+        rowScore = originalRow.length
+      } else if (rowFilled === 0) {
+        rowScore = 0
+      } else {
+        rowScore = -1
       }
 
       rowScores.push(rowScore)
@@ -475,7 +520,7 @@ export default function ImagesGame({
     for (let r = 0; r < originalImagesByRow.length; r++) {
       const originalRow = originalImagesByRow[r]
       const recallRow = shuffledImagesByRow[r]
-      for (let c = 0; c < COLS; c++) {
+      for (let c = 0; c < recallRow.length; c++) {
         const img = recallRow[c]
         const userInput = Number.parseInt(positionInputs[img], 10)
         if (userInput && !isNaN(userInput) && originalRow[userInput - 1] === img) {
@@ -491,79 +536,43 @@ export default function ImagesGame({
     if (showPopup) setResultPage(0)
   }, [showPopup])
 
-  // Pagination logic (max 20 pages, sliding window)
+  // Pagination Logic
   const renderPagination = (isResult = false) => {
-    const windowSize = 5
     const page = isResult ? resultPage : currentPage
     const setPage = isResult ? setResultPage : setCurrentPage
-    let start = Math.max(0, page - 2)
-    const end = Math.min(pages, start + windowSize)
+    const totalPages = pages
 
-    if (end - start < windowSize) {
-      start = Math.max(0, end - windowSize)
+    // Do not render pagination if there is only one page
+    if (totalPages <= 1) {
+      return null
     }
 
-    const pageButtons = []
-    if (start > 0) {
-      pageButtons.push(
+    return (
+      <div className="flex justify-center space-x-2 mt-4">
         <button
-          key={0}
-          onClick={() => setPage(0)}
-          className={clsx(
-            "px-3 py-1 rounded-full font-semibold",
-            page === 0 ? "bg-blue-600 text-white" : "bg-white text-black",
-          )}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+          className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-500 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          1
-        </button>,
-      )
-      if (start > 1)
-        pageButtons.push(
-          <span key="start-ellipsis" className="px-2 text-black">
-            ...
-          </span>,
-        )
-    }
-    for (let i = start; i < end; i++) {
-      pageButtons.push(
+          Prev
+        </button>
+        <span className="pt-2 px-4 font-medium text-gray-900">
+          Page {page + 1} / {totalPages}
+        </span>
         <button
-          key={i}
-          onClick={() => setPage(i)}
-          className={clsx(
-            "px-3 py-1 rounded-full font-semibold",
-            page === i ? "bg-blue-600 text-white" : "bg-white text-black",
-          )}
+          onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+          disabled={page === totalPages - 1}
+          className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {i + 1}
-        </button>,
-      )
-    }
-    if (end < pages) {
-      if (end < pages - 1)
-        pageButtons.push(
-          <span key="end-ellipsis" className="px-2 text-black">
-            ...
-          </span>,
-        )
-      pageButtons.push(
-        <button
-          key={pages - 1}
-          onClick={() => setPage(pages - 1)}
-          className={clsx(
-            "px-3 py-1 rounded-full font-semibold",
-            page === pages - 1 ? "bg-blue-600 text-white" : "bg-white text-black",
-          )}
-        >
-          {pages}
-        </button>,
-      )
-    }
-    return <div className="flex gap-2 mt-4">{pageButtons}</div>
+          Next
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col items-center relative w-[900px] mx-auto">
-      {countdownStarted && <CountdownOverlay message="Recall Phase starts in..."/>}
+      {countdownStarted && <CountdownOverlay message="Recall Phase starts in..." />}
 
       {/* Title */}
       <h2 className="text-3xl font-bold mb-4 text-black">🧠 5-Minute Images</h2>
@@ -583,8 +592,6 @@ export default function ImagesGame({
           .slice(currentPage * ROWS, currentPage * ROWS + ROWS)
           .map((row, rowIdx) => (
             <div key={rowIdx} className="flex items-center gap-6">
-              {" "}
-              {/* Use gap-6 for wider spacing */}
               <div className="text-gray-900 w-6 mr-2 font-bold text-right">{rowIdx + 1 + currentPage * ROWS}</div>
               {row.map((img, colIdx) => {
                 const inputVal = positionInputs[img]
@@ -702,9 +709,9 @@ export default function ImagesGame({
 
       {/* Result Popup   */}
       {showPopup && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-start p-4 sm:p-8 overflow-auto">
+        <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-indigo-900 to-indigo-950 z-50 flex flex-col items-center justify-start p-4 sm:p-8 overflow-auto">
           {/* Score Display */}
-          <div className="bg-white border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 mb-4 sm:absolute sm:top-4 sm:right-6">
+          <div className="bg-white  border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 mb-4 mr-12 sm:absolute sm:top-4 sm:right-6">
             <span className="text-2xl font-bold flex items-center">
               🏆 Score: <span className="text-4xl">{Math.max(0, score?.total || 0)}</span>
             </span>
@@ -713,86 +720,90 @@ export default function ImagesGame({
             </span>
           </div>
 
-          {/* Result Image Grid */}
-          <div className="flex flex-col items-center justify-center space-y-4 mt-16">
-            {shuffledImagesByRow.slice(resultPage * ROWS, resultPage * ROWS + ROWS).map((row, rowIdx) => {
-              const globalRowIdx = resultPage * ROWS + rowIdx
-              const originalRow = originalImagesByRow[globalRowIdx]
+          {/* Result Content Wrapper */}
+          <div className="flex flex-col items-center justify-center mt-16 bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl">
+            
+            {/* Result Image Grid */}
+            <div className="flex flex-col items-center justify-center space-y-4 w-full">
+              {shuffledImagesByRow.slice(resultPage * ROWS, resultPage * ROWS + ROWS).map((row, rowIdx) => {
+                const globalRowIdx = resultPage * ROWS + rowIdx
+                const originalRow = originalImagesByRow[globalRowIdx]
 
-              return (
-                <div key={globalRowIdx} className="flex items-center gap-8">
-                  {/* Row number */}
-                  <div className="text-black w-6 mr-2 font-bold text-right">{globalRowIdx + 1}</div>
-                  {/* Images and answer boxes */}
-                  {row.map((img, colIdx) => {
-                    const userInput = positionInputs[img]
-                    const userInputNum = Number.parseInt(userInput, 10)
+                return (
+                  <div key={globalRowIdx} className="flex items-center gap-6">
+                    {/* Row number */}
+                    <div className="text-black w-6 mr-2 font-bold text-right">{globalRowIdx + 1}</div>
+                    {/* Images and answer boxes */}
+                    {row.map((img, colIdx) => {
+                      const userInput = positionInputs[img]
+                      const userInputNum = Number.parseInt(userInput, 10)
 
-                    const isCorrect =
-                      !isNaN(userInputNum) &&
-                      userInputNum >= 1 &&
-                      userInputNum <= COLS &&
-                      originalRow[userInputNum - 1] === img
+                      const isCorrect =
+                        !isNaN(userInputNum) &&
+                        userInputNum >= 1 &&
+                        userInputNum <= originalRow.length && // Check against actual row length
+                        originalRow[userInputNum - 1] === img
 
-                    const isWrong = userInput && !isCorrect
-                    const isEmpty = !userInput
+                      const isWrong = userInput && !isCorrect
+                      const isEmpty = !userInput
 
-                    return (
-                      <div key={colIdx} className="flex flex-row items-center gap-2 w-28 sm:w-32">
-                        {/* Answer Box */}
-                        <div className="-mr-2">
-                          {isCorrect && (
-                            <span className="inline-block w-8 h-8 rounded bg-green-500 text-white font-bold text-center leading-8 border-2 border-green-700 shadow text-base">
-                              {userInput}
-                            </span>
-                          )}
-                          {isWrong && (
-                            <div className="flex flex-col items-center space-x-1 ">
-                              <span className=" w-8 h-8 rounded bg-red-500 text-white font-bold text-center leading-8 border-2 border-red-700 shadow text-base relative ">
-                                <span
-                                  className="absolute inset-0 flex flex-col items-center justify-center"
-                                  style={{ textDecoration: "line-through" }}
-                                >
-                                  {userInput}
-                                </span>
+                      return (
+                        <div key={colIdx} className="flex flex-row items-center gap-2 w-28 sm:w-32">
+                          {/* Answer Box */}
+                          <div className="-mr-2">
+                            {isCorrect && (
+                              <span className="inline-block w-8 h-8 rounded bg-green-500 text-white font-bold text-center leading-8 border-2 border-green-700 shadow text-base">
+                                {userInput}
                               </span>
-                              <span className="text-black font-sm">{originalRow.indexOf(img) + 1}</span>
-                            </div>
-                          )}
-                          {isEmpty && (
-                            <span className="inline-block w-8 h-8 rounded bg-yellow-400 text-black font-bold text-center leading-8 border-2 border-yellow-600 shadow text-base">
-                              {originalRow.indexOf(img) + 1}
-                            </span>
-                          )}
+                            )}
+                            {isWrong && (
+                              <div className="flex flex-col items-center space-x-1 ">
+                                <span className=" w-8 h-8 rounded bg-red-500 text-white font-bold text-center leading-8 border-2 border-red-700 shadow text-base relative ">
+                                  <span
+                                    className="absolute inset-0 flex flex-col items-center justify-center"
+                                    style={{ textDecoration: "line-through" }}
+                                  >
+                                    {userInput}
+                                  </span>
+                                </span>
+                                <span className="text-black font-sm">{originalRow.indexOf(img) + 1}</span>
+                              </div>
+                            )}
+                            {isEmpty && (
+                              <span className="inline-block w-8 h-8 rounded bg-yellow-400 text-black font-bold text-center leading-8 border-2 border-yellow-600 shadow text-base">
+                                {originalRow.indexOf(img) + 1}
+                              </span>
+                            )}
+                          </div>
+                          {/* Image */}
+                          <img
+                            src={img || "/placeholder.svg"}
+                            alt={`result-img-${globalRowIdx}-${colIdx}`}
+                            className="w-20 h-20 object-cover rounded-xl shadow-md"
+                            style={{
+                              border: `4px solid ${isCorrect ? "green" : isWrong ? "red" : "yellow"}`,
+                            }}
+                          />
                         </div>
-                        {/* Image */}
-                        <img
-                          src={img || "/placeholder.svg"}
-                          alt={`result-img-${globalRowIdx}-${colIdx}`}
-                          className="w-20 h-20 object-cover rounded-xl shadow-md"
-                          style={{
-                            border: `4px solid ${isCorrect ? "green" : isWrong ? "red" : "yellow"}`,
-                          }}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
 
-          {/* Result Pagination */}
-          <div className="flex gap-2 mt-8 justify-center">{renderPagination(true)}</div>
+            {/* Result Pagination */}
+            <div className="mt-8">{renderPagination(true)}</div>
 
-          {/* Close Button */}
-          <div className="flex justify-center mt-8 mb-4">
-            <button
-              onClick={onRestart}
-              className="w-[100px] mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
-            >
-              Close
-            </button>
+            {/* Close Button */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={onRestart}
+                className="w-[100px] bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

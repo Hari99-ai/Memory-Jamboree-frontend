@@ -31,8 +31,7 @@
 //   return <Outlet />;
 // }
 
-// src/components/ProtectedRoute.tsx
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState, ReactNode } from "react";
 import { getAuthToken } from "../lib";
 
@@ -42,7 +41,6 @@ type ProtectedRouteProps = {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
-  const location = useLocation();
 
   useEffect(() => {
     const token = getAuthToken();
@@ -54,19 +52,17 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         const expirationTime = decoded.exp * 1000;
         return Date.now() > expirationTime;
       } catch (error) {
-        console.error(error);
         return true;
+        console.error(error)
       }
     };
 
     setIsTokenValid(!isTokenExpired(token));
   }, []);
 
-  if (isTokenValid === null) return null;
+  if (isTokenValid === null) return null; // You can show a loader here if needed
+  if (!isTokenValid) return <Navigate to="/" replace />;
 
-  if (!isTokenValid) {
-    return <Navigate to={`/mobile-login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
-  }
-
+  // If children passed, return them (for single-route protection); else use <Outlet /> (for nested)
   return <>{children ? children : <Outlet />}</>;
 }

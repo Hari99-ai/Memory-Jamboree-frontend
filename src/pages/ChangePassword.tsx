@@ -3,19 +3,18 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../lib/client";
 
-// Add this for toast notifications
+// Toast component for notifications
 const Toast: React.FC<{ message: string }> = ({ message }) => (
   <div className="fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
     {message}
   </div>
 );
 
-
 const isValidPassword = (password: string) => {
-  const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+  // Requires: 6+ chars, at least 1 uppercase, 1 lowercase, 1 number, special character is optional
+  const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
   return passwordPattern.test(password);
 };
-
 
 const ChangePassword: React.FC = () => {
   const navigate = useNavigate();
@@ -25,30 +24,34 @@ const ChangePassword: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isCurrentVisible, setIsCurrentVisible] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null); // For toast
+  const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-
-   useEffect(() => {
-      if (newPassword && !isValidPassword(newPassword)) {
-        setPasswordError("Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character.");
-      } else if (confirmPassword && newPassword !== confirmPassword) {
-        setPasswordError("Passwords do not match");
-      } else {
-        setPasswordError("");
-      }
-    }, [newPassword, confirmPassword]);
+  // **UPDATED**: Real-time validation for the new password field
+  useEffect(() => {
+    if (newPassword && !isValidPassword(newPassword)) {
+      setPasswordError(
+        "Password must be at least 6 characters, include uppercase, lowercase, and a number."
+      );
+    } else {
+      setPasswordError("");
+    }
+  }, [newPassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null);
-    setError(null);
+    setError(null); // Clear previous errors
+
+    // **UPDATED**: Mandatory check with the new password requirements
+    if (!isValidPassword(newPassword)) {
+      setError("Password must be at least 6 characters, include uppercase, lowercase, and a number.");
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match!");
+      setError("The new passwords do not match!");
       return;
     }
 
@@ -56,7 +59,7 @@ const ChangePassword: React.FC = () => {
     try {
       const auth_token = sessionStorage.getItem("auth_token");
       if (!auth_token) {
-        setError("No auth token found. Please login again.");
+        setError("Authentication token not found. Please log in again.");
         setLoading(false);
         return;
       }
@@ -79,22 +82,33 @@ const ChangePassword: React.FC = () => {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        localStorage.clear();
-        setToast("Password changed successfully! Please login with your new password.");
+        // **UPDATED**: Clear session storage and redirect to API_BASE_URL
+        sessionStorage.clear();
+        setToast("Password changed successfully! Redirecting...");
         setTimeout(() => {
           setToast(null);
-          navigate("/login");
-        }, 3000); // 2 seconds before navigating
+          window.location.href = "https://aidev.memoryjamboree.com"; // Redirect to the base URL
+        }, 2000);
       } else {
-        setError(data.message || "Failed to change password.");
+        setError(data.message || data.error || "Failed to change password.");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("An error occurred. Please try again later.");
     }
     setLoading(false);
   };
 
   const isMatching = newPassword && confirmPassword && newPassword === confirmPassword;
+  
+  // This logic automatically uses the updated isValidPassword function
+  const isFormInvalid =
+    !currentPassword ||
+    !newPassword ||
+    !confirmPassword ||
+    newPassword !== confirmPassword ||
+    !isValidPassword(newPassword) ||
+    loading;
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -110,7 +124,7 @@ const ChangePassword: React.FC = () => {
         <div className="flex justify-center mb-6">
           <img
             src="https://media.istockphoto.com/id/1412092602/vector/reset-password-action.jpg?s=612x612&w=0&k=20&c=ihelCKSTEfY2Icc26nBakoN8wpk1qoh2yGVnJ5gi-Os="
-            alt="image"
+            alt="Change Password Illustration"
             className="w-50 h-40"
           />
         </div>
@@ -156,6 +170,9 @@ const ChangePassword: React.FC = () => {
                 {isVisible ? "🙈" : "👁️"}
               </button>
             </div>
+            {passwordError && (
+               <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -184,17 +201,13 @@ const ChangePassword: React.FC = () => {
               </p>
             )}
           </div>
-
-          {message && <div className="text-green-600 text-center">{message}</div>}
+          
           {error && <div className="text-red-600 text-center">{error}</div>}
-          {passwordError && (
-              <p className="text-red-500 text-sm">{passwordError}</p>
-            )}
 
           <button
             type="submit"
-            className="w-full max-w-md bg-[#245cab] hover:bg-[#95baed] text-white py-2 rounded-md transition"
-            disabled={loading}
+            className="w-full max-w-md bg-[#245cab] hover:bg-[#95baed] text-white py-2 rounded-md transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={isFormInvalid}
           >
             {loading ? "Submitting..." : "Submit"}
           </button>

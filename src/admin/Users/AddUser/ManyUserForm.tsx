@@ -25,6 +25,8 @@ import {
   getAllClasses,
 } from "../../../lib/select";
 import { CreateUser } from "../../../lib/api";
+import { useOthersCategory } from "../../../hooks/useOthersCategory";
+import { CategoryMasterData } from "../../../types";
 
 // Schema for individual user
 const userSchema = z.object({
@@ -73,6 +75,7 @@ function ManyUserForm() {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [selectedClass, setSelectedClass] = useState("");
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [activeTab, setActiveTab] = useState<"school" | "addUser">("school");
@@ -82,6 +85,21 @@ function ManyUserForm() {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+
+  const isOthersSelected = selectedClass?.startsWith("Others");
+  const cleanedClass = isOthersSelected ? "Others" : null;
+
+  const [ , setSelectedCategoryName] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
+  const { data , isLoading: categorydata_loading , refetch } = useOthersCategory(cleanedClass);
+
+  useEffect(() => {
+    if (isOthersSelected) {
+      refetch(); 
+    }
+  }, [isOthersSelected, refetch]);
 
   const {
     register,
@@ -463,24 +481,49 @@ function ManyUserForm() {
                 Class/Grade*
               </Label>
               <Select
-                onValueChange={(value) => setValue("school_class", value)}
-                value={formValues.school_class}
+                value={selectedClass}
+                onValueChange={(value) => {
+                  setSelectedClass(value);
+                  setValue("school_class", value);
+                }}
               >
                 <SelectTrigger id="school_class" className="w-full">
                   <SelectValue placeholder="Select Class/Grade" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
                   {getAllClasses().map((className) => (
-                    <SelectItem key={className} value={className}>
-                      {className}
-                    </SelectItem>
+                    <SelectItem key={className} value={className}>{className}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.school_class && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.school_class.message}
-                </p>
+
+
+              {isOthersSelected && (
+                <div className="mt-4">
+                  <h3 className="font-semibold text-sm mb-2">Others Categories (Select One):</h3>
+                  {categorydata_loading ? (
+                    <p className="text-xs">Loading categories...</p>
+                  ) : (
+                    <div className="text-xs text-gray-700 space-y-1">
+                      {data?.map((item: CategoryMasterData) => (
+                        <label key={item.cat_id} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="others_category"
+                            checked={selectedCategory === item.cat_id}
+                            value={item.cat_id}
+                            onChange={() => {
+                              setSelectedCategory(item.cat_id);
+                              setSelectedCategoryName(item.category_name);
+                            }}
+                            className="accent-blue-500"
+                          />
+                          <span>{item.category_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

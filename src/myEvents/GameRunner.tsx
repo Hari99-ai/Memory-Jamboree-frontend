@@ -5,7 +5,7 @@ import NumbersGame from "../Games/Numbers/NumbersGame"
 import BinaryGame from "../Games/Binary/BinaryGame"
 import ImagesGame from "../Games/Image/ImageGame"
 import DatesGame from "../Games/Dates/DateGames"
-//import FacesGame from "../Games/Faces/FacesGame"
+import FacesGame from "../Games/Faces/FacesGame"
 import WordsGame from "../Games/Words/WordsGame"
 import type { DisciplineData } from "../types"
 import { useEffect } from "react"
@@ -106,16 +106,16 @@ export default function GameRunner({ discipline, onRestart, config = {}, allDisc
       />
     )
   } else if (disciplineNormalized.includes("faces") || disciplineNormalized.includes("names")) {
-    // gameComponent = (
-    //   <FacesGame
-    //     time={formattedTime}
-    //     onRestart={onRestart}
-    //     highlightColor={config.highlightColor || "#00ffcc"}
-    //     disciplineName={discipline}
-    //     allDisciplines={allDisciplines}
-    //     onGameComplete={onGameComplete}
-    //   />
-    // )
+    gameComponent = (
+      <FacesGame
+        time={formattedTime}
+        onRestart={onRestart}
+        highlightColor={config.highlightColor || "#00ffcc"}
+        disciplineName={discipline}
+        allDisciplines={allDisciplines}
+        onGameComplete={onGameComplete}
+      />
+    )
   }
 
   return (

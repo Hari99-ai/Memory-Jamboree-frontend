@@ -81,7 +81,7 @@ export default function Hero() {
             mettle in the ultimate test of memory and intellect
           </p>
           <Link
-            to="/first-register"
+            to="auth/first-register"
             className="px-7 py-3  text-white text-base rounded-full transition-colors duration-300 hover:border-2 hover:border-[#245cab] border-transparent"
             style={{
               fontFamily: "var(--font-main)",

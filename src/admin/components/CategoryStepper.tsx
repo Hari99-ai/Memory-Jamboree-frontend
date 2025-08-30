@@ -45,18 +45,18 @@
 // }
 
 // import { cn } from "../../lib/utils";
- 
+
 // export interface Category {
 //   cat_id: number;
 //   category_name?: string;
 // }
- 
+
 // interface CategoryStepperProps {
 //   categories: Category[];
 //   activeTab: string | number;
 //   setActiveTab: (tabId: string | number) => void;
 // }
- 
+
 
 // export default function CategoryStepper({
 //   categories,
@@ -83,7 +83,7 @@
 //           )}
 //         />
 //       </button>
- 
+
 //       {/* Other categories */}
 //       {categories.map((category) => (
 //         <button
@@ -111,7 +111,7 @@
 
 
 import { cn } from "../../lib/utils";
-import { OverallData, RegisterUserInput , } from "../../types";
+import { OverallData, RegisterUserInput, } from "../../types";
 
 export interface Category {
   cat_id: number;
@@ -120,7 +120,7 @@ export interface Category {
 
 interface CategoryStepperProps {
   categories: Category[];
-  activeTab: string | number;
+  activeTab: string | number | null;
   setActiveTab: (tabId: string | number) => void;
   overallUsers?: RegisterUserInput[] | OverallData[];
 }
@@ -139,7 +139,7 @@ export default function CategoryStepper({
         onClick={() => setActiveTab("overall")}
         className={cn(
           "relative py-2 px-4 text-center transition-colors duration-300",
-          activeTab === "overall" ? "text-black font-semibold" : "text-gray-500"
+          String(activeTab) === "overall" ? "text-black font-semibold" : "text-gray-500"
         )}
       >
         Overall ({overallUsers?.length ?? 0})

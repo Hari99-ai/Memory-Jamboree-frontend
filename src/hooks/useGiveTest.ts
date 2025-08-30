@@ -82,6 +82,7 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
 
   const [phoneStarted , setPhoneStarted] = useState(false)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const triggerAlert = useCallback((message: string) => {
     if (!enabled) return
     if (alertQueueRef.current.length >= 2) {
@@ -109,19 +110,19 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
     }
   }
 
-  const alertTimeouts = {
-    phone: null as NodeJS.Timeout | null,
-    multiplePeople: null as NodeJS.Timeout | null,
-    focus: null as NodeJS.Timeout | null,
-    person_count: null as NodeJS.Timeout | null,
-  }
+  // const alertTimeouts = {
+  //   phone: null as NodeJS.Timeout | null,
+  //   multiplePeople: null as NodeJS.Timeout | null,
+  //   focus: null as NodeJS.Timeout | null,
+  //   person_count: null as NodeJS.Timeout | null,
+  // }
 
-  const clearExistingTimeout = (key: keyof typeof alertTimeouts) => {
-    if (alertTimeouts[key]) {
-      clearTimeout(alertTimeouts[key]!)
-      alertTimeouts[key] = null
-    }
-  }
+  // const clearExistingTimeout = (key: keyof typeof alertTimeouts) => {
+  //   if (alertTimeouts[key]) {
+  //     clearTimeout(alertTimeouts[key]!)
+  //     alertTimeouts[key] = null
+  //   }
+  // }
 
   // Function to pause monitoring API calls
   const pauseMonitoring = useCallback(() => {
@@ -233,7 +234,7 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
   const wsRef = useRef<WebSocket | null>(null);
   const focus_loss_count = useRef<number>(0)
     // const isFocusCooldown = useRef(false);
-  const foucus_warn_count = useRef<number>(0)
+  // const foucus_warn_count = useRef<number>(0)
   const startWebSocket = useCallback(async (passcode: string) => {
         
     if (!enabled) return;
@@ -677,17 +678,16 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
 }, [dialogOpen, pauseMonitoring, resumeMonitoring, gameTerminated])
 
 
-const closeDialog = useCallback(() => {
-  console.log(`[${getTimeStamp()}] Dialog closed by user`);
-  setDialogOpen(false);
-  dialogRef.current = false;
-
-  // Only resume monitoring if game is not terminated
-  if (!gameTerminated) {
-    console.log(`[${getTimeStamp()}] Resuming monitoring after dialog close`);
-    resumeMonitoring();
-  }
-}, [resumeMonitoring, gameTerminated]);
+   const closeDialog = useCallback(() => {
+    console.log("✅ Dialog closed by user")
+    setDialogOpen(false)
+    dialogRef.current = false
+    // Resume immediately if paused and game not terminated
+    if (monitoringPausedRef.current && !gameTerminated) {
+      console.log("▶️ Resuming monitoring after dialog close")
+      resumeMonitoring()
+    }
+  }, [resumeMonitoring, gameTerminated])
 
 
 

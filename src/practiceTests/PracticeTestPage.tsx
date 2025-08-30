@@ -9,13 +9,19 @@ export default function PracticeTestPage() {
   const state = location.state || {};
   const {
     selectedDiscipline: discipline,
-    config,
+    config: gameConfig,
     allDisciplines = [],
   }: {
     selectedDiscipline: string;
     config: any;
     allDisciplines: DisciplineData[];
   } = state;
+
+  const config = {
+    grouping: gameConfig.grouping || 1,
+    drawEvery: gameConfig.drawEvery || 0,
+    highlightColor: gameConfig.highlightColor || "#facc15",
+  };
 
   if (!discipline) {
     return (

@@ -1,19 +1,20 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
 import { Badge } from "../components/ui/badge"
 import { Skeleton } from "../components/ui/skeleton"
-import { TrendingUp, Calendar, Target, Clock, Filter, XCircle } from "lucide-react"
+import { TrendingUp, Calendar, Target, Clock, Filter, Pencil, XCircle } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { API_BASE_URL } from "../lib/client"
-
-interface PracticeTestRecord {
-  createdat: string
-  discipline_name: string | null
-  score: string
-}
+import { useNavigate } from "react-router-dom"
+import { PracticeTestRecord } from "../types"
 
 interface ProcessedRecord extends PracticeTestRecord {
   serialNumber: number
@@ -32,7 +33,7 @@ export default function PracticeTestHistory() {
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
   const [currentPage, setCurrentPage] = useState<number>(1)
-
+  const navigate = useNavigate()
   useEffect(() => {
     fetchPracticeTestHistory()
   }, [])
@@ -88,16 +89,21 @@ export default function PracticeTestHistory() {
 
       const processedData = data
         .map((record) => {
-          const date = new Date(record.createdat)
+          const originalDate = new Date(record.createdat)
+          // Calculate the time offset for +5 hours and 30 minutes in milliseconds
+          const timeOffset = (5 * 60 + 30) * 60 * 1000
+          const adjustedDate = new Date(originalDate.getTime() + timeOffset)
+
           return {
             ...record,
             serialNumber: 0,
-            formattedDate: date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
-            formattedTime: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
+            // Use the adjusted date for formatting, so it reflects the +5.5 hour change
+            formattedDate: adjustedDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+            formattedTime: adjustedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
             numericScore: Number.parseFloat(record.score),
           }
         })
-        .sort((a, b) => new Date(a.createdat).getTime() - new Date(b.createdat).getTime())
+        .sort((a, b) => new Date(b.createdat).getTime() - new Date(a.createdat).getTime())
         .map((record, index) => ({ ...record, serialNumber: index + 1 }))
 
       setRecords(processedData)
@@ -219,23 +225,39 @@ export default function PracticeTestHistory() {
 
   if (error) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[calc(100vh-100px)]">
-        <Card className="w-full max-w-md text-center p-6">
-          <CardHeader className="flex flex-col items-center justify-center space-y-4">
-            <XCircle className="h-16 w-16 text-red-500" />
-            <CardTitle className="text-2xl font-bold text-red-700">Error Loading Data</CardTitle>
+      <div className="flex min-h-[calc(100vh-100px)] items-center justify-center bg-slate-50 p-4">
+        <Card className="w-full max-w-lg text-center shadow-sm">
+          <CardHeader>
+            {/* 1. Icon updated for an "empty" or "start" state */}
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
+              <Pencil className="h-9 w-9 text-indigo-500" />
+            </div>
+
+            {/* 2. Title changed to reflect an empty history */}
+            <CardTitle className="mt-4 text-2xl font-semibold text-slate-800">
+              No Practice History Found
+            </CardTitle>
+
+            <CardDescription className="mt-2 text-base text-slate-600">
+              It looks like you haven't taken a test yet. Let's get started!
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">{error}</p>
-            <Button onClick={fetchPracticeTestHistory} className="mt-4">
-              Try Again
-            </Button>
+
+          <CardContent>
+            {/* 3. A clear, encouraging message */}
+            <p className="text-sm text-slate-500">
+              Complete a practice test to track your progress and see your history here.
+            </p>
           </CardContent>
+
+          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            {/* 4. Primary action is now to take a test */}
+            <Button onClick={() => navigate("/dashboard/practiceTests")}>Take a Practice Test</Button>
+          </CardFooter>
         </Card>
       </div>
     )
   }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">

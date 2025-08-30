@@ -80,7 +80,7 @@ const CertificateViewer = () => {
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 bg-gray-100">
       <div className="p-2 bg-white shadow-md">
         <div ref={certificateRef}>
-          <Certificate championship={championship} name={name} rank={rank} score={formattedScore} date={date} />
+          <Certificate championship={championship} name={name} rank={rank} score={formattedScore} date={date} categoryRank={""} />
         </div>
       </div>
       <button

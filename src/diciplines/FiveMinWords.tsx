@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState } from "react"
 
 interface Props {
   onStart: (config: {
-    highlightColor: string;
-    highlightGroupSize: number;
-    showGroupedWords: boolean;
-    category: string;
-  }) => void;
+    highlightColor: string
+    highlightGroupSize: number
+    showGroupedWords: boolean
+    category: string
+  }) => void
 }
 
 const COLORS = [
@@ -17,156 +17,149 @@ const COLORS = [
   "#99D6FF", // Darker Sky Blue
   "#9999FF", // Darker Blue
   "#99FF99", // Darker Green
-  "#FFB380"  // Darker Orange/Peach
-];
+  "#FFB380", // Darker Orange/Peach
+]
 
-export default function FifteenMinWords({ onStart }: Props) {
+export default function FiveMinWords({ onStart }: Props) {
   const [highlightColor, setHighlightColor] = useState(() => {
-    const saved = localStorage.getItem("fifteenMinWordsPreferences");
+    const saved = localStorage.getItem("fiveMinWordsPreferences")
     if (saved) {
       try {
-        return JSON.parse(saved).highlightColor || COLORS[0];
-      } catch {
-        // ignore
-      }
+        return JSON.parse(saved).highlightColor || COLORS[0]
+      } catch { /* ignore */ }
     }
-    return COLORS[0];
-  });
+    return COLORS[0]
+  })
   const [highlightGroupSize, setHighlightGroupSize] = useState(() => {
-    const saved = localStorage.getItem("fifteenMinWordsPreferences");
+    const saved = localStorage.getItem("fiveMinWordsPreferences")
     if (saved) {
       try {
-        return JSON.parse(saved).highlightGroupSize || 3;
-      } catch {
-        // ignore
-      }
+        return JSON.parse(saved).highlightGroupSize || 3
+      } catch { /* ignore */ }
     }
-    return 3;
-  });
+    return 3
+  })
   const [showGroupedWords, setShowGroupedWords] = useState(() => {
-    const saved = localStorage.getItem("fifteenMinWordsPreferences");
+    const saved = localStorage.getItem("fiveMinWordsPreferences")
     if (saved) {
       try {
-        return JSON.parse(saved).showGroupedWords ?? true;
-      } catch {
-        // ignore
-      }
+        return JSON.parse(saved).showGroupedWords ?? false
+      } catch { /* ignore */ }
     }
-    return true;
-  });
+    return false
+  })
   const [category, setCategory] = useState(() => {
-    const saved = localStorage.getItem("fifteenMinWordsPreferences");
+    const saved = localStorage.getItem("fiveMinWordsPreferences")
     if (saved) {
       try {
-        return JSON.parse(saved).category || "";
-      } catch {
-        // ignore
-      }
+        return JSON.parse(saved).category || "easy"
+      } catch { /* ignore */ }
     }
-    return "";
-  });
-  const [formError, setFormError] = useState("");
+    return "easy"
+  })
+  const [formError, setFormError] = useState("")
 
   const savePreferences = () => {
-    const prefs = {
-      highlightColor,
-      highlightGroupSize,
-      showGroupedWords,
-      category,
-    };
-    localStorage.setItem("fifteenMinWordsPreferences", JSON.stringify(prefs));
-  };
-
-const handleStart = () => {
-  if (!category) {
-    setFormError("Please select a category before starting.");
-    return;
+    const prefs = { highlightColor, highlightGroupSize, showGroupedWords, category }
+    localStorage.setItem("fiveMinWordsPreferences", JSON.stringify(prefs))
   }
 
-  setFormError(""); // clear any previous errors
-  savePreferences();
-  onStart({ highlightColor, highlightGroupSize, showGroupedWords, category });
-};
-
-  
+  const handleStart = () => {
+    if (!category) {
+      setFormError("Please select a category before starting.")
+      return
+    }
+    setFormError("")
+    savePreferences()
+    onStart({ highlightColor, highlightGroupSize, showGroupedWords, category })
+  }
 
   return (
-    <div className="w-full mx-auto bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-      {/* Game Instructions */}
+    <div className="space-y-6">
+      {/* Instructions Section */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 space-y-4">
         <h2 className="text-xl font-semibold text-blue-800 mb-3">📘 How to Play</h2>
-        
+
         <div className="space-y-3">
           <div className="bg-white rounded-lg p-4 shadow-sm">
-            <h3 className="font-medium text-blue-700 mb-2">🎯 Game Structure</h3>
+            <h3 className="font-medium text-blue-700 mb-2">🎯 Test Layout</h3>
             <ul className="list-disc list-inside text-gray-700 space-y-1">
-              <li>Each page contains <span className="font-medium">5 columns with 20 words</span> each</li>
-              <li>Total of <span className="font-medium">2 pages</span> to memorize</li>
-              <li>Memorize words in their exact order with correct spellings</li>
+              <li>Test consists of 2 pages.</li>
+              <li>Each page contains 5 columns with 20 words each.</li>
+              <li>You can shift between the pages using the page number buttons (1, 2).</li>
             </ul>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow-sm">
-            <h3 className="font-medium text-blue-700 mb-2">⏱ Time Limits</h3>
+            <h3 className="font-medium text-blue-700 mb-2">🎯 Test Objective</h3>
             <ul className="list-disc list-inside text-gray-700 space-y-1">
-              <li><span className="font-medium">Memorization Phase:</span> 5 minutes</li>
-              <li><span className="font-medium">Recall Phase:</span> 10 minutes</li>
-              <li>You can finish memorization early by clicking the submit button</li>
+              <li>You need to memorise as many words as possible in the given time.</li>
+              <li>Memorize the words in their exact order with correct spellings.</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⏱ Test Phases</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Memorization (5 minutes):</span> You will see a grid of words. During this time, you will memorise the words in order.
+              </li>
+              <li>
+                <span className="font-medium">Recall (15 minutes):</span> You will see empty text boxes on the screen. During this time, you will recall the words and fill them in the empty text boxes.
+              </li>
             </ul>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <h3 className="font-medium text-blue-700 mb-2">💯 Scoring System</h3>
             <ul className="list-disc list-inside text-gray-700 space-y-1">
-              <li>Points awarded for consecutive correct words in each column</li>
-              <li>Bonus: +1 point for 10 consecutive correct words(eg. 11 points for 10 consecutive correct words)</li>
-              <li>Spelling must be exact for points to count</li>
+              <li>Every column will be scored separately.</li>
+              <li>+1 point for Every correct word.</li>
+              <li>+1 bonus point for every 10 consecutive correct words in a column.</li>
+              <li>Scoring for a column stops at the first mistake found in the column.</li>
+              <li>Each column must start correctly to score points.</li>
+              <li>Final score will be the sum of all the scores in each column.</li>
+              <li>No negative marking.</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⚙️ Test Settings</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Grouping:</span> You may group the words during memorisation phase (1-5).
+              </li>
+              <li>
+                <span className="font-medium">Highlight Colour:</span> Select your preferred colour for active word groups during memorisation and recall phase.
+              </li>
+              <li>
+                <span className="font-medium">Default settings are saved for your next visit.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⌨️ Keyboard Controls</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Arrow Keys:</span> Navigate between cells using up and down arrow keys.
+              </li>
+              <li>
+                <span className="font-medium">Enter:</span> Move to next phase (memorization to recall / recall to submit).
+              </li>
+              <li>
+                <span className="font-medium">Delete/Backspace:</span> Deletes the cell content.
+              </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Existing keyboard shortcuts section */}
-      <div className="text-left p-4 text-sm bg-blue-50 border rounded-md mb-6">
-        <h3 className="font-semibold text-blue-800 mb-2">⌨️ Keyboard Shortcuts</h3>
-        <ul className="list-disc ml-5 text-blue-700 space-y-1">
-          <li><strong>Arrow Keys:</strong> Navigate between input fields (↑ ↓)</li>
-          <li><strong>Enter:</strong> Move to next phase(eg. memorization to recall)</li>
-          <li><strong>Highlighted Words:</strong> Groups and colors words based on the size you choose</li>
-        </ul>
-      </div>
-
-      {/* Add new Configuration Instructions section */}
-      <div className="text-left p-4 bg-blue-50 border rounded-md mb-6">
-        <h3 className="font-semibold text-blue-800 mb-2">⚙️ Game Configuration</h3>
-        <ul className="list-disc ml-5 text-blue-700 space-y-2">
-          <li>
-            <strong>Color Selection:</strong> Choose a highlight color that's comfortable for your eyes. 
-            This color will help you track word groups during memorization.
-          </li>
-          <li>
-            <strong>Group Size:</strong> Select how many words you want grouped together (1-5).
-            Larger groups can help with pattern recognition.
-          </li>
-          <li>
-            <strong>Visual Groups Toggle:</strong> Turn on/off the visual separation between word groups.
-            This can help with chunking information.
-          </li>
-          <li>
-            <strong>Difficulty Levels:</strong>
-            <ul className="ml-4 mt-1 space-y-1 text-blue-600">
-              <li>• Easy: Common everyday words</li>
-              <li>• Moderate: Mix of common and challenging words</li>
-              <li>• Hard: Complex and uncommon words</li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-
-      <section className="text-gray-800 text-base space-y-4 leading-relaxed">
-        <p>
-          Your input highlights will use the color you choose here:{" "}
-          <span className="flex gap-2 pt-4">
+      {/* Configuration Section */}
+      <div className="bg-white rounded-lg p-6 shadow-sm space-y-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 block">Highlight Color</label>
+          <div className="flex gap-2 pt-2">
             {COLORS.map((color) => (
               <button
                 key={color}
@@ -180,16 +173,14 @@ const handleStart = () => {
                 title={color}
               />
             ))}
-          </span>
-        </p>
+          </div>
+        </div>
 
-        <p>
-          Each highlight will group{" "}
-          <span className="inline-flex items-center border border-gray-300 rounded-full overflow-hidden mx-1">
+        <div>
+          <label className="text-sm font-medium text-gray-700">Grouping Size</label>
+          <div className="inline-flex items-center border border-gray-300 rounded-full overflow-hidden ml-3">
             <button
-              onClick={() =>
-                setHighlightGroupSize((size: number) => (size > 1 ? size - 1 : 1))
-              }
+              onClick={() => setHighlightGroupSize((size: number) => (size > 1 ? size - 1 : 1))}
               className="px-3 py-1 text-gray-700 hover:bg-gray-100"
             >
               −
@@ -200,19 +191,16 @@ const handleStart = () => {
               className="w-10 text-center bg-white font-semibold text-gray-900 border-x border-gray-300"
             />
             <button
-              onClick={() =>
-                setHighlightGroupSize((size: number) => (size < 5 ? size + 1 : 5))
-              }
+              onClick={() => setHighlightGroupSize((size: number) => (size < 5 ? size + 1 : 5))}
               className="px-3 py-1 text-gray-700 hover:bg-gray-100"
             >
               +
             </button>
-          </span>{" "}
-          words together.
-        </p>
+          </div>
+        </div>
 
-        <p className="flex items-center">
-          Want to display the groups visually?{" "}
+        <div className="flex items-center">
+          <label className="text-sm font-medium text-gray-700">Display groups visually?</label>
           <span
             onClick={() => setShowGroupedWords(!showGroupedWords)}
             className={`ml-3 w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
@@ -223,8 +211,8 @@ const handleStart = () => {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setShowGroupedWords(!showGroupedWords);
+                e.preventDefault()
+                setShowGroupedWords(!showGroupedWords)
               }
             }}
           >
@@ -234,16 +222,16 @@ const handleStart = () => {
               }`}
             />
           </span>
-        </p>
+        </div>
 
-        <p>
-          <label className="block font-semibold mb-2" htmlFor="category">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="category">
             Select Category <span className="text-red-500">*</span>
           </label>
           <select
             id="category"
             value={category}
-            onChange={e => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)}
             className="border rounded-lg px-4 py-2"
             required
           >
@@ -253,23 +241,20 @@ const handleStart = () => {
             <option value="hard">Hard</option>
             <option value="master">Master</option>
           </select>
-        </p>
-      </section>
+        </div>
+      </div>
 
-      <div className="text-right">
-      <button
-  onClick={handleStart}
-  className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-  type="button"
->
-  Start
-</button>
-
-
-        {formError && (
-          <p className="text-red-600 text-sm mt-2">{formError}</p>
-        )}
+      {/* Start Button */}
+      <div className="flex justify-end pr-4">
+        <button
+          onClick={handleStart}
+          className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+          type="button"
+        >
+          Start
+        </button>
+        {formError && <p className="text-red-600 text-sm mt-2">{formError}</p>}
       </div>
     </div>
-  );
+  )
 }

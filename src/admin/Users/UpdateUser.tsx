@@ -24,6 +24,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getUser, updateUser } from "../../lib/api";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "../../hooks/useRouter";
+import { useOthersCategory } from "../../hooks/useOthersCategory";
+import { ImgUrl } from "../../lib/client";
+import { CategoryMasterData } from "../../types";
 
 type Country = {
   name: string;
@@ -69,6 +72,7 @@ export function UpdateUser() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedClass, setSelectedClass] = useState("");
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCountry, setSelectedCountry] = useState("IN");
@@ -77,6 +81,21 @@ export function UpdateUser() {
   const [loadingCities, setLoadingCities] = useState(false);
   const [previewImage, setPreviewImage] = useState<string>("/assets/default-avatar.png");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+
+    const isOthersSelected = selectedClass?.startsWith("Others");
+    const cleanedClass = isOthersSelected ? "Others" : null;
+  
+    const [selectedCategoryName , setSelectedCategoryName] = useState<string>("");
+    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  
+    const { data , isLoading: categorydata_loading , refetch } = useOthersCategory(cleanedClass);
+  
+    useEffect(() => {
+      if (isOthersSelected) {
+        refetch(); 
+      }
+    }, [isOthersSelected, refetch]);
   
   const {
     register,
@@ -136,6 +155,12 @@ export function UpdateUser() {
       if (userData.image && typeof userData.image === 'string') {
         setPreviewImage(userData.image);
       }
+       if (typeof userData?.image === "string" && userData.image) {
+        const fullImageUrl = userData.image.startsWith("http")
+          ? userData.image
+          : `${ImgUrl}/${userData.image}`;
+        setPreviewImage(fullImageUrl);
+      }
     }
   }, [userData, countries, reset]);
 
@@ -161,7 +186,9 @@ export function UpdateUser() {
       setLoadingStates(true);
       try {
         const data = await getStates(selectedCountry);
-        setStates(data);
+        // Sort states alphabetically by name
+        const sortedStates = data.sort((a: State, b: State) => a.name.localeCompare(b.name));
+        setStates(sortedStates);
         
         if (userData?.state && data.some((s: State) => s.iso2 === userData.state)) {
           setSelectedState(userData.state);
@@ -247,6 +274,12 @@ export function UpdateUser() {
         
         if (value instanceof File) {
           formData.append(key, value);
+        }
+        if (key === "image") {
+          if (value instanceof File) {
+            formData.append("image", value);
+          }
+          return;
         } 
         else if (key === 'birth_date' && typeof value === 'string' && value) {
           const date = new Date(value);
@@ -261,6 +294,9 @@ export function UpdateUser() {
         else if (value !== null) {
           formData.append(key, String(value));
         }
+        
+        if(selectedCategory) formData.append('cat_id' , selectedCategory.toString())
+        if(selectedCategoryName) formData.append("category_name" , selectedCategoryName)
       });
 
       await mutate(formData);
@@ -381,13 +417,15 @@ export function UpdateUser() {
 
         <div className="space-y-1">
           <Label htmlFor="birth_date" className="text-sm font-medium">
-            Birth Date
+            Birth Date*
           </Label>
           <input
             id="birth_date"
             type="date"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            {...register("birth_date")}
+            {...register("birth_date" , {
+              required: "Birth Date is required"
+            })}
           />
         </div>
 
@@ -472,22 +510,50 @@ export function UpdateUser() {
             Class/Grade
           </Label>
           <Select
-            onValueChange={(value) =>
-              setValue("school_class", value, { shouldValidate: true })
-            }
-            value={watch("school_class")}
-          >
-            <SelectTrigger id="school_class" className="w-full">
-              <SelectValue placeholder="Select Class/Grade" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {getAllClasses().map((className) => (
-                <SelectItem key={className} value={className}>
-                  {className}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                value={selectedClass}
+                onValueChange={(value) => {
+                  setSelectedClass(value);
+                  setValue("school_class", value);
+                }}
+              >
+                <SelectTrigger id="school_class" className="w-full">
+                  <SelectValue placeholder="Select Class/Grade" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {getAllClasses().map((className) => (
+                    <SelectItem key={className} value={className}>{className}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+
+              {isOthersSelected && (
+                <div className="mt-4">
+                  <h3 className="font-semibold text-sm mb-2">Others Categories (Select One):</h3>
+                  {categorydata_loading ? (
+                    <p className="text-xs">Loading categories...</p>
+                  ) : (
+                    <div className="text-xs text-gray-700 space-y-1">
+                      {data?.map((item: CategoryMasterData) => (
+                        <label key={item.cat_id} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="others_category"
+                            checked={selectedCategory === item.cat_id}
+                            value={item.cat_id}
+                            onChange={() => {
+                              setSelectedCategory(item.cat_id);
+                              setSelectedCategoryName(item.category_name);
+                            }}
+                            className="accent-blue-500"
+                          />
+                          <span>{item.category_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
         </div>
         
 
@@ -667,6 +733,11 @@ export function UpdateUser() {
             id="pincode"
             placeholder="Pincode/ZIP"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            pattern="[0-9]*"
+              onInput={(e) => {
+                const input = e.target as HTMLInputElement;
+                input.value = input.value.replace(/\D/g, '').slice(0, 6);
+              }}
             {...register("pincode")}
           />
         </div>

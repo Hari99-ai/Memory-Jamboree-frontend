@@ -22,9 +22,17 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { submitEventScore } from "../lib/submitEventScore"
-import { useMonitoring } from "../hooks/useGiveTest"
+import { 
+  // fetchPhoneAlerts,
+  //  PhoneAlert,
+    useMonitoring,
+  //  usePhoneAlerts 
+  } from "../hooks/useGiveTest"
 import type { DisciplineData } from "../types"
 import { WarningDialog } from "../components/WarnDialog"
+import { SocketURL } from "../lib/client"
+// import { API_BASE_URL } from "../lib/client"
+// import { API_BASE_URL } from "../lib/client"
 
 // Interface for game component methods
 interface GameComponentRef {
@@ -60,7 +68,6 @@ interface SubmitResult {
 
 function EventGamePage() {
   const user_id = localStorage.getItem("userId") || sessionStorage.getItem("userId")
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { state } = useLocation() as any
   const { event_id, discipline } = useParams()
   const navigate = useNavigate()
@@ -76,15 +83,16 @@ function EventGamePage() {
     event_id: string
     eventDisciplines: EventDiscipline[]
     eventDetails: EventDetailsAPI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: Record<string, any>
     eventName: string
   } | null>(null)
   const [recallStartTime, setRecallStartTime] = useState<number | null>(null)
+
   const monitoringStartedRef = useRef(false)
   const gameComponentRef = useRef<GameComponentRef | null>(null)
 
 
+  
   // Initialize monitoring with proper IDs and monitoring status
   const {
     startMonitoring,
@@ -109,6 +117,73 @@ function EventGamePage() {
     },
     monitoringEnabled,
   ) // Pass monitoring enabled status
+
+  // const lastAlertTimeRef = useRef<string | null>(null);
+
+  // const { data} = fetchPhoneAlerts(
+  //   event_id!,
+  //   String(gameData?.selectedDiscipline?.disc_id),
+  //   user_id!,
+  //   monitoringEnabled,
+  //   lastAlertTimeRef.current
+  // );
+  // useEffect(() => {
+  //   if (!data?.phone?.length) return;
+
+  //   const latestTime = data.phone[data.phone.length - 1].log_time;
+  //   lastAlertTimeRef.current = latestTime;
+  // }, [data]);
+
+  const discipline_id = gameData?.selectedDiscipline?.disc_id
+      ? String(gameData.selectedDiscipline.disc_id)
+      : "";
+
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // const passcode = localStorage.getItem('passcode')
+
+  useEffect(() => {
+    const ws = new WebSocket(`${SocketURL}/phone/${discipline_id}/${event_id}/${user_id}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("✅ WebSocket connected to phone monitoring");
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "monitoring") {
+        // Update any proctoring data
+        console.log("data response" , data)
+
+        // Render the phone image
+        // if (data.imgData && canvasRef.current) {
+        //   const img = new Image();
+        //   img.src = data.imgData; // imgData comes directly from phone
+        //   img.onload = () => {
+        //     const canvas = canvasRef.current!;
+        //     const ctx = canvas.getContext("2d")!;
+        //     canvas.width = img.width;
+        //     canvas.height = img.height;
+        //     ctx.drawImage(img, 0, 0);
+        //   };
+        // }
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+
+    ws.onclose = () => {
+      console.log("⚠️ WebSocket disconnected");
+    };
+
+    return () => ws.close();
+  }, [SocketURL, discipline_id, event_id, user_id]);
+
+
 
   // Auto-submit score when game is terminated
   useEffect(() => {
@@ -202,6 +277,7 @@ function EventGamePage() {
         return
       }
 
+      // Check monitoring status from event details
       const eventMonitoringEnabled = state.eventDetails.monitoring === 1
       setMonitoringEnabled(eventMonitoringEnabled)
 
@@ -724,6 +800,34 @@ function EventGamePage() {
         </div>
       )}
 
+      {/* <div className="fixed bottom-4 right-4 w-64 rounded-lg overflow-hidden z-50 border-2 border-indigo-500 bg-white shadow-lg">
+        {!monitoringEnabled ? (
+          <div className="flex items-center justify-center h-48 text-sm text-gray-600">
+            ⏳ Waiting 30s before monitoring starts...
+          </div>
+        ) : (
+          <ul className="grid grid-cols-2 gap-2 p-2 bg-white">
+            {data?.phone?.length ? (
+              data.phone.map((alert: PhoneAlert, idx: number) =>
+                alert.external_img ? (
+                  <li key={idx} className="relative border rounded overflow-hidden bg-gray-100">
+                    <img
+                      src={`${API_BASE_URL}/${alert.external_img}`}
+                      alt={`Alert ${idx}`}
+                      className="w-full h-24 object-cover transition-opacity duration-300 ease-in-out"
+                      loading="lazy"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  </li>
+                ) : null
+              )
+            ) : (
+              <div className="col-span-2 text-center text-sm text-gray-500">No images detected</div>
+            )}
+          </ul>
+      
+        )}
+      </div> */}
       {/* Fullscreen Warning - Only show if monitoring is enabled */}
       {!isFullScreen && isMonitoring && monitoringEnabled && !gameTerminated && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
@@ -797,6 +901,9 @@ function EventGamePage() {
           </div>
         </div>
       )}
+
+
+      
 
       {/* Submit Score Popup - Only show if not terminated */}
       {showSubmitPopup && submitResult && !gameTerminated && (

@@ -263,7 +263,7 @@ const FifteenMinNumbers: React.FC<Props> = ({ onStart }) => {
           </div>
 
           {/* Start Button */}
-          <div className="flex justify-end mt-8">
+          <div className="flex justify-end mt-8 pr-4">
             <button
               onClick={startGame}
               className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"

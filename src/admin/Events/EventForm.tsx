@@ -520,7 +520,7 @@ export default function EventForm() {
                       options={
                         categories?.map((cat: CategoryMasterData) => ({
                           value: cat.cat_id,
-                          label: `Category ${cat.category_name} - Class ${cat.classes}`,
+                          label: `${cat.category_name} - Class ${cat.classes}`,
                         })) ?? []
                       }
                       onSelectionChange={(selectedValues) => {

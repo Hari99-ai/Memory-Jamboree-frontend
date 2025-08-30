@@ -1,65 +1,75 @@
 import React, { forwardRef } from 'react';
 
 interface CertificateProps {
-  championship: string;
-  name: string;
-  rank: string;
-  score: string;
-  date: string;
+  championship: string; // Corresponds to [Event name]
+  name: string; // Corresponds to [Participant’s Full Name]
+  rank: string; // Corresponds to [Rank Achieved] for Overall Rank
+  categoryRank: string; // Corresponds to Category Rank
+  score: string; // Corresponds to [Score Secured]
+  date: string; // Corresponds to [Date/Event Duration]
 }
 
 const Certificate = forwardRef((props: CertificateProps, ref: React.Ref<HTMLDivElement>) => {
-  const { championship, name, rank, score, date } = props;
+  const { championship, name, rank, categoryRank, score, date } = props;
 
   return (
     <div
       ref={ref}
-      className="relative w-[800px] h-[560px] bg-white overflow-hidden border-2 border-gray-300 rounded-md shadow-lg font-sans"
+      className="w-[700px] h-[500px] p-8 bg-gradient-to-br from-blue-100 via-white to-blue-200 text-black font-sans shadow-xl border border-gray-300 relative overflow-hidden flex flex-col justify-between"
     >
-      {/* Decorative Gradient Corners */}
-      <div className="absolute top-0 left-0 w-48 h-48 bg-gradient-to-br from-blue-800 to-blue-300 rounded-br-[80%]" />
-      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-yellow-400 to-yellow-200 rounded-bl-[80%]" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-yellow-200 to-yellow-400 rounded-tr-[80%]" />
-      <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-tl from-blue-300 to-blue-800 rounded-tl-[80%]" />
+      {/* Background corner shapes */}
+      <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-br from-blue-500 to-transparent rounded-br-full opacity-20 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-gradient-to-tr from-blue-700 to-transparent rounded-tr-full opacity-30 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-1/4 h-1/3 bg-gradient-to-bl from-blue-400 to-transparent rounded-bl-full opacity-25 pointer-events-none" />
 
-      {/* Title */}
-      <div className="mt-12 text-center">
-        <h1 className="text-4xl font-extrabold tracking-wide text-blue-900">CERTIFICATE</h1>
-        <p className="mt-1 text-sm font-medium tracking-wider text-blue-600 uppercase">of Achievement</p>
+      {/* Main Content */}
+      <div className="text-center">
+        {/* Title */}
+        <h1 className="text-4xl font-extrabold text-blue-800 tracking-wide font-serif">
+          Certificate of Participation
+        </h1>
+        <div className="w-24 h-1 bg-blue-600 mx-auto my-3 rounded-sm" />
+
+        {/* Certification Text */}
+        <p className="text-gray-700 text-base leading-relaxed mt-6">
+          This is to certify that <strong className="text-xl font-bold text-blue-900">{name}</strong> has successfully participated in the{' '}
+          <strong>{championship}</strong> held on <strong>{date}</strong>, and has demonstrated commendable performance.
+        </p>
+
+        {/* Achievement Details */}
+        <div className="mt-6 mx-auto w-fit text-left bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+          <h4 className="text-md font-semibold text-blue-800 mb-2 text-center">Achievement Details:</h4>
+          <ul className="list-none space-y-1 text-gray-800">
+            <li>
+              <strong>Overall Rank:</strong> {rank}
+            </li>
+            <li>
+              <strong>Category Rank:</strong> {categoryRank}
+            </li>
+            <li>
+              <strong>Overall Score:</strong> {score}
+            </li>
+          </ul>
+        </div>
+
+        {/* Appreciation Note */}
+        <p className="text-sm text-gray-600 font-medium italic mt-6">
+          We appreciate your enthusiasm, focus, and commitment towards enhancing memory skills.
+        </p>
       </div>
 
-      {/* Recipient Name */}
-      <h2 className="mt-8 text-center text-3xl font-[cursive] text-black">{name}</h2>
-
-      {/* Description */}
-      <p className="px-10 mt-6 text-sm leading-relaxed text-center text-gray-700">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. In recognition of your outstanding performance,
-        you are awarded this certificate for securing <strong>Rank: {rank}</strong> in the prestigious{' '}
-        <strong>{championship}</strong> with a score of <strong>{score}</strong>.
-      </p>
-
-      {/* Footer: Date & Signature */}
-      <div className="absolute left-0 right-0 flex justify-between px-16 text-sm text-center text-gray-700 bottom-16">
-        {/* Date */}
-        <div>
-          <p className="mb-1">{date}</p>
-          <div className="w-32 mx-auto border-t border-gray-400" />
-          <span className="text-xs uppercase">Date</span>
+      {/* Footer */}
+      <div className="flex justify-between items-end px-8 text-xs text-gray-700">
+        <div className="text-center">
+          <p className="font-bold">[Organization/Institution Name]</p>
+          <p className="mt-1 text-gray-600">[Seal/Stamp if applicable]</p>
         </div>
 
-        {/* Signature */}
-        <div>
-          <div className="w-32 mx-auto mb-1 border-t border-gray-400" />
-          <span className="text-xs uppercase">Signature</span>
+        <div className="text-center">
+          <div className="border-t border-gray-500 w-40 mb-1" />
+          <p>Authorized Signatory</p>
+          <p className="font-semibold">[Name & Designation]</p>
         </div>
-      </div>
-
-      {/* Gold Medal Circle (CSS-only) */}
-      <div className="absolute transform -translate-x-1/2 bottom-6 left-1/2">
-        <div className="flex items-center justify-center w-16 h-16 border-2 border-yellow-500 rounded-full shadow-md bg-gradient-to-br from-yellow-300 to-yellow-100">
-          <div className="w-6 h-6 bg-yellow-500 rounded-full" />
-        </div>
-        <p className="mt-1 text-xs text-center text-gray-600 uppercase">Certificate of Achievement</p>
       </div>
     </div>
   );

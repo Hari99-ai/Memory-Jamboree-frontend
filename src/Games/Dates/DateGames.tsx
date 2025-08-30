@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { EVENTS } from "./eventsData"
@@ -25,12 +23,13 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 interface DateGameProps {
-  paused?:boolean;
+  paused?: boolean
   onRestart: () => void
   hoverColor: string
   disciplineName: string
   allDisciplines: DisciplineData[]
   onGameComplete?: (score: number) => void
+  onRecallPhaseStart?: () => void
 }
 
 const DateGame: React.FC<DateGameProps> = ({
@@ -40,6 +39,7 @@ const DateGame: React.FC<DateGameProps> = ({
   disciplineName,
   allDisciplines,
   onGameComplete,
+  onRecallPhaseStart,
 }) => {
   const [phase, setPhase] = useState<"memorize" | "recall" | "done">("memorize")
   const [countdownStarted, setCountdownStarted] = useState(false)
@@ -48,17 +48,23 @@ const DateGame: React.FC<DateGameProps> = ({
   const [inputColors, setInputColors] = useState<string[]>(Array(EVENTS.length).fill(""))
   const [score, setScore] = useState<number>(0)
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([])
+  const [memorizeIndices, setMemorizeIndices] = useState<number[]>([])
   const [focusedRow, setFocusedRow] = useState<number>(0)
-  const [rawScore, setRawScore] = useState<number>(0)
-  // Timer state in seconds (5 minutes = 300 seconds)
-  const [timeLeft, setTimeLeft] = useState(300)
+  const [timeLeft, setTimeLeft] = useState(300) // Default to 5 minutes
   const timerRef = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const indices = Array.from({ length: EVENTS.length }, (_, i) => i)
+    setMemorizeIndices(shuffleArray(indices))
+  }, [])
 
   const totalPages = Math.ceil(EVENTS.length / itemsPerPage)
   const recallInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  const paginatedEvents = EVENTS.slice(page * itemsPerPage, (page + 1) * itemsPerPage)
+  const paginatedEvents = memorizeIndices
+    .slice(page * itemsPerPage, (page + 1) * itemsPerPage)
+    .map((i) => EVENTS[i])
 
   const getRecallIndices = () => {
     const start = page * itemsPerPage
@@ -67,9 +73,9 @@ const DateGame: React.FC<DateGameProps> = ({
   }
 
   // Function to start timer
-  const startTimer = () => {
+  const startTimer = (duration: number) => {
     if (timerRef.current) clearInterval(timerRef.current)
-    setTimeLeft(300)
+    setTimeLeft(duration)
     timerRef.current = window.setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -113,6 +119,7 @@ const DateGame: React.FC<DateGameProps> = ({
   }, [page])
 
   const handleRecallStart = () => {
+    stopTimer();
     setCountdownStarted(true)
 
     // After 5 seconds, start the recall phase
@@ -123,26 +130,22 @@ const DateGame: React.FC<DateGameProps> = ({
       setPage(0) // Reset to first page
       setFocusedRow(0)
       setCountdownStarted(false)
-      startTimer()
+
+      // Notify parent that recall phase has started
+      if (onRecallPhaseStart) {
+        onRecallPhaseStart()
+      }
+
+      startTimer(900) // Start 15-minute timer for recall
       window.scrollTo({ top: 0, behavior: "smooth" })
     }, 5000)
   }
 
   const handleChange = (idx: number, value: string) => {
-    // Allow only up to 4 digits and only numbers
     if (!/^\d{0,4}$/.test(value)) return
+    if (value.length > 0 && !/^[1-9]/.test(value)) return
 
-    // Only validate if at least 1 digit entered
-    if (value.length > 0) {
-      // First digit must be 1-9
-      if (!/^[1-9]/.test(value)) return
-    }
-
-    // Only validate if 4 digits entered
     if (value.length === 4) {
-      // All digits already checked by regex above
-      // No further validation needed for digits 2-4 (0-9)
-      // Move focus to next input if exists and update focusedRow
       const currentInputIndex = recallInputRefs.current.findIndex((input) => input && input === document.activeElement)
       if (currentInputIndex !== -1 && currentInputIndex < recallInputRefs.current.length - 1) {
         recallInputRefs.current[currentInputIndex + 1]?.focus()
@@ -158,8 +161,6 @@ const DateGame: React.FC<DateGameProps> = ({
     stopTimer()
 
     let correctCount = 0
-    let wrongCount = 0
-
     const newColors = Array(EVENTS.length).fill(COLORS.empty)
 
     shuffledIndices.forEach((eventIndex) => {
@@ -170,36 +171,28 @@ const DateGame: React.FC<DateGameProps> = ({
         correctCount += 1
         newColors[eventIndex] = COLORS.correct
       } else {
-        wrongCount += 1
         newColors[eventIndex] = COLORS.incorrect
       }
     })
 
-    let actualScore = correctCount + wrongCount * -0.5
-    if (actualScore < 0) actualScore = 0
-
-    const displayScore = Math.ceil(actualScore)
+    const finalScore = correctCount;
 
     setInputColors(newColors)
-    setRawScore(actualScore)
-    setScore(displayScore)
+    setScore(finalScore)
     setPage(0)
     setPhase("done")
 
     // Call onGameComplete if provided (for event games)
     if (onGameComplete) {
-      const calculatedScore = Number.parseFloat(((displayScore / 142) * 1000).toFixed(1))
-      onGameComplete(calculatedScore)
-      // Ensure scroll to top after state updates
+      // Changed this line to submit the raw correct count
+      onGameComplete(finalScore) 
+      
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" })
         containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
       }, 0)
       return // Don't submit practice score for event games
     }
-
-    // ✅ Submit score to backend using the fresh `displayScore` only for practice games
-    const calculatedScore = Number.parseFloat(displayScore.toFixed(1))
 
     try {
       const userIdString = sessionStorage.getItem("userId")
@@ -213,7 +206,7 @@ const DateGame: React.FC<DateGameProps> = ({
         const postData = {
           user_id: userId,
           disc_id: matchedDiscipline.disc_id!,
-          score: calculatedScore, // ✅ send decimal score
+          score: finalScore, 
         }
 
         console.log("📤 Sending score to API:", postData)
@@ -236,7 +229,6 @@ const DateGame: React.FC<DateGameProps> = ({
       containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }, 0)
   }
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((phase === "recall" || phase === "memorize") && e.key === "Enter") {
@@ -265,19 +257,15 @@ const DateGame: React.FC<DateGameProps> = ({
 
   // On phase change to memorize or recall, start/reset timer
   useEffect(() => {
-    if(paused) return
-    if (phase === "memorize" || phase === "recall") {
-      if (!countdownStarted) {
-        startTimer()
-      }
-    } else {
+    if (paused) return
+    if (phase === "memorize" && !countdownStarted) {
+      startTimer(300); // 5 minutes for memorization
+    } else if (phase === "recall" && !countdownStarted) {
+        startTimer(900); // 15 minutes for recall
+    } else if (phase === "done") {
       stopTimer()
     }
-    // Reset time left to 5:00 when phase changes
-    if (!countdownStarted) {
-      setTimeLeft(300)
-    }
-  }, [phase, countdownStarted , paused])
+  }, [phase, countdownStarted, paused])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -285,7 +273,6 @@ const DateGame: React.FC<DateGameProps> = ({
       if (e.key === "ArrowDown") {
         setFocusedRow((prev) => {
           if (prev === maxRows - 1) {
-            // If at last row, go to next page if possible
             if (page < totalPages - 1) {
               setPage(page + 1)
               return 0
@@ -298,14 +285,13 @@ const DateGame: React.FC<DateGameProps> = ({
         e.preventDefault()
         setFocusedRow((prev) => {
           if (prev === 0) {
-            // If at first row, go to previous page if possible
             if (page > 0) {
               const prevPageStart = (page - 1) * itemsPerPage
               const prevPageLength = Math.min(itemsPerPage, EVENTS.length - prevPageStart)
               setPage(page - 1)
-              return prevPageLength - 1 // last row index of previous page
+              return prevPageLength - 1
             }
-            return 0 // If no previous page, stay at first row
+            return 0
           }
           return prev - 1
         })
@@ -405,125 +391,102 @@ const DateGame: React.FC<DateGameProps> = ({
   }
 
   const renderResultTable = () => {
-    // Paginate results just like recall
     const start = page * itemsPerPage
     const end = (page + 1) * itemsPerPage
-    const paginatedEvents = EVENTS.slice(start, end)
+    const paginatedResults = shuffledIndices.slice(start, end)
 
     return (
-      <table className="w-full text-left border-separate border-spacing-y-1 text-black">
-        <thead>
-          <tr className="bg-gray-100 text-gray-700">
-            <th className="px-2 py-1">#</th>
-            <th className="px-3 py-1">Answer</th>
-            <th className="px-3 py-1">Event</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedEvents.map((item, idx) => {
-            const globalIdx = start + idx
-            const userAns = userInput[globalIdx]
-            const isCorrect = inputColors[globalIdx] === COLORS.correct
-            const isEmpty = inputColors[globalIdx] === COLORS.empty
-            const isWrong = inputColors[globalIdx] === COLORS.incorrect
-            return (
-              <tr key={globalIdx}>
-                <td className="px-2 py-1 font-mono">{globalIdx + 1}</td>
-                <td className="px-3 py-1 font-mono">
-                  {isCorrect && (
-                    <span
-                      style={{
-                        background: COLORS.correct,
-                        color: "green",
-                        fontWeight: "bold",
-                        borderRadius: "0.25rem",
-                        padding: "1px 6px",
-                      }}
-                    >
-                      {item.year}
-                    </span>
-                  )}
-                  {isWrong && (
-                    <>
-                      <span
-                        style={{
-                          textDecoration: "line-through",
-                          color: "red",
-                          marginRight: 6,
-                        }}
-                      >
-                        {userAns}
-                      </span>
-                      <span
-                        style={{
-                          color: "red",
-                          fontWeight: "bold",
-                          marginLeft: 3,
-                        }}
-                      >
-                        ({item.year})
-                      </span>
-                    </>
-                  )}
-                  {isEmpty && (
-                    <span
-                      style={{
-                        background: COLORS.empty,
-                        color: "#a68a00",
-                        fontWeight: "bold",
-                        borderRadius: "0.25rem",
-                        padding: "1px 6px",
-                      }}
-                    >
-                      {item.year}
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-1">{item.event}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    )
-  }
+        <table className="w-full text-left border-separate border-spacing-y-1 text-black">
+            <thead>
+                <tr className="bg-gray-100 text-gray-700">
+                    <th className="px-2 py-1">#</th>
+                    <th className="px-3 py-1">Answer</th>
+                    <th className="px-3 py-1">Event</th>
+                </tr>
+            </thead>
+            <tbody>
+                {paginatedResults.map((eventIdx, idx) => {
+                    const item = EVENTS[eventIdx];
+                    const userAns = userInput[eventIdx];
+                    const color = inputColors[eventIdx];
+                    const isCorrect = color === COLORS.correct;
+                    const isEmpty = color === COLORS.empty;
+                    const isWrong = color === COLORS.incorrect;
 
-  const renderLegend = () => (
-    <div className="flex gap-6 mt-6 mb-2 text-black">
-      <div className="flex items-center gap-2">
-        <span className="w-4 h-4 rounded" style={{ background: COLORS.correct }}></span>
-        <span className="text-sm">Correct</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="w-4 h-4 rounded" style={{ background: COLORS.incorrect }}></span>
-        <span className="text-sm">Wrong</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="w-4 h-4 rounded" style={{ background: COLORS.empty }}></span>
-        <span className="text-sm">Empty</span>
-      </div>
-    </div>
-  )
+                    return (
+                        <tr key={eventIdx}>
+                            <td className="px-2 py-1 font-mono">{page * itemsPerPage + idx + 1}</td>
+                            <td className="px-3 py-1 font-mono">
+                                {isCorrect && (
+                                    <span style={{ background: COLORS.correct, color: "green", fontWeight: "bold", borderRadius: "0.25rem", padding: "1px 6px" }}>
+                                        {item.year}
+                                    </span>
+                                )}
+                                {isWrong && (
+                                    <>
+                                        <span style={{ textDecoration: "line-through", color: "red", marginRight: 6 }}>
+                                            {userAns}
+                                        </span>
+                                        <span style={{ color: "red", fontWeight: "bold", marginLeft: 3 }}>
+                                            ({item.year})
+                                        </span>
+                                    </>
+                                )}
+                                {isEmpty && (
+                                    <span style={{ background: COLORS.empty, color: "#a68a00", fontWeight: "bold", borderRadius: "0.25rem", padding: "1px 6px" }}>
+                                        {item.year}
+                                    </span>
+                                )}
+                            </td>
+                            <td className="px-3 py-1">{item.event}</td>
+                        </tr>
+                    );
+                })}
+            </tbody>
+        </table>
+    );
+}
 
-  const renderPagination = () => (
-    <div className="flex justify-center gap-2 mt-4">
-      {Array.from({ length: totalPages }, (_, i) => (
+
+  // const renderLegend = () => (
+  //   <div className="flex gap-6 mt-6 mb-2 text-black">
+  //     <div className="flex items-center gap-2">
+  //       <span className="w-4 h-4 rounded" style={{ background: COLORS.correct }}></span>
+  //       <span className="text-sm">Correct</span>
+  //     </div>
+  //     <div className="flex items-center gap-2">
+  //       <span className="w-4 h-4 rounded" style={{ background: COLORS.incorrect }}></span>
+  //       <span className="text-sm">Wrong</span>
+  //     </div>
+  //     <div className="flex items-center gap-2">
+  //       <span className="w-4 h-4 rounded" style={{ background: COLORS.empty }}></span>
+  //       <span className="text-sm">Not attempted</span>
+  //     </div>
+  //   </div>
+  // )
+
+   const renderPagination = () => (
+    <div className="flex justify-center space-x-2 mt-4">
         <button
-          key={i}
-          onClick={() => {
-            setPage(i)
-            window.scrollTo({ top: 0, behavior: "smooth" })
-            containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-          }}
-          className={`w-8 h-8 rounded-full border ${
-            page === i ? "bg-blue-600 text-white" : "bg-gray-200 text-black"
-          } font-bold`}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-500 text-white disabled:opacity-50"
         >
-          {i + 1}
+            Prev
         </button>
-      ))}
+        <span className="pt-2 px-4 font-medium text-gray-400">
+            Page {page + 1} / {totalPages}
+        </span>
+        <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-600 text-white disabled:opacity-50"
+        >
+            Next
+        </button>
     </div>
-  )
+)
+
 
   return (
     <div
@@ -535,18 +498,13 @@ const DateGame: React.FC<DateGameProps> = ({
 
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-black">Date Game</h1>
-        {/* Show timer always except after done, or optionally always show */}
         {(phase === "memorize" || phase === "recall") && !countdownStarted && (
           <div className="text-lg font-semibold text-red-600 select-none">Time : {formatTime(timeLeft)}</div>
         )}
-        {/* Show score only after done */}
         {phase === "done" && (
-          <div className="absolute top-4 right-6 bg-white border-2 border-green-600 text-green-700 px-6  rounded-lg shadow-lg flex items-center align-middle gap-2">
+          <div className="absolute mb-8 top-4 right-6 bg-white border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg shadow-lg flex items-center align-middle gap-2">
             <span className="text-xl font-bold flex items-center align-middle">
-              🏆 Score: <span className="text-3xl">{score}</span>
-            </span>
-            <span className="text-lg  flex items-center align-middle">
-              ( <span className="text-lg font-bold pr-[4px]"> {rawScore.toFixed(1)} </span> )
+              🏆 Score: <span className="text-3xl ml-2">{score}</span>
             </span>
           </div>
         )}
@@ -588,7 +546,7 @@ const DateGame: React.FC<DateGameProps> = ({
 
       {phase === "done" && (
         <>
-          {renderLegend()}
+         
           <div className="mb-4">{renderResultTable()}</div>
           {renderPagination()}
           <div className="flex justify-center mt-6">

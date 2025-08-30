@@ -7,8 +7,7 @@ const AlertMsgBox = () => {
 
   useEffect(() => {
     const alertShown = localStorage.getItem("profile-alert-shown");
-
-    // Only show if not already shown
+    
     if (!alertShown) {
       setVisible(true);
       localStorage.setItem("profile-alert-shown", "true");

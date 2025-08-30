@@ -1,12 +1,10 @@
-"use client"
-
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef, useCallback } from "react"
 import { submitPracticeScore } from "../../lib/submitPracticeScore"
 import type { DisciplineData } from "../../types/index"
 import CountdownOverlay from "../../practiceTests/CountdownOverlay"
 
 type Props = {
-  paused?:boolean
+  paused?: boolean
   time: number
   onRestart: () => void
   config: {
@@ -17,12 +15,21 @@ type Props = {
   disciplineName: string
   allDisciplines: DisciplineData[]
   onGameComplete?: (score: number) => void
+  onRecallPhaseStart?: () => void
 }
 
 const generateRandomBinaryDigits = (length: number): number[] =>
   Array.from({ length }, () => Math.floor(Math.random() * 2))
 
-export default function BinaryGame({ onRestart, config, disciplineName, allDisciplines, onGameComplete , paused }: Props) {
+export default function BinaryGame({
+  onRestart,
+  config,
+  disciplineName,
+  allDisciplines,
+  onGameComplete,
+  onRecallPhaseStart,
+  paused,
+}: Props) {
   const totalRows = 30
   const digitsPerRow = 30
   const totalDigits = totalRows * digitsPerRow
@@ -31,17 +38,21 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
 
   const [phase, setPhase] = useState<"memorize" | "recall" | "done">("memorize")
   const [countdownStarted, setCountdownStarted] = useState(false)
-  // Binary game: 5 min memorize, 10 min recall
   const [timer, setTimer] = useState(5 * 60) // 5 minutes memorization
   const [digits, setDigits] = useState<number[]>([])
   const [inputs, setInputs] = useState<string[][]>([])
   const [results, setResults] = useState<string[][]>([])
   const [score, setScore] = useState(0)
   const [currentPage, setCurrentPage] = useState(0)
-  const [highlightGroup, setHighlightGroup] = useState<{ row: number; group: number }>({ row: 0, group: 0 })
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0) // New: Global group index
   const [totalCorrect, setTotalCorrect] = useState(0)
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null)
   const [scoreSubmitted, setScoreSubmitted] = useState(false)
+
+  // Refs for robust timer
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const startTimeRef = useRef<number>(Date.now())
+  const timeRemainingRef = useRef<number>(5 * 60 * 1000) // 5 minutes in ms
 
   const inputRefs = useRef<(HTMLInputElement | null)[][]>([])
 
@@ -50,7 +61,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
     const randoms = generateRandomBinaryDigits(totalDigits)
     setDigits(randoms)
     setActiveCell({ row: 0, col: 0 })
-    setHighlightGroup({ row: 0, group: 0 })
+    setActiveGroupIndex(0)
     setInputs(Array.from({ length: totalRows }, () => Array(digitsPerRow).fill("")))
     inputRefs.current = Array.from({ length: totalRows }, () => Array(digitsPerRow).fill(null))
   }, [])
@@ -60,55 +71,94 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
     if (phase === "recall") {
       setCurrentPage(0)
       setActiveCell({ row: 0, col: 0 })
-      setHighlightGroup({ row: 0, group: 0 })
+      setActiveGroupIndex(0)
       setTimeout(() => {
         inputRefs.current[0]?.[0]?.focus()
       }, 100)
     }
   }, [phase])
 
-  // Handle recall start with countdown
-  const handleRecallStart = () => {
+  const startTimer = useCallback(
+    (durationInSeconds: number) => {
+      timeRemainingRef.current = durationInSeconds * 1000
+      startTimeRef.current = Date.now()
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+
+      timerRef.current = setInterval(() => {
+        if (paused) {
+          startTimeRef.current = Date.now() - (durationInSeconds * 1000 - timeRemainingRef.current)
+          return
+        }
+
+        const elapsed = Date.now() - startTimeRef.current
+        const remaining = timeRemainingRef.current - elapsed
+
+        if (remaining <= 0) {
+          setTimer(0)
+          if (timerRef.current) clearInterval(timerRef.current)
+        } else {
+          setTimer(Math.ceil(remaining / 1000))
+        }
+      }, 100)
+    },
+    [paused],
+  )
+
+  const handleRecallStart = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
     setCountdownStarted(true)
 
-    // After 5 seconds, start the recall phase
     setTimeout(() => {
       setPhase("recall")
-      setTimer(10 * 60) // 10 minutes for recall
       setCountdownStarted(false)
-    }, 5000)
-  }
+      startTimer(15 * 60) // 15 minutes for recall
 
-  // Timer logic
+      if (onRecallPhaseStart) {
+        onRecallPhaseStart()
+      }
+    }, 5000)
+  }, [onRecallPhaseStart, startTimer])
+
+  // Timer expiration logic
   useEffect(() => {
-    if(paused) return
-    if (timer > 0 && !countdownStarted) {
-      const interval = setInterval(() => setTimer((t) => t - 1), 1000)
-      return () => clearInterval(interval)
-    } else {
-      if (phase === "memorize" && !countdownStarted) {
+    if (timer <= 0 && !countdownStarted) {
+      if (phase === "memorize") {
         handleRecallStart()
       } else if (phase === "recall") {
         handleSubmit()
       }
     }
-  }, [timer, phase, countdownStarted , paused])
+  }, [timer, phase, countdownStarted, handleRecallStart])
+
+  // Start initial timer
+  useEffect(() => {
+    startTimer(5 * 60)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [startTimer])
 
   // Keep activeCell in view when page changes
   useEffect(() => {
-    if (activeCell) {
+    if (activeCell && config) {
       const start = currentPage * rowsPerPage
       const end = start + rowsPerPage
       if (activeCell.row < start || activeCell.row >= end) {
-        setActiveCell({ row: start, col: 0 })
-        setHighlightGroup({ row: start, group: 0 })
+        const newRow = start
+        const newCol = 0
+        setActiveCell({ row: newRow, col: newCol })
+        const globalIndex = newRow * digitsPerRow + newCol
+        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
       }
     }
-  }, [currentPage])
+  }, [currentPage, activeCell, rowsPerPage, config, digitsPerRow])
 
   // Input change handler with navigation
   const handleInputChange = (r: number, c: number, val: string) => {
-    if (!/^[01]?$/.test(val)) return
+    if (!/^[01]?$/.test(val) || !config) return
     const copy = [...inputs]
     copy[r][c] = val
     setInputs(copy)
@@ -118,18 +168,19 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
 
     if (val) {
       if (!isLastCol) {
-        // Move to next column in same row
         inputRefs.current[r][c + 1]?.focus()
         inputRefs.current[r][c + 1]?.select()
       } else if (!isLastRow) {
-        // Move to first column of next row
-        inputRefs.current[r + 1][0]?.focus()
-        inputRefs.current[r + 1][0]?.select()
-        setActiveCell({ row: r + 1, col: 0 })
-        setHighlightGroup({ row: r + 1, group: 0 })
+        const newRow = r + 1
+        const newCol = 0
+        inputRefs.current[newRow][newCol]?.focus()
+        inputRefs.current[newRow][newCol]?.select()
+        setActiveCell({ row: newRow, col: newCol })
 
-        // Handle page switch if next row is on next page
-        const nextRowPage = Math.floor((r + 1) / rowsPerPage)
+        const globalIndex = newRow * digitsPerRow + newCol
+        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
+
+        const nextRowPage = Math.floor(newRow / rowsPerPage)
         if (nextRowPage !== currentPage) {
           setCurrentPage(nextRowPage)
         }
@@ -142,7 +193,8 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
 
     const moveFocus = (newRow: number, newCol: number) => {
       setActiveCell({ row: newRow, col: newCol })
-      setHighlightGroup({ row: newRow, group: Math.floor(newCol / (config?.grouping || 1)) })
+      const globalIndex = newRow * digitsPerRow + newCol
+      setActiveGroupIndex(Math.floor(globalIndex / (config?.grouping || 1)))
       setTimeout(() => {
         inputRefs.current[newRow]?.[newCol]?.focus()
       }, 50)
@@ -155,14 +207,10 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
       case "ArrowLeft":
         if (col > 0) {
           moveFocus(row, col - 1)
-          setTimeout(() => {
-            inputRefs.current[row]?.[col - 1]?.select()
-          }, 10)
+          setTimeout(() => inputRefs.current[row]?.[col - 1]?.select(), 10)
         } else if (col === 0 && row > pageStartRow) {
           moveFocus(row - 1, digitsPerRow - 1)
-          setTimeout(() => {
-            inputRefs.current[row - 1]?.[digitsPerRow - 1]?.select()
-          }, 10)
+          setTimeout(() => inputRefs.current[row - 1]?.[digitsPerRow - 1]?.select(), 10)
         }
         break
       case "ArrowRight":
@@ -176,17 +224,22 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
         if (row < pageEndRow - 1) moveFocus(row + 1, col)
         break
       case "Backspace":
-        if (inputs[row][col] === "" && col > 0) {
+        e.preventDefault()
+        const copy = [...inputs]
+        copy[row][col] = ""
+        setInputs(copy)
+
+        if (col > 0) {
           moveFocus(row, col - 1)
+        } else if (row > pageStartRow) {
+          moveFocus(row - 1, digitsPerRow - 1)
         }
         break
       case "Enter":
         if (row === pageEndRow - 1 && col === maxCol) {
           if (currentPage < totalPages - 1) {
             setCurrentPage((p) => p + 1)
-            setTimeout(() => {
-              moveFocus((currentPage + 1) * rowsPerPage, 0)
-            }, 100)
+            setTimeout(() => moveFocus((currentPage + 1) * rowsPerPage, 0), 100)
           }
         } else if (col < maxCol) {
           moveFocus(row, col + 1)
@@ -197,70 +250,60 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
     }
   }
 
-  // Keyboard navigation for memorize phase
+  // New: Keyboard navigation for memorize phase with cross-row grouping
   useEffect(() => {
     if (phase !== "memorize" || !config) return
+
+    const totalGroups = Math.ceil(totalDigits / config.grouping)
+
+    const move = (newGroupIndex: number) => {
+      if (newGroupIndex < 0 || newGroupIndex >= totalGroups) {
+        return // Out of bounds
+      }
+
+      setActiveGroupIndex(newGroupIndex)
+
+      const groupStartGlobalIndex = newGroupIndex * config.grouping
+      const newRow = Math.floor(groupStartGlobalIndex / digitsPerRow)
+      const newCol = groupStartGlobalIndex % digitsPerRow
+
+      setActiveCell({ row: newRow, col: newCol })
+
+      const newPage = Math.floor(newRow / rowsPerPage)
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage)
+      }
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!activeCell) return
 
-      const { row, col } = activeCell
-      const maxCol = digitsPerRow - 1
-      const groupSize = config.grouping || 1
-      const pageStartRow = currentPage * rowsPerPage
-      const pageEndRow = Math.min(totalRows, pageStartRow + rowsPerPage)
-      const lastGroupInRow = Math.floor((digitsPerRow - 1) / groupSize)
-      const currentGroup = Math.floor(col / groupSize)
-
-      const move = (r: number, c: number) => {
-        setActiveCell({ row: r, col: c })
-        setHighlightGroup({ row: r, group: Math.floor(c / groupSize) })
-      }
-
       switch (e.key) {
-        case "ArrowLeft": {
-          if (currentGroup > 0) {
-            move(row, (currentGroup - 1) * groupSize)
-          } else if (row > pageStartRow) {
-            move(row - 1, lastGroupInRow * groupSize)
-          } else if (row === pageStartRow && currentPage > 0) {
-            const newPage = currentPage - 1
-            setCurrentPage(newPage)
-            setTimeout(() => {
-              const newRow = Math.min((newPage + 1) * rowsPerPage, totalRows) - 1
-              setActiveCell({ row: newRow, col: lastGroupInRow * groupSize })
-              setHighlightGroup({ row: newRow, group: lastGroupInRow })
-            }, 50)
-          }
+        case "ArrowLeft":
+          e.preventDefault()
+          move(activeGroupIndex - 1)
           break
-        }
-        case "ArrowRight": {
-          if (currentGroup < lastGroupInRow) {
-            move(row, Math.min((currentGroup + 1) * groupSize, maxCol))
-          } else if (row < pageEndRow - 1) {
-            move(row + 1, 0)
-          } else if (row === pageEndRow - 1 && currentGroup === lastGroupInRow) {
-            if (currentPage < totalPages - 1) {
-              const newPage = currentPage + 1
-              setCurrentPage(newPage)
-              setTimeout(() => {
-                const newRow = newPage * rowsPerPage
-                setActiveCell({ row: newRow, col: 0 })
-                setHighlightGroup({ row: newRow, group: 0 })
-              }, 50)
-            }
-          }
+        case "ArrowRight":
+          e.preventDefault()
+          move(activeGroupIndex + 1)
           break
-        }
         case "ArrowUp": {
-          if (row > pageStartRow) {
-            move(row - 1, Math.min(currentGroup * groupSize, maxCol))
+          e.preventDefault()
+          const { row, col } = activeCell
+          if (row > 0) {
+            const targetGlobalIndex = (row - 1) * digitsPerRow + col
+            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
+            move(newGroupIndex)
           }
           break
         }
         case "ArrowDown": {
-          if (row < pageEndRow - 1) {
-            move(row + 1, Math.min(currentGroup * groupSize, maxCol))
+          e.preventDefault()
+          const { row, col } = activeCell
+          if (row < totalRows - 1) {
+            const targetGlobalIndex = (row + 1) * digitsPerRow + col
+            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
+            move(newGroupIndex)
           }
           break
         }
@@ -269,10 +312,22 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [activeCell, phase, config, currentPage, rowsPerPage, totalPages, totalRows, digitsPerRow])
+  }, [
+    phase,
+    activeGroupIndex,
+    activeCell,
+    config,
+    currentPage,
+    totalDigits,
+    digitsPerRow,
+    rowsPerPage,
+    totalRows,
+  ])
 
-  // Handle submit with same scoring logic as NumbersGame
   const handleSubmit = async () => {
+    if (phase === "done") return
+    if (timerRef.current) clearInterval(timerRef.current)
+
     const output: string[][] = []
     let finalScore = 0
     let totalCorrect = 0
@@ -282,16 +337,13 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
       let consecutiveCorrect = 0
       let rowScore = 0
 
-      // Check if first box is empty or incorrect
       const firstInput = inputs[r][0]
       const firstActual = digits[r * digitsPerRow].toString()
 
       if (firstInput === "" || firstInput !== firstActual) {
-        // Mark entire row as incorrect but still identify correct/incorrect answers
         for (let c = 0; c < digitsPerRow; c++) {
           const actual = digits[r * digitsPerRow + c].toString()
           const input = inputs[r][c]
-
           if (input === actual) {
             rowResult.push("correct")
             totalCorrect++
@@ -299,9 +351,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
             rowResult.push("incorrect")
           }
         }
-        // Row score remains 0
       } else {
-        // First box is correct, count consecutive correct answers
         for (let c = 0; c < digitsPerRow; c++) {
           const actual = digits[r * digitsPerRow + c].toString()
           const input = inputs[r][c]
@@ -312,14 +362,11 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
             totalCorrect++
             rowScore++
 
-            // Add bonus point for every 10 consecutive correct answers
-            if (consecutiveCorrect % 10 === 0) {
+            if (consecutiveCorrect > 0 && consecutiveCorrect % 10 === 0) {
               rowScore++
             }
           } else {
-            // Stop counting score at first incorrect answer
             rowResult.push("incorrect")
-            // Fill remaining cells without adding to score
             for (let i = c + 1; i < digitsPerRow; i++) {
               const remaining = digits[r * digitsPerRow + i].toString()
               const remainingInput = inputs[r][i]
@@ -346,47 +393,25 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
     setCurrentPage(0)
     setTotalCorrect(totalCorrect)
 
-    // Call onGameComplete if provided (for event games)
     if (onGameComplete) {
       onGameComplete(finalScore)
-      return // Don't submit practice score for event games
+      return
     }
 
-    // Submit score to backend only for practice games
     if (!scoreSubmitted) {
       setScoreSubmitted(true)
       try {
         const userIdString = sessionStorage.getItem("userId")
         const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined
 
-        if (!userId) {
-          console.error("❌ User ID not found in localStorage")
-          throw new Error("User ID not found in localStorage")
-        }
-
-        if (!allDisciplines || !disciplineName) {
-          console.error("❌ Discipline data is missing:", { allDisciplines, disciplineName })
-          throw new Error("Discipline data is missing")
-        }
-
-        console.log("🔍 Looking for discipline:", disciplineName)
-        console.log(
-          "📋 Available disciplines:",
-          allDisciplines.map((d) => ({ name: d.discipline_name, id: d.disc_id })),
-        )
+        if (!userId) throw new Error("User ID not found in localStorage")
+        if (!allDisciplines || !disciplineName) throw new Error("Discipline data is missing")
 
         const matchedDiscipline = allDisciplines.find(
           (d) => d.discipline_name === disciplineName && typeof d.disc_id === "number",
         )
 
-        if (!matchedDiscipline) {
-          console.error(`❌ Discipline not matched: "${disciplineName}"`)
-          console.error(
-            "Available disciplines:",
-            allDisciplines.map((d) => d.discipline_name),
-          )
-          throw new Error(`Discipline not matched: "${disciplineName}"`)
-        }
+        if (!matchedDiscipline) throw new Error(`Discipline not matched: "${disciplineName}"`)
 
         const postData = {
           user_id: userId,
@@ -394,28 +419,33 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
           score: finalScore,
         }
 
-        console.log("📤 Sending score to API:", postData)
         await submitPracticeScore(postData)
-        console.log("✅ Score submitted successfully!")
       } catch (err) {
         console.error("🚨 Failed to submit score:", err)
-        setScoreSubmitted(false) // Allow retry
-        // Show user-friendly error message
+        setScoreSubmitted(false)
         alert(`Failed to submit score: ${err instanceof Error ? err.message : "Unknown error"}`)
       }
     }
   }
 
-  // Click to set group highlight and active cell
+  // New: Click handler for global grouping
   const handleBoxClick = (r: number, c: number) => {
-    setActiveCell({ row: r, col: c })
-    setHighlightGroup({ row: r, group: Math.floor(c / (config?.grouping || 1)) })
+    if (!config) return
+    const globalIndex = r * digitsPerRow + c
+    const groupIndex = Math.floor(globalIndex / config.grouping)
+    setActiveGroupIndex(groupIndex)
+
+    const groupStartGlobalIndex = groupIndex * config.grouping
+    setActiveCell({
+      row: Math.floor(groupStartGlobalIndex / digitsPerRow),
+      col: groupStartGlobalIndex % digitsPerRow,
+    })
+
     if (phase === "recall") {
       inputRefs.current[r][c]?.focus()
     }
   }
 
-  // Render grid with exact same design as NumbersGame
   const renderGrid = () => {
     if (!config) return null
 
@@ -454,35 +484,23 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
                   {Array.from({ length: digitsPerRow + (phase === "done" ? 1 : 0) }).map((_, colIndex) => {
                     const globalIndex = rowIndex * digitsPerRow + colIndex
 
-                    // Score cell at end of row
                     if (phase === "done" && colIndex === digitsPerRow) {
                       return <div key={`score-${colIndex}`}></div>
                     }
 
-                    const groupIndex = Math.floor(colIndex / grouping)
                     const value = phase === "memorize" ? digits[globalIndex] : inputs[rowIndex][colIndex]
-
-                    // Group highlight logic
+                    const globalGroupIndex = Math.floor(globalIndex / grouping)
                     const isGroupHighlighted =
-                      (phase === "memorize" || phase === "recall") &&
-                      highlightGroup.row === rowIndex &&
-                      highlightGroup.group === groupIndex
+                      (phase === "memorize" || phase === "recall") && globalGroupIndex === activeGroupIndex
 
                     const result = results?.[rowIndex]?.[colIndex]
-                    let background = "transparent"
+                    let background = isGroupHighlighted ? highlightColor : "transparent"
                     let textColor = "black"
                     let border = "1.5px solid #d1d5db"
-
-                    if (isGroupHighlighted) {
-                      background = highlightColor
-                      textColor = "black"
-                    }
 
                     if (phase === "done") {
                       if (inputs[rowIndex][colIndex] === "") {
                         background = "transparent"
-                        textColor = "black"
-                        border = "1.5px solid #d1d5db"
                       } else if (result === "correct") {
                         background = "green"
                         textColor = "white"
@@ -505,7 +523,9 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
                           {phase === "recall" && (
                             <input
                               ref={(el) => {
-                                inputRefs.current[rowIndex][colIndex] = el
+                                if (inputRefs.current[rowIndex]) {
+                                  inputRefs.current[rowIndex][colIndex] = el
+                                }
                               }}
                               value={value}
                               maxLength={1}
@@ -514,7 +534,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
                               onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
                               className="w-full h-full text-center bg-transparent outline-none font-bold"
-                              style={{ color: textColor }}
+                              style={{ color: isGroupHighlighted ? "black" : textColor }}
                             />
                           )}
                           {phase === "done" && (
@@ -536,7 +556,6 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
                             </div>
                           )}
                         </div>
-                        {/* Double space after every 10th column */}
                         {(colIndex + 1) % 10 === 0 && colIndex !== digitsPerRow - 1 && (
                           <div style={{ width: "0.8rem" }} />
                         )}
@@ -552,7 +571,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
           <button
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-500 text-white"
+            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-500 text-white disabled:opacity-50"
           >
             Prev
           </button>
@@ -562,7 +581,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={currentPage === totalPages - 1}
-            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-600 text-white"
+            className="px-4 py-2 rounded bg-gray-900 hover:bg-gray-600 text-white disabled:opacity-50"
           >
             Next
           </button>
@@ -590,7 +609,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
     }
     window.addEventListener("keydown", handleGlobalEnter)
     return () => window.removeEventListener("keydown", handleGlobalEnter)
-  }, [phase, countdownStarted])
+  }, [phase, countdownStarted, handleRecallStart, handleSubmit])
 
   if (!config) {
     return <div>Loading...</div>
@@ -598,7 +617,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
 
   return (
     <div className="pr-12 pl-10 pt-16 pb-6 max-w-6xl mx-auto bg-gray-50 rounded-xl space-y-6 relative">
-      {countdownStarted && <CountdownOverlay message="Memorization starts in .."/>}
+      {countdownStarted && <CountdownOverlay message="Recall starts in..." />}
 
       <h1 className="text-3xl font-bold text-center text-indigo-700">
         {phase === "memorize" ? "🧠 Memorization Phase" : phase === "recall" ? "📝 Recall Phase" : "✅ Results"}
@@ -628,7 +647,7 @@ export default function BinaryGame({ onRestart, config, disciplineName, allDisci
           <button
             disabled={timer <= 0}
             onClick={handleRecallStart}
-            className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+            className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
           >
             Recall
           </button>

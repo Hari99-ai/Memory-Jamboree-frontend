@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
@@ -81,7 +82,7 @@ const AdminPage = () => {
   }, [upcomingEvents]);
 
   return (
-    <div className="relative w-full min-h-screen px-4 py-6 space-y-6 overflow-hidden sm:px-6 lg:px-8">
+    <div className="relative w-full min-h-screen px-4 py-0 space-y-6 overflow-hidden sm:px-6 lg:px-8">
       {/* Background Pattern */}
       <div className="absolute inset-0 pointer-events-none opacity-10">
         <svg
@@ -120,39 +121,48 @@ const AdminPage = () => {
               <div className="w-10 h-10 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
             </div>
           ) : upcomingEvents && upcomingEvents.length > 0 ? (
-            <div className="flex items-center justify-center">
-              <button
-                id="prev-btn"
-                className="flex-shrink-0 p-2 transition-colors bg-gray-100 rounded-full hover:bg-gray-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="sm:w-9 sm:h-9"
+            <div className="flex items-center justify-center gap-1"> {/* Added gap-1 instead of default spacing */}
+              {upcomingEvents.length > 1 && (
+                <button
+                  id="prev-btn"
+                  className="flex-shrink-0 p-2 transition-colors bg-gray-100 rounded-full hover:bg-gray-200"
                 >
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="sm:w-9 sm:h-9"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+              )}
 
               <div className="flex items-center justify-center flex-1 pb-4 overflow-hidden">
-                <div className="w-full max-w-4xl overflow-hidden">
+                <div className={`w-full max-w-4xl overflow-hidden ${upcomingEvents.length === 1 ? 'flex items-center justify-center' : ''
+                  }`}>
                   <div
-                    className="flex transition-transform duration-500 ease-in-out"
+                    className={`flex transition-transform duration-500 ease-in-out ${upcomingEvents.length === 1 ? 'justify-center w-full' : ''
+                      }`}
                     style={{
-                      transform: `translateX(-${currentIndex * (100 / Math.min(2, upcomingEvents.length))}%)`,
+                      transform: upcomingEvents.length > 1
+                        ? `translateX(-${currentIndex * (100 / Math.min(2, upcomingEvents.length))}%)`
+                        : 'none'
                     }}
                   >
                     {upcomingEvents.map((event: EventData, idx: any) => (
                       <div
                         key={idx}
-                        className="flex-shrink-0 w-full px-2 sm:w-1/2 sm:px-4"
+                        className={`flex-shrink-0 px-2 ${upcomingEvents.length === 1
+                          ? 'w-[80%] sm:w-[70%] md:w-[60%] lg:w-[50%]' // Custom explicit widths for single event
+                          : 'w-full sm:w-1/2'
+                          } sm:px-4 mx-auto`}
                       >
                         <div className="relative h-48 overflow-hidden rounded-lg shadow-md sm:h-64 hover:shadow-lg group">
                           <img
@@ -189,8 +199,8 @@ const AdminPage = () => {
                               </span>
                               <button
                                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 
-                                         bg-white/90 text-[#245cab] px-2 sm:px-3 py-1 rounded-full text-xs font-medium 
-                                         flex items-center gap-1 hover:bg-white"
+                                  bg-white/90 text-[#245cab] px-2 sm:px-3 py-1 rounded-full text-xs font-medium 
+                                  flex items-center gap-1 hover:bg-white"
                                 onClick={() =>
                                   navigate(`/admin/event/${event.event_id}`)
                                 }
@@ -206,25 +216,28 @@ const AdminPage = () => {
                 </div>
               </div>
 
-              <button
-                id="next-btn"
-                className="flex-shrink-0 p-2 transition-colors bg-gray-100 rounded-full hover:bg-gray-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="sm:w-9 sm:h-9"
+              {/* Only show next button if multiple events */}
+              {upcomingEvents.length > 1 && (
+                <button
+                  id="next-btn"
+                  className="flex-shrink-0 p-2 transition-colors bg-gray-100 rounded-full hover:bg-gray-200"
                 >
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="sm:w-9 sm:h-9"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              )}
             </div>
           ) : (
             <div className="py-10 text-center text-gray-500">
@@ -275,10 +288,10 @@ const AdminPage = () => {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10">
                             {performer.image ? (
-                              <img 
-                                className="w-8 h-8 rounded-full sm:w-10 sm:h-10" 
-                                src={`${ImgUrl}/${performer.image}`} 
-                                alt="" 
+                              <img
+                                className="w-8 h-8 rounded-full sm:w-10 sm:h-10"
+                                src={`${ImgUrl}/${performer.image}`}
+                                alt=""
                               />
                             ) : (
                               <div className="flex items-center justify-center w-8 h-8 text-xs font-medium text-blue-600 bg-blue-100 rounded-full sm:w-10 sm:h-10 sm:text-sm">

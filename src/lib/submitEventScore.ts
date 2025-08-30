@@ -7,6 +7,7 @@ interface ScoreSubmissionRequest {
   event_id: number
   calc_score: number
   disc_id: number
+  time_taken?: string // New field for recall phase timing
   // Optional fields for termination case, as requested
   status?: number
   iscomplete?: number
@@ -47,13 +48,14 @@ function getAuthToken(): string | null {
  * @param {number} disc_id - The ID of the discipline.
  * @param {object} [options] - Optional parameters.
  * @param {boolean} [options.isTerminated] - Set to true if the discipline was automatically terminated.
+ * @param {string} [options.timeTaken] - The time taken for recall phase in format "5min:10sec".
  * @returns {Promise<ScoreSubmissionResponse>} - The response from the server.
  */
 export async function submitEventScore(
   event_id: number,
   calc_score: number,
   disc_id: number,
-  options?: { isTerminated?: boolean },
+  options?: { isTerminated?: boolean; timeTaken?: string },
 ): Promise<ScoreSubmissionResponse> {
   try {
     const token = getAuthToken()
@@ -63,6 +65,12 @@ export async function submitEventScore(
       event_id,
       calc_score,
       disc_id,
+    }
+
+    // Add time_taken if provided
+    if (options?.timeTaken) {
+      requestData.time_taken = options.timeTaken
+      console.log("⏱️ Including recall time in submission:", options.timeTaken)
     }
 
     // Per the new requirement:
@@ -179,8 +187,9 @@ export async function submitScoreAndMarkComplete(
   event_id: number,
   calc_score: number,
   disc_id: number,
+  timeTaken?: string,
 ): Promise<ScoreSubmissionResponse> {
-  console.log("🎯 Submitting score and marking as complete:", { event_id, calc_score, disc_id })
+  console.log("🎯 Submitting score and marking as complete:", { event_id, calc_score, disc_id, timeTaken })
   // A standard call to this function implies a successful completion, not a termination.
-  return submitEventScore(event_id, calc_score, disc_id, { isTerminated: false })
+  return submitEventScore(event_id, calc_score, disc_id, { isTerminated: false, timeTaken })
 }

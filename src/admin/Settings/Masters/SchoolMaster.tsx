@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { AddSchool, getSchools, updateSchool } from "../../../lib/api"; 
+import { AddSchool, getSchools, updateSchool } from "../../../lib/api";
 import {
   Select,
   SelectContent,
@@ -43,16 +43,17 @@ type State = {
 
 export default function SchoolMaster() {
   const [schoolName, setSchoolName] = useState("");
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [selectedCountry, setSelectedCountry] = useState("IN");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedSchool, setSelectedSchool] = useState<SchoolsMasterData | null>(null);
+  const [selectedSchool, setSelectedSchool] =
+    useState<SchoolsMasterData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [skipStateReset, setSkipStateReset] = useState(false);
   const [skipCityReset, setSkipCityReset] = useState(false);
@@ -81,8 +82,8 @@ export default function SchoolMaster() {
     },
   });
 
-  const { mutate: updateSchoolMutation , isPending: isUpdating } = useMutation({
-    mutationFn: (data: { id: number; school: any }) => 
+  const { mutate: updateSchoolMutation, isPending: isUpdating } = useMutation({
+    mutationFn: (data: { id: number; school: any }) =>
       updateSchool(data.id, data.school),
     onSuccess: () => {
       toast.success("School updated successfully!");
@@ -112,7 +113,11 @@ export default function SchoolMaster() {
     const loadCountries = async () => {
       try {
         const data = await getCountries();
-        setCountries(data);
+        // Sort countries alphabetically by name
+        const sortedCountries = [...data].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+        setCountries(sortedCountries);
       } catch (error) {
         console.error("Error loading countries:", error);
         toast.error("Failed to load countries");
@@ -125,11 +130,11 @@ export default function SchoolMaster() {
   useEffect(() => {
     if (selectedSchool && isEditMode) {
       setSchoolName(selectedSchool.school_name);
-      
+
       // Set flags to prevent state/city resets during edits
       setSkipStateReset(true);
       setSkipCityReset(true);
-      
+
       // Set country (this will trigger state loading)
       setSelectedCountry(selectedSchool.country);
     }
@@ -143,8 +148,12 @@ export default function SchoolMaster() {
       setLoadingStates(true);
       try {
         const data = await getStates(selectedCountry);
-        setStates(data);
-        
+        // Sort states alphabetically by name
+        const sortedStates = [...data].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+        setStates(sortedStates);
+
         // Only reset state selection if not in edit mode or if editing and country changed
         if (!skipStateReset) {
           setSelectedState("");
@@ -173,8 +182,12 @@ export default function SchoolMaster() {
       setLoadingCities(true);
       try {
         const data = await getCities(selectedCountry, selectedState);
-        setCities(data);
-        
+        // Sort cities alphabetically by name
+        const sortedCities = [...data].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+        setCities(sortedCities);
+
         // Only reset city selection if not in edit mode or if editing and state changed
         if (!skipCityReset) {
           setSelectedCity("");
@@ -214,14 +227,14 @@ export default function SchoolMaster() {
       country: selectedCountry,
       state: selectedState,
       city: selectedCity,
-      school_id:0
+      school_id: 0,
     };
 
     if (isEditMode && selectedSchool) {
       // Update existing school
-      updateSchoolMutation({ 
-        id: Number(selectedSchool.school_id), 
-        school: schoolData 
+      updateSchoolMutation({
+        id: Number(selectedSchool.school_id),
+        school: schoolData,
       });
     } else {
       // Add new school
@@ -234,7 +247,6 @@ export default function SchoolMaster() {
     setIsEditMode(true);
     setSelectedSchool(school);
     setDialogOpen(true);
-    
   };
 
   if (loadingSchools)
@@ -248,8 +260,8 @@ export default function SchoolMaster() {
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">School Master</h2>
-        <Button 
-          variant="default" 
+        <Button
+          variant="default"
           onClick={() => {
             resetForm();
             setDialogOpen(true);
@@ -260,12 +272,15 @@ export default function SchoolMaster() {
       </div>
 
       {/* Use controlled dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          resetForm();
-        }
-        setDialogOpen(open);
-      }}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            resetForm();
+          }
+          setDialogOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
@@ -296,8 +311,8 @@ export default function SchoolMaster() {
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select Country" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country:Country) => (
+                  <SelectContent position="popper" className="max-h-60">
+                    {countries.map((country: Country) => (
                       <SelectItem key={country.iso2} value={country.iso2}>
                         {country.name}
                       </SelectItem>
@@ -324,8 +339,8 @@ export default function SchoolMaster() {
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent>
-                    {states.map((state:State) => (
+                  <SelectContent position="popper" className="max-h-60">
+                    {states.map((state: State) => (
                       <SelectItem key={state.iso2} value={state.iso2}>
                         {state.name}
                       </SelectItem>
@@ -352,7 +367,7 @@ export default function SchoolMaster() {
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="max-h-60">
                     {cities.map((city: City) => (
                       <SelectItem key={city.id} value={city.name}>
                         {city.name}
@@ -365,8 +380,8 @@ export default function SchoolMaster() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => {
                 resetForm();
                 setDialogOpen(false);
@@ -374,10 +389,7 @@ export default function SchoolMaster() {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleSaveSchool}
-              disabled={isUpdating}
-            >
+            <Button onClick={handleSaveSchool} disabled={isUpdating}>
               {isUpdating ? "Saving..." : isEditMode ? "Update" : "Save"}
             </Button>
           </DialogFooter>
@@ -386,7 +398,7 @@ export default function SchoolMaster() {
 
       <div className="bg-white border shadow p-4 rounded-md">
         <DataTable
-          columns={Schoolcolumns(refetch, handleEdit , true)}
+          columns={Schoolcolumns(refetch, handleEdit, true)}
           data={schools || []}
         />
       </div>

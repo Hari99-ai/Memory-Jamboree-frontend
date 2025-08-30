@@ -80,7 +80,7 @@ export const EVENTS: EventItem[] = [
   { year: "2045", event: "Wind learns to sing" },
   { year: "2088", event: "Shadow trading begins" },
   { year: "2150", event: "Time starts moving backwards" },
-  { year: "888", event: "Mirror world discovered" },
+  { year: "1888", event: "Mirror world discovered" },
   { year: "1123", event: "Dreams become reality" },
   { year: "1299", event: "Colors gain consciousness" },
   { year: "1455", event: "Imagination becomes visible" },
@@ -89,6 +89,6 @@ export const EVENTS: EventItem[] = [
   { year: "1899", event: "Light learns to dance" },
   { year: "1967", event: "Echo starts painting" },
   { year: "2055", event: "Numbers refuse to count" },
-  { year: "3000", event: "Reality takes a holiday" }
+  { year: "2133", event: "Thoughts travel through time" },
 ];
 

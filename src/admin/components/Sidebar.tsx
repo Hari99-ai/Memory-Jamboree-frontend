@@ -15,7 +15,7 @@ import { Award, LockKeyhole, MonitorPlay, ChevronLeft, ChevronRight, ClipboardPe
 import { LogoutDialogButton } from "./AlertDialog";
 import { motion, AnimatePresence } from "framer-motion";
 
-
+// Define main menu structure (without bottom items)
 const menuItems = [
   {
     id: "events",
@@ -100,7 +100,7 @@ const menuItems = [
     ],
   },
 ];
- 
+
 // Define bottom menu items (with increased spacing)
 const bottomMenuItems = [
   {
@@ -118,7 +118,7 @@ const bottomMenuItems = [
     icon: <IconSettings className="w-5 h-5 shrink-0" />,
   },
 ];
- 
+
 // Enhanced Dropdown Component
 interface EnhancedDropdownProps {
   item: any;
@@ -127,7 +127,7 @@ interface EnhancedDropdownProps {
   sidebarOpen: boolean;
   location: any;
 }
- 
+
 const EnhancedDropdown = ({
   item,
   isOpen,
@@ -139,7 +139,7 @@ const EnhancedDropdown = ({
   const isAnyChildActive = item.children?.some((child: any) =>
     location.pathname === child.to || location.pathname.startsWith(child.to + '/')
   );
- 
+
   return (
     <div className="space-y-0.5">
       <button
@@ -172,7 +172,7 @@ const EnhancedDropdown = ({
           </motion.span>
         )}
       </button>
- 
+
       <AnimatePresence initial={false}>
         {isOpen && sidebarOpen && (
           <motion.ul
@@ -197,30 +197,28 @@ const EnhancedDropdown = ({
     </div>
   );
 };
- 
+
 // Enhanced Child Link Component for dropdown items
 interface EnhancedChildLinkProps {
   link: any;
   location: any;
 }
- 
+
 const EnhancedChildLink = ({ link, location }: EnhancedChildLinkProps) => {
   const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/');
- 
+
   return (
     <Link
       to={link.to}
       className={cn(
-        "flex items-center gap-2 rounded-md py-2 px-2 text-[13px] font-medium transition-all duration-200",
+        "flex items-center gap-2 rounded-md py-2 px-2 text-[12px] font-medium transition-all duration-200",
         isActive
-          ? "bg-blue-600 text-white shadow-md font-semibold"
+          ? "bg-white text-blue-600 shadow-md font-semibold"
           : "text-gray-300 hover:text-white hover:bg-white/10"
       )}
     >
-      <span className={cn(
-        "transition-colors flex-shrink-0",
-        isActive ? "text-white" : "text-gray-400"
-      )}>
+      {/* MODIFIED: Removed explicit color class to inherit from parent */}
+      <span className="transition-colors flex-shrink-0">
         {link.icon}
       </span>
       <span className="truncate">
@@ -229,21 +227,21 @@ const EnhancedChildLink = ({ link, location }: EnhancedChildLinkProps) => {
     </Link>
   );
 };
- 
+
 // Enhanced Single Link Component
 interface EnhancedSingleLinkProps {
   item: any;
   sidebarOpen: boolean;
   location: any;
 }
- 
+
 const EnhancedSingleLink = ({
   item,
   sidebarOpen,
   location,
 }: EnhancedSingleLinkProps) => {
   const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + '/');
- 
+
   return (
     <Link
       to={item.to}
@@ -251,15 +249,13 @@ const EnhancedSingleLink = ({
         "flex items-center gap-2 rounded-md py-1 px-2 text-[12px] font-semibold transition-all duration-200",
         !sidebarOpen && "justify-center",
         isActive
-          ? "bg-blue-600 text-white shadow-md"
+          ? "bg-white text-blue-600 shadow-md"
           : "text-white hover:text-blue-200 hover:bg-white/10"
       )}
       title={!sidebarOpen ? item.label : undefined}
     >
-      <span className={cn(
-        "transition-colors flex-shrink-0",
-        isActive ? "text-white" : ""
-      )}>
+      {/* MODIFIED: Removed explicit color class to inherit from parent */}
+      <span className="transition-colors flex-shrink-0">
         {item.icon}
       </span>
       {sidebarOpen && (
@@ -270,23 +266,23 @@ const EnhancedSingleLink = ({
     </Link>
   );
 };
- 
+
 interface SidebarProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
- 
+
 export default function AdminSidebar({ open, setOpen }: SidebarProps) {
   const [openDropdowns, setOpenDropdowns] = useState(new Set());
   const location = useLocation();
- 
+
   // Initialize open dropdowns based on current path
   useEffect(() => {
     const newOpenDropdowns = new Set();
- 
+
     // Check both main menu and bottom menu items
     const allMenuItems = [...menuItems, ...bottomMenuItems];
- 
+
     allMenuItems.forEach((item) => {
       if (item.type === "dropdown" && "children" in item && Array.isArray(item.children)) {
         const shouldBeOpen = item.children.some((child) =>
@@ -297,30 +293,30 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
         }
       }
     });
- 
+
     setOpenDropdowns(newOpenDropdowns);
   }, [location.pathname]);
- 
+
   // Handle dropdown toggle with auto-close functionality and auto-expand
   const handleDropdownToggle = (dropdownId: any) => {
     // If sidebar is collapsed, expand it first
     if (!open) {
       setOpen(true);
     }
- 
+
     setOpenDropdowns((prev) => {
       const newSet = new Set();
- 
+
       // If the dropdown is currently closed, open it and close others
       if (!prev.has(dropdownId)) {
         newSet.add(dropdownId);
       }
       // If it's already open, close it (toggle off)
- 
+
       return newSet;
     });
   };
- 
+
   const renderMenuItem = (item: any) => {
     if (item.type === "dropdown") {
       return (
@@ -344,7 +340,7 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
       );
     }
   };
- 
+
   return (
     <div className="relative h-full">
       <Sidebar open={open} setOpen={setOpen}>
@@ -360,7 +356,7 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
             <ChevronRight className="w-4 h-4" />
           )}
         </button>
- 
+
         <SidebarBody className="flex flex-col h-full overflow-hidden">
           <div className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
             {/* TOP: Logo + App Name */}
@@ -379,16 +375,16 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
                 </span>
               )}
             </Link>
- 
+
             {/* MAIN MENU SECTION: Dynamic rendering */}
             <div className="flex flex-col flex-1 px-4 space-y-2">
               {menuItems.map(renderMenuItem)}
             </div>
- 
+
             {/* BOTTOM SECTION: Change Password, Settings, Logout with increased margin */}
             <div className="px-4 mt-auto space-y-2 ">
               {bottomMenuItems.map(renderMenuItem)}
- 
+
               {/* LOGOUT - Special case */}
               <div className="flex flex-col gap-1">
                 <LogoutDialogButton />
@@ -400,4 +396,3 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
     </div>
   );
 }
- 

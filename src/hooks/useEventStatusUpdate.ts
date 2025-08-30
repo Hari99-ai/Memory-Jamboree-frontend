@@ -18,9 +18,8 @@ const getEventStatus = (etype: number): string => {
   }
 }
 
-export const useEventWebSocket = async (event_id: string) => {
+export const useEventWebSocket = (event_id: string) => {
   const setEventStatus = useSetRecoilState(eventStatusState(event_id));
-
 
   // const response =  await api.post(`/update-event-status/${event_id}`)
   // return response.data
@@ -78,5 +77,5 @@ export const useEventWebSocket = async (event_id: string) => {
     return () => {
       ws.close();
     };
-  }, [setEventStatus , event_id]);
+  }, [event_id]);
 };

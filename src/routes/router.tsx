@@ -19,7 +19,7 @@ const CertificateViewer = lazy(() => import("../pages/CertificateViewer"));
 const MyProfilePage = lazy(() => import("../pages/MyProfilePage"));
 const ExamPage = lazy(() => import("../components/ExamPage"));
 const GamePage = lazy(() => import("../practiceTests/GamePage"));
-const LiveMonitoring = lazy(() => import("../components/LiveMonitoring")) 
+// const LiveMonitoring = lazy(() => import("../components/LiveMonitoring")) 
 // import AdminDashboard from "./admin/AdminDashboard";
 const DashboardLayout = lazy(() => import("../admin/components/DashboardLayout"));
 // import PracticeTestPage from "./practiceTests/PracticeTestPage";
@@ -29,6 +29,9 @@ const ResultsCertificate = lazy(() => import("../components/ui/ResultsCertificat
 import NotFound from "../components/NotFound";
 import { mobileOnlyRoutes } from ".";
 import { DesktopOnlyRoute } from "./DesktopRoute";
+// import { DesktopOnlyRoute } from "./DesktopRoute";
+// import { mobileOnlyRoutes } from ".";
+// import { DesktopOnlyRoute } from "./DesktopRoute";
 // import PhoneRouteGuard from "./MobileRoute";
 // import MobileLogin from "../mobile/MobileLogin";
 // import MobileOnlyRoute from "./MobileRoute";
@@ -83,7 +86,9 @@ export const router = createBrowserRouter([
     element: (
     <ProtectedRoute>
       <Suspense fallback={<Loader2 />}>
+      <DesktopOnlyRoute>
         <EventView />
+      </DesktopOnlyRoute>
       </Suspense>
     </ProtectedRoute>
   ),
@@ -93,7 +98,9 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Suspense fallback={<Loader2 />}>
+        <DesktopOnlyRoute>
         <EventGamePage />
+        </DesktopOnlyRoute>
       </Suspense>
       </ProtectedRoute>
     )
@@ -168,14 +175,14 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
-  {
-    path: "/live",
-    element: (
-      <Suspense fallback={<Loader2 />}>
-        <LiveMonitoring />
-      </Suspense>
-    ),
-  },
+  // {
+  //   path: "/live",
+  //   element: (
+  //     <Suspense fallback={<Loader2 />}>
+  //       <LiveMonitoring />
+  //     </Suspense>
+  //   ),
+  // },
   {
     path: "/change-password",
     element: (
@@ -200,9 +207,9 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute>
-      <DesktopOnlyRoute>
-        <Outlet />
-      </DesktopOnlyRoute>
+        {/* <DesktopOnlyRoute> */}
+          <Outlet />
+        {/* </DesktopOnlyRoute> */}
     </ProtectedRoute>
     ),
     children: [
@@ -398,7 +405,13 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <ProtectedRoute />,
+    element: (
+      <ProtectedRoute>
+        {/* <DesktopOnlyRoute> */}
+          <Outlet />
+        {/* </DesktopOnlyRoute> */}
+    </ProtectedRoute>
+    ),
     children: [
       {
         element: <StudentDashboardLayout />,
@@ -425,11 +438,11 @@ export const router = createBrowserRouter([
   {
     path: "/auth",
     element: (
-      <DesktopOnlyRoute>
+      // <DesktopOnlyRoute>
         <Suspense fallback={<Loader />}>
           <AuthLayout />
         </Suspense>
-      </DesktopOnlyRoute>
+      // </DesktopOnlyRoute>
     ),
     children: [
       {

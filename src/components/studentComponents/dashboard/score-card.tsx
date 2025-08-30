@@ -1,49 +1,40 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Sector,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from "recharts";
 import { useState, useMemo, useCallback } from "react";
 import "../../../App.css";
 import { useDashboardData } from "../../../hooks/useStudentDashboardData";
 
-// A modern, more vibrant color palette
-const getColorForDiscipline = (name: string) => {
-  const colorMap: Record<string, string> = {
-    "5-Minute Dates": "#6366F1",   // Indigo
-    "5-Minute Images": "#EC4899",  // Pink
-    "5-Minute Numbers": "#F59E0B", // Amber
-    "5-Minute Words": "#10B981",  // Emerald
-    "Cards": "#3B82F6",            // Blue
-    "Default": "#6B7280",          // Gray
+// Defining a more vibrant and modern color palette with gradients
+const getColorsForDiscipline = (name: string): [string, string] => {
+  const colorMap: Record<string, [string, string]> = {
+    "5-Minute Dates": ["#818cf8", "#4f46e5"],   // Indigo
+    "5-Minute Images": ["#f472b6", "#db2777"],  // Pink
+    "5-Minute Numbers": ["#fb923c", "#f97316"], // Orange
+    "5-Minute Words": ["#34d399", "#059669"],  // Emerald
+    "Cards": ["#60a5fa", "#2563eb"],            // Blue
+    "Default": ["#9ca3af", "#6b7280"],          // Gray
   };
   return colorMap[name] || colorMap.Default;
 };
 
-// Custom active shape for the pie chart with a modern feel
+// Custom active shape with a more pronounced effect
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-
   return (
-    <g style={{ filter: `drop-shadow(0 4px 6px ${fill}60)` }}>
+    <g style={{ filter: `drop-shadow(0 6px 12px ${fill[1]}80)` }}>
       <Sector
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 6} // Make the active sector pop more
+        outerRadius={outerRadius + 8}
         startAngle={startAngle}
         endAngle={endAngle}
-        fill={fill}
-        cornerRadius={5} // Add rounded corners to the sector
+        fill={fill[1]}
+        cornerRadius={8}
       />
     </g>
   );
 };
-
 
 export default function ScoreCard() {
   const { data: avg_score, isLoading, isError } = useDashboardData();
@@ -51,19 +42,16 @@ export default function ScoreCard() {
 
   const chartData = useMemo(() => {
     if (!data) return [];
-    return Object.entries(data).map(([discipline, score]) => ({
+    return Object.entries(data).map(([discipline, score], index) => ({
       name: discipline,
       value: Math.round(Number(score)),
-      color: getColorForDiscipline(discipline),
+      colors: getColorsForDiscipline(discipline),
+      id: `gradient-${index}`
     }));
   }, [data]);
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  const activeItem =
-    activeIndex !== null && activeIndex < chartData.length
-      ? chartData[activeIndex]
-      : null;
+  const activeItem = activeIndex !== null ? chartData[activeIndex] : null;
 
   const totalAverage = useMemo(() => {
     if (chartData.length === 0) return 0;
@@ -71,109 +59,54 @@ export default function ScoreCard() {
     return Math.round(sum / chartData.length);
   }, [chartData]);
 
-  const onPieEnter = useCallback((_: any, index: number) => {
-    setActiveIndex(index);
-  }, []);
+  const onPieEnter = useCallback((_: any, index: number) => setActiveIndex(index), []);
+  const onPieLeave = useCallback(() => setActiveIndex(null), []);
 
-  const onPieLeave = useCallback(() => {
-    setActiveIndex(null);
-  }, []);
-
-  // Modern Loading State
   if (isLoading) {
     return (
-      <Card className="h-[450px]">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold tracking-tight">Average Score</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-            <p className="mt-4 text-sm text-gray-500">Calculating your scores...</p>
-        </CardContent>
+      <Card className="h-[480px] flex items-center justify-center bg-gray-50/50">
+        <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div><p className="mt-4 text-sm font-medium text-gray-500">Calculating scores...</p></div>
       </Card>
     );
   }
 
-  // Modern Error State
   if (isError || !chartData.length) {
     return (
-      <Card className="h-[450px]">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold tracking-tight">Average Score</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center h-full">
-            <p className="text-lg text-gray-500">No Score Data Available</p>
-            <p className="mt-2 text-sm text-gray-400">Complete a practice test to see your scores.</p>
-        </CardContent>
+      <Card className="h-[480px] flex items-center justify-center bg-gray-50/50">
+        <div className="text-center"><p className="text-lg font-semibold text-gray-700">No Score Data Available</p><p className="mt-2 text-sm text-gray-400">Complete a practice test to see your scores.</p></div>
       </Card>
     );
   }
 
   return (
-    <Card className="h-[450px] flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold tracking-tight">Average Score</CardTitle>
-         <p className="text-sm text-gray-500">Your average performance per discipline.</p>
+    <Card className="h-[480px] flex flex-col p-2">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight">Discipline Scores</CardTitle>
+        <p className="text-sm text-gray-500">Hover over a discipline to see details</p>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col items-center justify-center">
-        <div className="relative h-[220px] w-full">
+        <div className="relative h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart onMouseLeave={onPieLeave}>
-              <Pie
-                activeIndex={activeIndex !== null ? activeIndex : undefined}
-                activeShape={renderActiveShape}
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={70} // Thicker donut
-                outerRadius={90} // Thicker donut
-                paddingAngle={3}
-                dataKey="value"
-                onMouseEnter={onPieEnter}
-                animationDuration={300}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    opacity={ activeIndex === null || activeIndex === index ? 1 : 0.4 }
-                    style={{ transition: "opacity 0.2s ease" }}
-                  />
-                ))}
+              <defs>{chartData.map((entry) => (<linearGradient id={entry.id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={entry.colors[0]} stopOpacity={0.9}/><stop offset="100%" stopColor={entry.colors[1]} stopOpacity={1}/></linearGradient>))}</defs>
+              <Pie activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={chartData} cx="50%" cy="50%" innerRadius={80} outerRadius={115} paddingAngle={4} dataKey="value" onMouseEnter={onPieEnter}>
+                {chartData.map((entry) => (<Cell key={`cell-${entry.id}`} fill={`url(#${entry.id})`} stroke="none"/>))}
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-5xl font-bold text-gray-800 transition-all">
-              {activeItem ? activeItem.value : totalAverage}
-            </p>
-            <p className="text-sm text-gray-500 transition-all">
-              {activeItem ? activeItem.name : "Total Avg"}
-            </p>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+              <p className="text-6xl font-bold text-gray-800 transition-all duration-300 ease-in-out">
+                {activeItem ? activeItem.value : totalAverage}
+              </p>
+              {!activeItem && <p className="text-base font-medium text-gray-500">Total Average</p>}
           </div>
         </div>
-
-        {/* Modern Legend */}
-        <div className="mt-2 flex flex-wrap justify-center gap-x-6 gap-y-3">
-          {chartData.map((entry, index) => (
-            <div
-              key={`legend-${index}`}
-              className={`flex items-center cursor-pointer transition-opacity duration-200 ${
-                activeIndex === null || activeIndex === index
-                  ? "opacity-100"
-                  : "opacity-60 hover:opacity-100"
-              }`}
-              onMouseEnter={() => setActiveIndex(index)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-              <div
-                className="h-3 w-3 mr-2 rounded-full transition-transform"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-sm font-medium">{entry.name}</span>
-            </div>
-          ))}
+        <div className="h-10 flex items-center justify-center">
+            {activeItem && (
+                <p className="text-lg font-bold text-gray-800 transition-opacity duration-300">
+                    {activeItem.name}
+                </p>
+            )}
         </div>
       </CardContent>
     </Card>

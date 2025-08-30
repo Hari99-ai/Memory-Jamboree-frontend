@@ -2,7 +2,9 @@
 import { useRecoilState } from "recoil";
 import { authAtom } from "../atoms/authAtom";
 import { Button } from "./ui/button";
-import { ForgetPasswords, OtpVerify, setPassword} from "../lib/api";
+import { 
+  // ForgetPasswords, 
+  OtpVerification, OtpVerify, setPassword} from "../lib/api";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -11,7 +13,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { setPasswordData } from "../types";
 import OTPInput from "./OTPInput";
 
-const emailRegex = /^(?=.*@)(?=.*\.).*$/;
+// const emailRegex = /^(?=.*@)(?=.*\.).*$/;
 const isValidPassword = (password: string) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(password);
 
 export default function VerifyOtp() {
@@ -27,10 +29,10 @@ export default function VerifyOtp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  const { mutate: sendOtp } = useMutation({
-    mutationKey: ["otp-send"],
-    mutationFn: (email: string) => ForgetPasswords(email),
-  });
+  // const { mutate: sendOtp } = useMutation({
+  //   mutationKey: ["otp-send"],
+  //   mutationFn: (email: string) => ForgetPasswords(email),
+  // });
 
   // const { mutateAsync: resetPassword } = useMutation({
   //   mutationKey: ["reset-password"],
@@ -56,7 +58,7 @@ export default function VerifyOtp() {
 
   useEffect(() => {
     if (newPassword && !isValidPassword(newPassword)) {
-      setPasswordError("Password must contain at least 1 uppercase, 1 lowercase & 1 number");
+      setPasswordError("Password must contain at least 6 digits , 1 uppercase, 1 lowercase & 1 number");
     } else if (confirmPassword && newPassword !== confirmPassword) {
       setPasswordError("Passwords do not match");
     } else {
@@ -71,19 +73,33 @@ export default function VerifyOtp() {
   };
 
   const handleContinue = async () => {
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    try {
-      await sendOtp(email);
-      toast.success("OTP sent to your email!");
-      setTimeLeft(300);
-      setIsResendEnabled(false);
-    } catch (err: any) {
-      toast.error("Failed to send OTP, please try again.");
-    }
+  // if (!emailRegex.test(email)) {
+  //   toast.error("Please enter a valid email address");
+  //   return;
+  // }
+
+  const storedFields = JSON.parse(localStorage.getItem("registerd_fields") || "{}");
+  const payload = {
+    email: storedFields.email,
+    fname: storedFields.fname,
+    lname: storedFields.lname,
   };
+  try {
+    const res = await OtpVerification(payload);
+    if (res.success) {
+      toast.success("OTP sent to your email!");
+      setTimeLeft(300);          // reset countdown
+      setIsResendEnabled(false); // disable resend until countdown ends
+    } else {
+      toast.error(`Failed to send OTP: ${res.msg}`);
+      setIsResendEnabled(true);  // allow retry if failed
+    }
+  } catch (err: any) {
+    toast.error("Something went wrong. Please try again.");
+    setIsResendEnabled(true);    // allow retry
+  }
+};
+
 
   const handleVerifyOtp = async () => {
     const enteredOtp = authState.otp.join("");
@@ -132,7 +148,7 @@ export default function VerifyOtp() {
       setAuthState((prev) => ({ ...prev, otp: Array(5).fill("") }));
       setNewPassword("");
       setConfirmPassword("");
-      navigate("/dashboard");
+      navigate("/auth/login");
     } catch (error: any) {
       toast.error("Failed to reset password.");
       console.error(error);
@@ -168,7 +184,7 @@ export default function VerifyOtp() {
             <>
               {!isOtpVerified ? (
                 <div>
-                  <p className="text-center text-gray-600">Sent to <b>{email}</b></p>
+                  <p className="text-center text-gray-600 py-4">Sent to <b>{email}</b></p>
                 <OTPInput
                   value={authState.otp.join("")}
                   onChange={(val) => {
@@ -179,7 +195,7 @@ export default function VerifyOtp() {
                   }}
                 />
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 py-3">
                     {isResendEnabled ? "You can resend OTP now." : `Resend in ${formatTime(timeLeft)}`}
                   </p>
                   <button
@@ -197,7 +213,7 @@ export default function VerifyOtp() {
                 <Button
                   type="submit"
                   onClick={handleVerifyOtp}
-                  className="h-12 text-lg font-semibold bg-[#245cab] hover:bg-[#95baed] w-full"
+                  className="h-12 text-lg pt-2 font-semibold bg-[#245cab] hover:bg-[#95baed] w-full"
                 >
                   Continue
                 </Button>

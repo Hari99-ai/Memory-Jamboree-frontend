@@ -5,12 +5,12 @@ import { get_face_verification } from "../lib/api";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
- 
+
 interface Props {
   onVerified: () => void;
   onClose: () => void;
 }
- 
+
 export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,13 +20,14 @@ export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
- 
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
   useEffect(() => {
     const storedId = sessionStorage.getItem("userId");
     console.log("userId", storedId);
     if (storedId) setUserId(storedId);
   }, []);
- 
+
   // Enhanced camera stopping function
   const stopCamera = () => {
     console.log("Stopping camera...");
@@ -102,62 +103,15 @@ export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
       else if(err?.response?.status === 404){
         toast.error("No face detected. Please ensure your face is clearly visible to the camera.");
       }
+      else if (err?.response?.data?.error?.includes("Exception while processing img1_path")) {
+        toast.error("Please Check your Profile Picture. Ensure your face is clearly visible into your profile");
+      }
       else {
         // toast.error("Verification failed");
         setError(err?.message || "Verification failed");
       }
     },
   });
- 
-  // Initialize camera with improved error handling
-  // useEffect(() => {
-  //   console.log("Initializing camera...");
-  //   let mounted = true;
-    
-  //   const initCamera = async () => {
-  //     try {
-  //       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-  //         throw new Error("MediaDevices API not supported in this browser");
-  //       }
-        
-  //       console.log("Requesting camera access...");
-  //       const stream = await navigator.mediaDevices.getUserMedia({ 
-  //         video: { facingMode: "user" }, // Prefer front camera
-  //         audio: false 
-  //       });
-        
-  //       if (!mounted) {
-  //         // Component unmounted before stream was obtained
-  //         stream.getTracks().forEach(track => track.stop());
-  //         console.log("Component unmounted, stopped obtained stream");
-  //         return;
-  //       }
-        
-  //       // Store stream reference for later cleanup
-  //       streamRef.current = stream;
-        
-  //       if (videoRef.current) {
-  //         videoRef.current.srcObject = stream;
-  //         console.log("Camera started successfully");
-  //         setCameraActive(true);
-  //       }
-  //     } catch (err: any) {
-  //       console.error("Error accessing media devices:", err);
-  //       setError(`Camera access failed: ${err.message || "Unknown error"}`);
-  //     }
-  //   };
-    
-  //   initCamera();
-    
-  //   // Cleanup function runs when component unmounts
-  //   return () => {
-  //     mounted = false;
-  //     console.log("Component unmounting, cleaning up camera");
-  //     stopCamera();
-  //   };
-  // }, []);
-
-
 
   useEffect(() => {
     console.log("Initializing camera...");
@@ -204,7 +158,12 @@ export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
         }
       } catch (err: any) {
         console.error("Error accessing media devices:", err);
-        setError(`Camera access failed: ${err.message || "Unknown error"}`);
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+          setError("Camera access was denied. Please enable camera permissions in your browser settings to continue.");
+          setPermissionDenied(true);
+        } else {
+          setError(`Camera access failed: ${err.message || "Unknown error"}`);
+        }
       }
     };
 
@@ -304,12 +263,19 @@ export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
             <h3 className="text-2xl font-semibold mb-4 text-gray-100">Instructions</h3>
             <ul className="list-disc list-inside text-gray-200 space-y-2 text-left">
               <li>Ensure your face is centered and visible.</li>
+              <li>Please don’t wear sunglasses or capes.</li>
               <li>Use a well-lit area for better accuracy.</li>
               <li>Click the capture button to authenticate.</li>
             </ul>
  
             <div className="mt-6">
-              {error && (
+              {permissionDenied && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-4" role="alert">
+                  <p className="font-bold">Camera Access Denied</p>
+                  <p>To continue, please allow camera access in your browser's settings. You may need to reload the page after granting permission.</p>
+                </div>
+              )}
+              {error && !permissionDenied && (
                 <div className="bg-red-100 text-red-800 px-4 py-3 rounded-lg mb-4 font-medium">
                   ❌ {error}
                 </div>
@@ -323,21 +289,14 @@ export default function FacialRecognitionStep({ onVerified, onClose }: Props) {
                 <div className="bg-green-100 text-green-800 px-4 py-3 rounded-lg mb-4 font-medium">
                   ✅ Face matched successfully
                 </div>
-              )} 
-              {/* // : (
-              //   <div className="bg-green-100 text-red-800 px-4 py-3 rounded-lg mb-4 font-medium">
-              //     <span className="text-xl cursor-pointer">✖</span> Face Not Matched ! Try Again
-              //   </div>
-              // ) */}
-              
-
-              {
+              )}
+              {/* {
                 error && (
                   <div className="bg-green-100 text-red-800 px-4 py-3 rounded-lg mb-4 font-medium">
                     Something Error Occured ! Please Contact to Your Admin
                   </div>
                 )
-              }
+              } */}
  
               <button
                 onClick={handleContinue}

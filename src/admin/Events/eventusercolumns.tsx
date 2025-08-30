@@ -235,7 +235,7 @@ export const eventusercolumns = (
         const id = row.original.id
         const name = `${row.original.fname} ${row.original.lname}`
         return (
-          <NavLink to={`/admin-dashboard/user/${id}`} className="text-blue-600 hover:underline">
+          <NavLink to={`/admin/user/${id}`} className="text-blue-600 hover:underline">
             {name}
           </NavLink>
         )

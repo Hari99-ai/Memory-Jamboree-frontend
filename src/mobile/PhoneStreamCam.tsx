@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useLocation } from "react-router-dom"
 import { usePhoneMonitoring } from "../hooks/usePhoneMonitoring.ts"
 
@@ -16,44 +16,44 @@ export default function PhoneStreamCam() {
   const [started, setStarted] = useState(false)
   const [timer, setTimer] = useState(30)
   const [showInstructions, setShowInstructions] = useState(false)
+  const [cameraMode, setCameraMode] = useState<"user" | "environment">("environment") // front = user, back = environment
 
   const {
     videoRef,
     verified,
     isMonitoring,
     startMonitoring,
-    // stopMonitoring,
     phoneDetected,
     multiplePeople,
   } = usePhoneMonitoring({ event_id, discipline_id, user_id, passcode })
 
-  /** ---- INITIAL CAMERA ACCESS ---- */
-  useEffect(() => {
-    const initCamera = async () => {
-      try {
-        let stream
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: "environment" } },
-            audio: true,
-          })
-        } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        }
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-        }
-        console.log("📷 Camera ready")
-      } catch (err) {
-        console.error("Cannot access camera:", err)
-        alert("Cannot access camera or microphone.")
+  /** ---- CAMERA ACCESS ---- */
+  const initCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraMode },
+        audio: true,
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
       }
+      console.log(`📷 Camera ready (${cameraMode})`)
+    } catch (err) {
+      console.error("Cannot access camera:", err)
+      alert("Cannot access camera or microphone.")
     }
-    initCamera()
-  }, [videoRef])
+  }, [cameraMode, videoRef])
 
-  /** ---- HANDLE START ---- */
+  useEffect(() => {
+    initCamera()
+    return () => {
+      const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks()
+      tracks?.forEach((t) => t.stop())
+    }
+  }, [initCamera])
+
+  /** ---- START MONITORING ---- */
   const handleStart = () => {
     if (!verified) return
     setShowInstructions(false)
@@ -64,7 +64,6 @@ export default function PhoneStreamCam() {
       setTimer((prev) => {
         if (prev <= 1) {
           clearInterval(countdown)
-          console.log("monitoring should start")
           startMonitoring()
           return 0
         }
@@ -80,16 +79,28 @@ export default function PhoneStreamCam() {
     return `${m}:${s}`
   }
 
-
+  
   useEffect(() => {
-  if (verified) {
-    setShowInstructions(true)
+    if (verified) {
+      setShowInstructions(true)
+    }
+  }, [verified])
+
+  const handleToggleCamera = () => {
+    setCameraMode((prev) => (prev === "environment" ? "user" : "environment"))
   }
-}, [verified])
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center">
       <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+
+      {/* Toggle Button */}
+      <button
+        onClick={handleToggleCamera}
+        className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow-md z-50"
+      >
+        {cameraMode === "environment" ? "Switch to Front" : "Switch to Back"}
+      </button>
 
       {showInstructions && verified && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50 p-6 text-white">
@@ -101,20 +112,17 @@ export default function PhoneStreamCam() {
               <li>Avoid bright lights or glare directly in front of the camera.</li>
               <li>Click "Start" to begin monitoring after the countdown.</li>
             </ul>
-            <button onClick={handleStart} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            <button
+              onClick={handleStart}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
               Start
             </button>
           </div>
         </div>
       )}
 
-      {/* <div className="absolute top-3 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
-        {!started && "Not started"}
-        {started && !isMonitoring && `⏳ Starting in ${formatTimer(timer)}`}
-        {isMonitoring && "🎥 Monitoring Active"}
-      </div> */}
-
-      <div className="absolute top-3 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
+      <div className="absolute top-14 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
         {!started && !verified && "Verifying..."}
         {!started && verified && "Ready to start"}
         {started && !isMonitoring && `⏳ Starting in ${formatTimer(timer)}`}

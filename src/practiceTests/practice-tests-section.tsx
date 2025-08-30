@@ -18,12 +18,12 @@ import { Skeleton } from "../components/ui/skeleton";
 
 const allowedDisciplines = [
   "5-Minute Words",
-  // "30-Minute Binary",
+  "5-Minute Binary",
   "5-Minute Images",
   "5-Minute Numbers",
   "5-Minute Dates",
-  // "15-Minute Numbers",
-  // "15-Minute Names & Faces",
+  //"15-Minute Numbers",
+  "5-Minute Names & Faces",
 ]
 
 interface GameConfig {
@@ -39,7 +39,7 @@ interface GameConfig {
 
 export default function PracticeTestSection() {
   // const disciplines = useRecoilValue(disciplineListAtom)
-  const desiredOrder = [9, 22, 11, 14 ,10 , 15];
+  const desiredOrder = [9,25, 11, 14 , 15 , 12];
   
   const {data: disciplines , isLoading } = useQuery({
     queryKey: ['disciplines' , ],
@@ -225,7 +225,7 @@ const handleStartFromInstructions = (config: GameConfig) => {
             />
           )}
 
-          {selectedDiscipline === "30-Minute Binary" && (
+          {selectedDiscipline === "5-Minute Binary" && (
             <BinaryGame
               time={formattedTime}
               onRestart={resetTest}
@@ -272,11 +272,15 @@ const handleStartFromInstructions = (config: GameConfig) => {
             />
           )}
 
-          {selectedDiscipline === "15-Minute Names & Faces" && (
+          {selectedDiscipline === "5-Minute Names & Faces" && (
             <FacesGame
               time={formattedTime}
               onRestart={resetTest}
               highlightColor={gameConfig.highlightColor || "#00ffcc"}
+              disciplineName={selectedDiscipline}
+              allDisciplines={disciplines ?? []}
+              onGameComplete={undefined} // optional, for event games
+              onRecallPhaseStart={undefined} // optional
             />
           )}
         </div>

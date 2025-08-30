@@ -42,7 +42,7 @@ export interface PaymentData {
   plan_period_end: string;   
   duration: number;
   smid: number;
-}  
+}
 
 type Score = {
   disc_id:number;
@@ -88,6 +88,7 @@ export interface RegisterUserInput  {
   event_overall_rank?:number;
   category_overall_rank?:number;
   emonitored?:number;
+  status?:number;
 }
 
 
@@ -118,6 +119,11 @@ export interface UserDetails {
 //   id?:number;
 // }
 
+export interface PracticeTestRecord {
+  createdat: string
+  discipline_name: string | null
+  score: string
+}
 
 export interface UserAssesmentRespone  {
   finalscore:number;
@@ -137,7 +143,7 @@ export interface EventData {
   user_registered: unknown;
   event_id?:number;
   ename:string;
-  eimage:string;
+  eimage: File | string;
   event_start:string;
   event_end:string;
   estatus:number;
@@ -148,6 +154,8 @@ export interface EventData {
   user_participants?:string;
   etype?:number;
   is_participating:number;
+  isPlaceholder?:boolean; 
+  emonitored?:number;
 }
 
 export interface PasswordChangeData {
@@ -250,7 +258,8 @@ export interface MonitoringData {
   voice_db?: number;
   phone_detection?:number;
   img_log?: string;               
-  log_time?: string;           
+  log_time?: string;  
+  external_img?: string;         
 }
 
 
@@ -275,6 +284,8 @@ export interface MessageData {
   userType:string;
 }
 
+
+
 export interface KeyboardEventData {
   kid?:number;
   user_id:number;
@@ -282,6 +293,7 @@ export interface KeyboardEventData {
   keyboard_event:string;
   transaction_log:string; 
 }
+
 
 export interface WindowLogs {
   logs:WindowData[]
@@ -300,4 +312,12 @@ export interface MessageData {
   email:string;
   message:string;
   userType:string;
+}
+
+
+
+export interface PhoneSendData  {
+  email:string;
+  event_id:string;
+  disc_id:string;
 }
