@@ -30,7 +30,7 @@ import {
   } from "../hooks/useGiveTest"
 import type { DisciplineData } from "../types"
 import { WarningDialog } from "../components/WarnDialog"
-import { SocketURL } from "../lib/client"
+import { API_BASE_URL } from "../lib/client"
 // import { API_BASE_URL } from "../lib/client"
 // import { API_BASE_URL } from "../lib/client"
 
@@ -109,6 +109,7 @@ function EventGamePage() {
     showTerminationPopup,
     handleTerminationClose,
     gameTerminated,
+    liveFrame
   } = useMonitoring(
     {
       user_id: String(user_id || ""),
@@ -118,7 +119,13 @@ function EventGamePage() {
     monitoringEnabled,
   ) // Pass monitoring enabled status
 
+
+  
+
   // const lastAlertTimeRef = useRef<string | null>(null);
+
+
+
 
   // const { data} = fetchPhoneAlerts(
   //   event_id!,
@@ -134,54 +141,57 @@ function EventGamePage() {
   //   lastAlertTimeRef.current = latestTime;
   // }, [data]);
 
-  const discipline_id = gameData?.selectedDiscipline?.disc_id
-      ? String(gameData.selectedDiscipline.disc_id)
-      : "";
 
-  const wsRef = useRef<WebSocket | null>(null);
+  
 
-  // const passcode = localStorage.getItem('passcode')
+  // const discipline_id = gameData?.selectedDiscipline?.disc_id
+  //     ? String(gameData.selectedDiscipline.disc_id)
+  //     : "";
 
-  useEffect(() => {
-    const ws = new WebSocket(`${SocketURL}/phone/${discipline_id}/${event_id}/${user_id}`);
-    wsRef.current = ws;
+  // const wsRef = useRef<WebSocket | null>(null);
 
-    ws.onopen = () => {
-      console.log("✅ WebSocket connected to phone monitoring");
-    };
+  // // const passcode = localStorage.getItem('passcode')
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+  // useEffect(() => {
+  //   const ws = new WebSocket(`${SocketURL}/phone/${discipline_id}/${event_id}/${user_id}`);
+  //   wsRef.current = ws;
 
-      if (data.type === "monitoring") {
-        // Update any proctoring data
-        console.log("data response" , data)
+  //   ws.onopen = () => {
+  //     console.log("✅ WebSocket connected to phone monitoring");
+  //   };
 
-        // Render the phone image
-        // if (data.imgData && canvasRef.current) {
-        //   const img = new Image();
-        //   img.src = data.imgData; // imgData comes directly from phone
-        //   img.onload = () => {
-        //     const canvas = canvasRef.current!;
-        //     const ctx = canvas.getContext("2d")!;
-        //     canvas.width = img.width;
-        //     canvas.height = img.height;
-        //     ctx.drawImage(img, 0, 0);
-        //   };
-        // }
-      }
-    };
+  //   ws.onmessage = (event) => {
+  //     const data = JSON.parse(event.data);
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-    };
+  //     if (data.type === "monitoring") {
+  //       // Update any proctoring data
+  //       console.log("data response" , data)
 
-    ws.onclose = () => {
-      console.log("⚠️ WebSocket disconnected");
-    };
+  //       // Render the phone image
+  //       // if (data.imgData && canvasRef.current) {
+  //       //   const img = new Image();
+  //       //   img.src = data.imgData; // imgData comes directly from phone
+  //       //   img.onload = () => {
+  //       //     const canvas = canvasRef.current!;
+  //       //     const ctx = canvas.getContext("2d")!;
+  //       //     canvas.width = img.width;
+  //       //     canvas.height = img.height;
+  //       //     ctx.drawImage(img, 0, 0);
+  //       //   };
+  //       // }
+  //     }
+  //   };
 
-    return () => ws.close();
-  }, [SocketURL, discipline_id, event_id, user_id]);
+  //   ws.onerror = (err) => {
+  //     console.error("WebSocket error:", err);
+  //   };
+
+  //   ws.onclose = () => {
+  //     console.log("⚠️ WebSocket disconnected");
+  //   };
+
+  //   return () => ws.close();
+  // }, [SocketURL, discipline_id, event_id, user_id]);
 
 
 
@@ -414,16 +424,20 @@ function EventGamePage() {
       })
     }
   }
-
+  const wsRef = useRef<WebSocket | null>(null);
   useEffect(() => {
     if (dialogOpen) {
       stopMonitoring()
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "stop_monitoring" }));
+        console.log("📡 Sent resume_monitoring to phone");
+      }
     }
   }, [dialogOpen, stopMonitoring])
 
   const handleClose = async () => {
     console.log("🔄 Closing dialog")
-    await startMonitoring()
+    // await startMonitoring()
     closeDialog()
     // setShowSubmitPopup(false)
   }
@@ -800,34 +814,34 @@ function EventGamePage() {
         </div>
       )}
 
-      {/* <div className="fixed bottom-4 right-4 w-64 rounded-lg overflow-hidden z-50 border-2 border-indigo-500 bg-white shadow-lg">
+      <div className="fixed bottom-4 right-4 w-64 rounded-lg overflow-hidden z-50 border-2 border-indigo-500 bg-white shadow-lg">
         {!monitoringEnabled ? (
           <div className="flex items-center justify-center h-48 text-sm text-gray-600">
             ⏳ Waiting 30s before monitoring starts...
           </div>
         ) : (
           <ul className="grid grid-cols-2 gap-2 p-2 bg-white">
-            {data?.phone?.length ? (
-              data.phone.map((alert: PhoneAlert, idx: number) =>
-                alert.external_img ? (
-                  <li key={idx} className="relative border rounded overflow-hidden bg-gray-100">
-                    <img
-                      src={`${API_BASE_URL}/${alert.external_img}`}
-                      alt={`Alert ${idx}`}
-                      className="w-full h-24 object-cover transition-opacity duration-300 ease-in-out"
-                      loading="lazy"
-                      onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
-                  </li>
-                ) : null
-              )
+            {liveFrame?.image_path ? (
+              <li className="relative border rounded overflow-hidden bg-gray-100">
+                <img
+                  src={`${API_BASE_URL}/${liveFrame.image_path}`}
+                  alt="Phone live"
+                  className="w-full h-24 object-cover transition-opacity duration-300 ease-in-out"
+                  loading="lazy"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+              </li>
             ) : (
-              <div className="col-span-2 text-center text-sm text-gray-500">No images detected</div>
+              <div className="col-span-2 text-center text-sm text-gray-500">
+                No images detected
+              </div>
             )}
           </ul>
-      
         )}
-      </div> */}
+      </div>
+
+
+
       {/* Fullscreen Warning - Only show if monitoring is enabled */}
       {!isFullScreen && isMonitoring && monitoringEnabled && !gameTerminated && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">

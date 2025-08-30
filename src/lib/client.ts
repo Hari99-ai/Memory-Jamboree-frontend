@@ -159,5 +159,5 @@ export { API_BASE_URL };
 
 
 export const eventImg = "https://aidev.gravitinfosystems.com:5000/uploads/events"
-export const ImgUrl = "https://aidev.memoryjamboree.com:5000/uploads";
-export const AUDIO_BASE_URL = "https://aidev.memoryjamboree.com:5000/uploads/events/audio-records/";
+export const ImgUrl = "https://aidev.gravitinfosystems.com:5000/uploads";
+export const AUDIO_BASE_URL = "https://aidev.gravitinfosystems.com:5000/uploads/events/audio-records/";

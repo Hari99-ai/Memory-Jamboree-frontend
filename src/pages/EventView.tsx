@@ -312,24 +312,27 @@ export default function EventView() {
     },
   });
 
+  const handleSend = (discipline_id: string) => {
+  const email = sessionStorage.getItem("email");
 
-  const handleSend = () => {
-    const email = sessionStorage.getItem("email");
+  if (!email || !eventData?.event.event_id || !discipline_id) {
+    toast.error(`Missing required fields: email=${email}, event_id=${eventData?.event.event_id}, disc_id=${discipline_id}`);
+    return;
+  }
 
-    if (!email || !eventData?.event.event_id || !selectedDiscipline?.disc_id) {
-      toast.error("Missing required fields");
-      return;
-    }
+  console.log("email:", email);
+  console.log("event_id:", eventData.event.event_id);
+  console.log("disc_id:", discipline_id);
 
-    const payload: PhoneSendData = {
-      email: email,
-      event_id: String(eventData.event.event_id),
-      disc_id: String(selectedDiscipline.disc_id),
-    };
-
-    // Call the mutation directly, no await needed
-    sendLink(payload);
+  const payload: PhoneSendData = {
+    email: email,
+    event_id: String(eventData.event.event_id),
+    disc_id: discipline_id,
   };
+
+  // Call the mutation directly
+  sendLink(payload);
+};
 
 
   // Function to request media permissions
@@ -636,10 +639,10 @@ export default function EventView() {
   useEventWebSocket(event_id!);
   const eventStatus = useRecoilValue(eventStatusState(event_id!));
   const [ws, setWs] = useState<WebSocket | null>(null);
-const [connectionAttempts, setConnectionAttempts] = useState(0);
-const MAX_CONNECTION_ATTEMPTS = 5;
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const MAX_CONNECTION_ATTEMPTS = 5;
 
-const connectWebSocket = (discipline: DisciplineData) => {
+  const connectWebSocket = (discipline: DisciplineData) => {
   // Close previous connection if still open
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.close(1000, "Reconnecting");
@@ -648,7 +651,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
   const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${event.event_id}/${userId}`;
   const socket = new WebSocket(wsUrl);
 
-  // Timeout if connection doesn't open
+  let heartbeat: NodeJS.Timeout | null = null;
   const connectionTimeout = setTimeout(() => {
     if (socket.readyState !== WebSocket.OPEN) {
       console.warn("⌛ Connection timeout");
@@ -662,14 +665,22 @@ const connectWebSocket = (discipline: DisciplineData) => {
     console.log("✅ Desktop WS connected");
     setConnectionAttempts(0);
 
-    // Optionally send passcode
+    // Send verify message
     socket.send(JSON.stringify({ type: "verify" }));
 
+    // // Immediately request phone status after reconnect
+    // socket.send(JSON.stringify({
+    //   type: "phone_status",
+    //   disciplineId: discipline.disc_id,
+    //   event_id: event.event_id,
+    //   user_id: userId
+    // }));
+
     // Start heartbeat to keep connection alive
-    const heartbeat = setInterval(() => {
+    heartbeat = setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "ping" }));
-      } else {
+      } else if (heartbeat) {
         clearInterval(heartbeat);
       }
     }, 20000);
@@ -680,18 +691,35 @@ const connectWebSocket = (discipline: DisciplineData) => {
       const data = JSON.parse(event.data);
       console.log("📩 Desktop WS message:", data);
 
-      if (data.type === "phone_status") {
-        setPhoneStarted(data.started);
-        if (data.started) {
-          toast.success("Phone Connected");
+      // if (data.type === "phone_status") {
+      //   setPhoneStarted(data.started);
+      //   if (data.started) {
+      //     toast.success("📱 Phone Connected");
+      //   }
+      // } 
+      if (data.type === "phone_ready") {
+        console.log("✅ Phone is ready to start monitoring for user:", data.user_id);
+        // toast.success("📱 Phone Ready");
+        setPhoneStarted(true)
+        // Optionally, auto-start monitoring:
+        // socket.send(JSON.stringify({ type: "start_monitoring" }));
+      } 
 
-          // socket.send(JSON.stringify({ type: "start_monitoring" }));
-        }
-      } else if (data.type === "disconnect") {
+      // if (data.type === "phone_ready") {
+      //   setPhoneStarted(true);
+      //   toast.success("📱 Phone Ready");
+      //   console.log("✅ Phone ready, Start button enabled");
+      // }
+
+      else if (data.type === "phone_started") {
+        setIsMonitoringEnabled(true);
+        toast.success("▶️ Monitoring Started");
+        console.log("▶️ Desktop notified that monitoring started");
+      }
+      else if (data.type === "disconnect") {
         console.warn("🔌 Disconnected by server:", data.message);
         socket.close();
       }
-
     } catch (err) {
       console.error("⚠️ Failed to parse WS message:", err);
     }
@@ -700,22 +728,93 @@ const connectWebSocket = (discipline: DisciplineData) => {
   socket.onerror = (err) => {
     console.error("❌ Desktop WS error:", err);
     clearTimeout(connectionTimeout);
+    if (heartbeat) clearInterval(heartbeat);
     retryConnection(discipline);
   };
 
   socket.onclose = (event) => {
     clearTimeout(connectionTimeout);
+    if (heartbeat) clearInterval(heartbeat);
     console.log(`🔌 Desktop WS closed (clean: ${event.wasClean})`);
+
     if (!event.wasClean && connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
       retryConnection(discipline);
     }
   };
 
-  
-
   setWs(socket);
 };
 
+
+// const connectWebSocket = useCallback((discipline: DisciplineData) => {
+//   if (ws && ws.readyState === WebSocket.OPEN) return; // already connected
+
+//   const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${eventData?.event.event_id}/${userId}`;
+//   const socket = new WebSocket(wsUrl);
+
+//   let heartbeat: NodeJS.Timeout;
+
+//   socket.onopen = () => {
+//     console.log("✅ Desktop WS connected");
+
+//     // Send verify message
+//     socket.send(JSON.stringify({ type: "verify" }));
+
+//     // Heartbeat
+//     heartbeat = setInterval(() => {
+//       if (socket.readyState === WebSocket.OPEN) {
+//         socket.send(JSON.stringify({ type: "ping" }));
+//       } else clearInterval(heartbeat);
+//     }, 20000);
+//   };
+
+//   socket.onmessage = (event) => {
+//     try {
+//       const data = JSON.parse(event.data);
+//       console.log("📩 Desktop WS message:", data);
+
+//       switch (data.type) {
+//         case "phone_ready":
+//           if (data.discipline_id === discipline.disc_id) { // Ensure correct discipline
+//           console.log("✅ Phone is ready for user:", data.user_id);
+//           // toast.success("📱 Phone Ready");  // Only show info
+//           setPhoneStarted(true)
+//         }
+//           break
+
+//         case "phone_started":
+//           setIsMonitoringEnabled(true);
+//           toast.success("▶️ Monitoring Started");
+//           console.log("▶️ Desktop notified monitoring started");
+//           break;
+
+//         case "disconnect":
+//           console.warn("🔌 Disconnected by server:", data.message);
+//           socket.close();
+//           break;
+
+//         default:
+//           break;
+//       }
+//     } catch (err) {
+//       console.error("⚠️ Failed to parse WS message:", err);
+//     }
+//   };
+
+//   socket.onerror = (err) => {
+//     console.error("❌ Desktop WS error:", err);
+//     clearInterval(heartbeat);
+//     retryConnection(discipline);
+//   };
+
+//   socket.onclose = (event) => {
+//     clearInterval(heartbeat);
+//     console.log(`🔌 Desktop WS closed (clean: ${event.wasClean})`);
+//     if (!event.wasClean) retryConnection(discipline);
+//   };
+
+//   setWs(socket);
+// }, [ws, eventData?.event.event_id, userId]);
 
 
 
@@ -756,9 +855,16 @@ const retryConnection = (discipline: DisciplineData) => {
       // setPasscode(""); // Reset passcode state
       connectWebSocket(discipline);
 
+
+      // send Mobile Link
+      
+
       // 2. Continue with UI flow
       setSelectedDiscipline(discipline);
       setShowProctoringModal(true);
+
+      handleSend(String(discipline.disc_id))
+
     } catch (error) {
       console.error("Discipline start failed:", error);
       alert("Failed to initialize proctoring session");
@@ -1209,7 +1315,8 @@ const retryConnection = (discipline: DisciplineData) => {
                                 disabled={buttonDisabled}
                                 onClick={() =>
                                   !buttonDisabled &&
-                                  handleStartDiscipline(discipline)
+                                  handleStartDiscipline(discipline) 
+                          
                                 }
                                 className={`w-full h-11 text-base font-semibold transition-all duration-300 ${
                                   buttonDisabled
@@ -1571,50 +1678,75 @@ const retryConnection = (discipline: DisciplineData) => {
                 </p> */}
                 <div className="flex">
                   <FaLongArrowAltRight className="text-3xl text-red-500  w-28" />
-                  <span className="text-xl  font-semibold text-red-500 px-2 blink">
+                  <span className="text-sm  font-semibold text-red-500 px-2 blink">
                     {" "}
                    Open the link sent to your email on your Mobile Browser and start monitoring to enable dual camera mode.
-
                   </span>
                 </div>
 
+                <div>
+                  <p>Phone Review</p>
+                  <img src={``} alt="phone_img" /> 
+                </div>
+                
                 <button
-                  onClick={handleSend}
-                  disabled={SendLoading}
-                  className={`flex items-center px-3 py-2 border rounded-sm font-medium ${
-                    SendLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:underline text-white'
-                  }`}
-                >
-                  <SendHorizontal className="mr-2 w-4 h-4" /> 
-                  {SendLoading ? 'Sending...' : 'Send Link'}
-                </button>
-
+                onClick={() => {
+                  if (String(!selectedDiscipline?.disc_id)) {
+                    toast.error("Discipline ID is missing!");
+                    return;
+                  }
+                  handleSend(String(selectedDiscipline?.disc_id));
+                }}
+                disabled={SendLoading || !phoneStarted}
+                className={`flex items-center px-3 py-2 border rounded-sm font-medium transition-colors ${
+                  SendLoading || !phoneStarted
+                    ? 'bg-blue-400 cursor-not-allowed text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                <SendHorizontal className="mr-2 w-4 h-4" />
+                {SendLoading
+                  ? 'Sending...'
+                  : phoneStarted
+                    ? 'ReSend Link'
+                    : 'Waiting for Phone ⌚'}
+              </button>
               </div>
-              <div className="bg-blue-50 rounded-xl p-4 mb-6 text-left">
-                <h4 className="font-semibold text-blue-800 mb-2">
-                  Required Permissions:
+
+              <div className="bg-blue-50 rounded-xl p-4 mb-6 text-left shadow-sm">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                  Required Permissions
                 </h4>
-                <ul className="space-y-2 text-sm text-blue-700">
-                  <li className="flex items-center gap-2">
+
+                <ul className="space-y-3 text-sm">
+                  {/* Camera & Microphone Combined */}
+                  <li className="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm border">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          mediaPermissions.video && mediaPermissions.audio
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                        }`}
+                      />
+                      <span>Camera & Microphone Access</span>
+                    </div>
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        mediaPermissions.video ? "bg-green-500" : "bg-red-500"
+                      className={`text-xs font-semibold px-2 py-1 rounded ${
+                        mediaPermissions.video && mediaPermissions.audio
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
                       }`}
-                    />
-                    Camera Access -{" "}
-                    {mediaPermissions.video ? "Granted" : "Required"}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        mediaPermissions.audio ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    />
-                    Microphone Access -{" "}
-                    {mediaPermissions.audio ? "Granted" : "Required"}
+                    >
+                      {mediaPermissions.video && mediaPermissions.audio
+                        ? "Granted"
+                        : "Required"}
+                    </span>
                   </li>
                 </ul>
               </div>
+
 
               <div className="flex gap-3">
                 <button
@@ -1690,3 +1822,4 @@ const retryConnection = (discipline: DisciplineData) => {
     </>
   );
 }
+

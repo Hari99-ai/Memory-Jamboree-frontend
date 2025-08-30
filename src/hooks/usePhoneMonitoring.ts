@@ -131,9 +131,6 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
   }, [stopPhoneAlertLoop, safeSend, user_id, event_id, discipline_id])
 
 
-
-
-
   /** ---- WS INIT ---- */
   const initWebSocket = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return
@@ -160,24 +157,27 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
           startPhoneAlertLoop()
         }
       }
-      // if (data.type === "pause_monitoring") {
-      //   setPaused(true)
-      //   if (monitorIntervalRef.current) {
-      //     clearInterval(monitorIntervalRef.current)
-      //     monitorIntervalRef.current = null
-      //   }
-      // }
-      // if (data.type === "resume_monitoring"){
-      //   setPaused(false)
-      // }
-    
+      if (data.type === "pause_monitoring") {
+        setPaused(true)
+        if (monitorIntervalRef.current) {
+          clearInterval(monitorIntervalRef.current)
+          monitorIntervalRef.current = null
+        }
+      }
 
+      if (data.type === "resume_monitoring"){
+        setPaused(false)
+        if (!isMonitoring) {
+          startMonitoring() 
+          startPhoneAlertLoop()
+        }
+      }
+    
       if (data.type === "stop_monitoring") {
         stopMonitoring()
         alert("Monitoring stopped")
         return
       }
-        
         
       if (data.type === "monitoring") {
         setPhoneDetected(data.phone_detected == 1 ? 1 : 0)
