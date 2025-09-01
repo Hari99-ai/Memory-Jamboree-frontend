@@ -20,6 +20,7 @@ import {
   MessageData,
   setPasswordData,
   WindowLogs,
+  PhoneSendData,
 } from "../types";
 
 // The static 'token' and 'headers' constants have been removed.
@@ -523,8 +524,8 @@ export const StudentEventsReport = async () => {
   return response.data;
 }
 
-export const sendPhoneLinkedMail = async(email:string) => {
-  const response = await api.post("/send-mail", { email });
+export const sendPhoneLinkedMail = async(data:PhoneSendData) => {
+  const response = await api.post("/send-mail", data);
   return response.data;
 }
 

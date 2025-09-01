@@ -219,6 +219,13 @@ export default function EventView() {
   const [, setEventTimeExpired] = useState(false);
   const [isInFullScreenFlow, setIsInFullScreenFlow] = useState(false);
 
+  const [frame, setFrame] = useState<string | null>(null);
+  // const wsRef = useRef<WebSocket | null>(null);
+
+  const [faceDetected , setFaceDetected] = useState(false)
+  const [handDetected , setHandDetected ] = useState(false)
+
+
   // Add countdown state
   const [countdown, setCountdown] = useState<{
     days: number;
@@ -264,6 +271,9 @@ export default function EventView() {
       // window.location.reload() // FIXED: This was causing a refresh loop if the backend hadn't updated the event status yet.
     }
   }, [eventData]);
+
+
+
 
   // Countdown effect
   useEffect(() => {
@@ -703,7 +713,17 @@ export default function EventView() {
         setPhoneStarted(true)
         // Optionally, auto-start monitoring:
         // socket.send(JSON.stringify({ type: "start_monitoring" }));
-      } 
+      }
+      
+      else if(data.type === "prechecking"){
+        setFaceDetected(true)
+        setHandDetected(true)
+      }
+
+      else if (data.type === "frame") {
+        console.log(data);
+        setFrame(data.image);
+      }
 
       // if (data.type === "phone_ready") {
       //   setPhoneStarted(true);
@@ -744,6 +764,9 @@ export default function EventView() {
 
   setWs(socket);
 };
+
+
+
 
 
 // const connectWebSocket = useCallback((discipline: DisciplineData) => {
@@ -1656,9 +1679,9 @@ const retryConnection = (discipline: DisciplineData) => {
       {/* Media Permission Modal */}
       {showPermissionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full relative border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full relative border border-gray-200">
             <div className="p-8 text-center">
-              <div className="mb-6">
+              <div className="mb-6 flex space-x-5">
                 <div className="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 mb-4">
                   <AlertTriangle className="h-4 w-4 text-blue-600" />
                 </div>
@@ -1683,18 +1706,47 @@ const retryConnection = (discipline: DisciplineData) => {
                    Open the link sent to your email on your Mobile Browser and start monitoring to enable dual camera mode.
                   </span>
                 </div>
-
-                <div>
+                <div className="flex justify-between">
                   <p>Phone Review</p>
-                  <img src={``} alt="phone_img" /> 
+                  <div className="w-[250px] h-full flex items-center justify-center bg-black">
+                    {frame ? (
+                      <img src={frame} className="object-cover w-full h-full" alt="Phone stream" />
+                    ) : (
+                      <div className="text-white">Waiting for phone camera...</div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col space-y-2">
+                    <p className="font-semibold">Biometric Verification</p>
+
+                    {/* Face Detection */}
+                    <div className="flex items-center gap-2">
+                      <p>Face:</p>
+                      {faceDetected ? (
+                        <span className="text-green-600 font-bold">✅ Detected</span>
+                      ) : (
+                        <span className="text-red-600 font-bold">❌ Not Detected</span>
+                      )}
+                    </div>
+
+                    {/* Hand Detection */}
+                    <div className="flex items-center gap-2">
+                      <p>Hand:</p>
+                      {handDetected ? (
+                        <span className="text-green-600 font-bold">✅ Detected</span>
+                      ) : (
+                        <span className="text-red-600 font-bold">❌ Not Detected</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 <button
                 onClick={() => {
-                  if (String(!selectedDiscipline?.disc_id)) {
-                    toast.error("Discipline ID is missing!");
-                    return;
-                  }
+                  // if (String(!selectedDiscipline?.disc_id)) {
+                  //   toast.error("Discipline ID is missing!");
+                  //   return;
+                  // }
                   handleSend(String(selectedDiscipline?.disc_id));
                 }}
                 disabled={SendLoading || !phoneStarted}

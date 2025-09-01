@@ -18,7 +18,6 @@ export default function PhoneStreamFrameCapture({ videoRef, discipline_id, event
   useEffect(() => {
     if (!videoRef.current) return;
 
-    // Initialize WebSocket
     wsRef.current = new WebSocket(`${SocketURL}/phone/${discipline_id}/${event_id}/${user_id}`);
     wsRef.current.onopen = () => console.log("📡 Live camera streaming started");
 
@@ -39,7 +38,9 @@ export default function PhoneStreamFrameCapture({ videoRef, discipline_id, event
         image: frame,
         timestamp: Date.now()
       }));
-      }, 1000); // send every 300ms
+    }, 1000);
+    console.log("frame send to phone 📱")
+    
 
     return () => {
       if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
@@ -47,7 +48,7 @@ export default function PhoneStreamFrameCapture({ videoRef, discipline_id, event
     };
   }, [videoRef, discipline_id, event_id, user_id]);
 
-  return null; // this component does not render anything
+  return null;
 }
 
 

@@ -62,7 +62,7 @@ export default function Sidebar() {
   ]
 
   const [id, setId] = useState(() => sessionStorage.getItem("userId"));
-  const [token, setToken] = useState(() =>
+  const [, setToken] = useState(() =>
     sessionStorage.getItem("auth_token")
   );
 
@@ -77,7 +77,7 @@ export default function Sidebar() {
 
   const { data: user } = useQuery({
     queryKey: ["user", id],
-    queryFn: () => getUserById(id!, token!),
+    queryFn: () => getUserById(id!),
     refetchOnWindowFocus: false,
   });
 

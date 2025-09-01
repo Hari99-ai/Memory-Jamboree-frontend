@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { usePhoneMonitoring } from "../hooks/usePhoneMonitoring.ts";
-import { usePreMonitoring } from "../hooks/usePreMonitoring.ts";
-import PhoneStreamFrameCapture from "./PhoneStream.tsx";
+// import { usePreMonitoring } from "../hooks/usePreMonitoring.ts";
+// import PhoneStreamFrameCapture from "./PhoneStream.tsx";
 
 export default function PhoneStreamCam() {
   const location = useLocation();
@@ -24,19 +24,30 @@ export default function PhoneStreamCam() {
     videoRef,
     verified,
     isMonitoring,
-    sendPhoneStatus,
-    phoneDetected,
-    multiplePeople,
+    // sendPhoneStatus,
+    startCameraPrecheck
+    // phoneDetected,
+
+    // multiplePeople,
   } = usePhoneMonitoring({ event_id, discipline_id, user_id, passcode });
 
-  const {
-    // frontVideoRef,
-    // backVideoRef,
-    validationPassed,
-    startValidation,
-  } = usePreMonitoring({
-    onValidationChange: (valid) => console.log("Position valid:", valid),
-  });
+  // const {
+  //   // frontVideoRef,
+  //   // backVideoRef,
+  //   validationPassed,
+  //   startValidation,
+  //   setMissingParts,
+  //   setValidationPassed,
+  //   onValidationChange,
+  //   missingParts,
+  //   handsVisible,
+  //   headVisible,
+  //   // legsVisible,
+  //   // tableVisible,
+  //   laptopVisible
+  // } = usePreMonitoring({
+  //   onValidationChange: (valid) => console.log("Position valid:", valid),
+  // });
 
   /** ---- CAMERA ACCESS ---- */
   const initCamera = useCallback(async () => {
@@ -64,17 +75,33 @@ export default function PhoneStreamCam() {
     };
   }, [initCamera]);
 
-  /** ---- START MONITORING ---- */
+  // useEffect(() => {
+  //   const missing: string[] = []
+  //   if (!headVisible) missing.push("Head")
+  //   if (!handsVisible) missing.push("Hands")
+  //   // if (!legsVisible) missing.push("Legs")
+  //   // if (!tableVisible) missing.push("Table")
+  //   if (!laptopVisible) missing.push("Laptop")
+    
+  //   setMissingParts(missing)
+  //   const valid = missing.length === 0
+  //   setValidationPassed(valid)
+  //   if (onValidationChange) onValidationChange(valid)
+  // }, [headVisible, handsVisible, legsVisible, tableVisible, laptopVisible, onValidationChange])
+
+  // /** ---- START MONITORING ---- */
   const handleStart = async () => {
     if (!verified) return;
 
     // Start pre-monitoring validation first
-    startValidation();
+    // startValidation();
 
-    if (!validationPassed) {
-      alert("Please adjust your position until the camera captures you clearly.");
-      return;
-    }
+    // console.log("validation" , validationPassed)
+
+    // if (!validationPassed) {
+    //   alert("Please adjust your position until the camera captures you clearly.");
+    //   return;
+    // }
 
     // If validation passes, start countdown
     setShowInstructions(false);
@@ -85,13 +112,32 @@ export default function PhoneStreamCam() {
       setTimer((prev) => {
         if (prev <= 1) {
           clearInterval(countdown);
-          sendPhoneStatus();
+          startCameraPrecheck(30_000, (remainingSeconds) => {
+            // Update countdown timer dynamically
+            setTimer(Math.ceil(remainingSeconds / 1000));
+          });
+          // sendPhoneStatus();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
   };
+
+
+//   const handleStart = async () => {
+//   if (!verified) return;
+
+//   setShowInstructions(false);
+//   setStarted(true);
+//   setTimer(30);
+
+//   // Start precheck immediately for 30s
+  
+// };
+
+
+
 
   /** ---- TIMER FORMAT ---- */
   const formatTimer = (seconds: number) => {
@@ -122,15 +168,20 @@ export default function PhoneStreamCam() {
         muted
       />
 
+      {/* {missingParts.length > 0 && (
+        <div className="text-red-500 p-4">
+          Missing: {missingParts.join(", ")}
+        </div>
+      )} */}
 
-      {videoRef.current && (
+      {/* {videoRef.current && (
         <PhoneStreamFrameCapture
           videoRef={videoRef}
           discipline_id={discipline_id}
           event_id={event_id}
           user_id={user_id}
         />
-      )}
+      )} */}
 
       {/* Camera Toggle Button */}
       <button
@@ -170,9 +221,9 @@ export default function PhoneStreamCam() {
       )}
 
       {/* Status footer */}
-      <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
+      {/* <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
         Phone Detected: {phoneDetected} | Multiple People: {multiplePeople}
-      </div>
+      </div> */}
     </div>
   );
 }
