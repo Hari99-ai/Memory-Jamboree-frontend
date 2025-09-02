@@ -125,29 +125,41 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
   // }
 
   // Function to pause monitoring API calls
-  const pauseMonitoring = useCallback(() => {
-    console.log("⏸️ Pausing monitoring API calls due to warning dialog...");
-    setMonitoringPaused(true);
-    monitoringPausedRef.current = true;
-    logToWindow("⏸️ Monitoring API calls paused - Dialog open");
+  const autoResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "pause_monitoring" }));
-      console.log("📡 Sent pause_monitoring to phone");
+// Updated pauseMonitoring
+  const pauseMonitoring = useCallback(() => {
+    if (monitoringPausedRef.current) {
+      // Already paused, reset the timer
+      console.log("⏸️ Monitoring already paused, resetting 5s timer...");
+      if (autoResumeTimeoutRef.current) clearTimeout(autoResumeTimeoutRef.current);
+    } else {
+      // First-time pause
+      console.log("⏸️ Pausing monitoring API calls due to warning...");
+      setMonitoringPaused(true);
+      monitoringPausedRef.current = true;
+      logToWindow("⏸️ Monitoring API calls paused - Warning triggered");
+
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "pause_monitoring" }));
+        console.log("📡 Sent pause_monitoring to phone");
+      }
     }
 
-    // Automatically resume after 5 seconds
-    setTimeout(() => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        console.log("▶️ Automatically resuming monitoring after 5s...");
-        setMonitoringPaused(false);
-        monitoringPausedRef.current = false;
-        wsRef.current.send(JSON.stringify({ type: "resume_monitoring" }));
-        console.log("📡 Sent resume_monitoring to phone");
-      }
-    }, 5000);
-  }, []);
+  // Start/restart 5-second resume timer
+  autoResumeTimeoutRef.current = setTimeout(() => {
+    console.log("▶️ Automatically resuming monitoring after 5s...");
+    setMonitoringPaused(false);
+    monitoringPausedRef.current = false;
 
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "resume_monitoring" }));
+      console.log("📡 Sent resume_monitoring to phone");
+    }
+
+    autoResumeTimeoutRef.current = null; // clear reference
+  }, 5000);
+}, []);
 
   // Function to resume monitoring API calls
   const resumeMonitoring = useCallback(() => {
@@ -300,54 +312,61 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
       }
 
       if (gameTerminated) return;
-
       if (response.type === "phone_alert" || response.type === "alert" || response.data) {
-          const alertData = response.alert || response.data || {};
+        const alertData = response.alert || response.data || {};
 
-          let violationType = "";
-          if (alertData.phone_detected) violationType = "Phone detected";
-          else if (alertData.person_count < 1) violationType = "No Person Found";
-          else if (alertData.persons_status > 0) violationType = "Multiple people detected";
-          else if (focus_loss_count.current > 5) violationType = "Your focus continuously lost";
-          else if (alertData.voice_detected > 5) violationType = "Continuous voice detected";
+        let violationType = "";
+        if (alertData.phone_detected) violationType = "Phone detected";
+        else if (alertData.person_count < 1) violationType = "No Person Found";
+        else if (alertData.persons_status > 0) violationType = "Multiple people detected";
+        else if (focus_loss_count.current > 5) violationType = "Focus continuously lost";
+        else if (alertData.voice_detected > 5) violationType = "Continuous voice detected";
 
-          // Skip if dialog is open or no violation
-          if (!violationType || dialogRef.current) {
-            console.log(`[${getTimeStamp()}] Skipped violation: ${violationType || "none"}, dialog paused: ${dialogRef.current}`);
-            return;
-          }
-
-          // Mark dialog as open immediately to prevent stacking
-          dialogRef.current = true;
-
-          setWarningCount(prev => {
-            const next = prev + 1;
-            setLastType(violationType);
-            setViolationHistory(prevHistory => [
-              ...prevHistory,
-              `${getTimeStamp()}: ${violationType}`
-            ]);
-
-            if (next === 1) {
-              pauseMonitoring();
-              triggerAlert(`⚠️ First Warning: ${violationType}`);
-              setWarningTitle("⚠️ First Warning!");
-              setDialogOpen(true);
-            } else if (next === 2) {
-              pauseMonitoring();
-              triggerAlert(`⚠️ Second Warning: ${violationType}`);
-              setWarningTitle("⚠️ Second Warning - Final Chance!");
-              setDialogOpen(true);
-            } else if (next >= 3) {
-              setWarningTitle("⚠️ Game Terminated!");
-              setDialogOpen(true);
-              setTimeout(() => handleGameTermination(), 100);
-            }
-
-            return next;
-          });
+        // Skip if no violation or dialog already open
+        if (!violationType || dialogRef.current) {
+          console.log(`[${getTimeStamp()}] Skipped violation: ${violationType || "none"}, dialog paused: ${dialogRef.current}`);
+          return;
         }
 
+        // Increment warning count
+        setWarningCount(prev => {
+          const next = prev + 1;
+          setLastType(violationType);
+          setViolationHistory(prevHistory => [
+            ...prevHistory,
+            `${getTimeStamp()}: ${violationType}`
+          ]);
+
+          if (next === 1) {
+            // First warning
+            console.log("⚠️ First Warning triggered");
+            dialogRef.current = true;
+            pauseMonitoring(); // automatic 5s pause (resets if already paused)
+            triggerAlert(`⚠️ First Warning: ${violationType}`);
+            setWarningTitle("⚠️ First Warning!");
+            setDialogOpen(true);
+          } else if (next === 2) {
+            // Second warning
+            console.log("⚠️ Second Warning triggered");
+            dialogRef.current = true;
+            pauseMonitoring(); // automatic 5s pause (resets if already paused)
+            triggerAlert(`⚠️ Second Warning: ${violationType}`);
+            setWarningTitle("⚠️ Second Warning - Final Chance!");
+            setDialogOpen(true);
+          } else if (next >= 3) {
+            // Third warning → terminate game
+            console.log("🚨 Third Warning: Game Terminated!");
+            dialogRef.current = true;
+            setWarningTitle("⚠️ Game Terminated!");
+            setDialogOpen(true);
+
+            setTimeout(() => handleGameTermination(), 100);
+          }
+
+          return next;
+        });
+      }
+      
       if ((response.type === "alert" || response.type === "desktop_alert") && response.from === "desktop") {
         console.log("💻 Desktop info alert:", response.alert);
         return;
@@ -364,7 +383,7 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
     ws.onclose = () => console.log("❌ WebSocket disconnected");
     ws.onerror = (err) => console.error("WebSocket error:", err);
 
-  }, [enabled, config.discipline_id, config.event_id, config.user_id, gameTerminated, triggerAlert, pauseMonitoring, handleGameTermination, stopMonitoring])
+  }, [enabled, config.discipline_id, config.event_id, config.user_id, gameTerminated, triggerAlert, pauseMonitoring, handleGameTermination])
 
   const { mutate: window_logs } = useMutation({
     mutationFn: window_events,

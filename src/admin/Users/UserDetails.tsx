@@ -102,19 +102,30 @@ export default function UserDetails() {
   const useEvent = data?.events || [];
   const user = data?.user || {};
 
-  console.log("user - ", user);
-  console.log("disciplines - ", disciplines);
-  console.log("userEvents - ", useEvent);
+  // Create a unique list of events based on event_id
+  const uniqueEvents = Array.from(new Map(useEvent.map(item => [item.event_id, item])).values());
 
   const getDisciplineScore = (eventItem: UserEventsResponse, discId: number): string => {
     const disciplineData = eventItem.disciplines?.find(d => d.disc_id === discId);
-    return disciplineData ? parseFloat(disciplineData.finalscore).toFixed(2) : "-";
+    if (!disciplineData) {
+      return "NA";
+    }
+    const parsedScore = parseFloat(disciplineData.finalscore);
+    return isNaN(parsedScore) ? "NA" : parsedScore.toFixed(2);
   };
 
   const getDisciplineTime = (eventItem: UserEventsResponse, discId: number): string => {
     const disciplineData = eventItem.disciplines?.find(d => d.disc_id === discId);
-    return disciplineData ? disciplineData.time_taken : "-";
+    return disciplineData ? disciplineData.time_taken : "NA";
   };
+
+  // Helper function to format overall score and handle NaN
+  const formatOverallScore = (score: number | string | undefined): string => {
+    if (score === undefined || score === null) return "NA";
+    const parsedScore = parseFloat(String(score));
+    return isNaN(parsedScore) ? "NA" : parsedScore.toFixed(2);
+  };
+
 
   if (isLoading) {
     return (
@@ -280,22 +291,22 @@ export default function UserDetails() {
               </tr>
             </thead>
             <tbody>
-              {useEvent?.map((item, index) => (
+              {uniqueEvents.map((item, index) => (
                 <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-indigo-50"}>
                   <td className="px-3 py-2 text-xs border-2 border-indigo-200">{item.event_name}</td>
                   <td className="px-3 py-2 text-xs border-2 border-indigo-200">{item.category_name}</td>
-                  <td className="px-3 py-2 text-xs font-semibold text-green-600 border-2 border-indigo-200">{parseFloat(String(item.overall_score)).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-xs font-semibold text-green-600 border-2 border-indigo-200">{formatOverallScore(item.overall_score)}</td>
                   <td className="px-3 py-2 text-xs font-semibold text-yellow-600 border-2 border-indigo-200">{item.event_rank}</td>
                   <td className="px-3 py-2 text-xs font-semibold text-blue-600 border-2 border-indigo-200">{item.cat_rank}</td>
                   {disciplines?.map((discipline) => (
                     <>
                       <td key={`${discipline.disc_id}-score`} className="px-2 py-2 text-xs text-center border-t border-b border-l-2 border-r border-indigo-200">
-                        <span className={getDisciplineScore(item, discipline.disc_id!) !== "-" ? "text-green-600 font-semibold" : "text-gray-400"}>
+                        <span className={getDisciplineScore(item, discipline.disc_id!) !== "NA" ? "text-green-600 font-semibold" : "text-gray-400"}>
                           {getDisciplineScore(item, discipline.disc_id!)}
                         </span>
                       </td>
                       <td key={`${discipline.disc_id}-time`} className="px-2 py-2 text-xs text-center border-t border-b border-l border-r-2 border-indigo-200">
-                        <span className={getDisciplineTime(item, discipline.disc_id!) !== "-" ? "text-gray-600" : "text-gray-400"}>
+                        <span className={getDisciplineTime(item, discipline.disc_id!) !== "NA" ? "text-gray-600" : "text-gray-400"}>
                           {getDisciplineTime(item, discipline.disc_id!)}
                         </span>
                       </td>
@@ -303,7 +314,7 @@ export default function UserDetails() {
                   ))}
                 </tr>
               ))}
-              {useEvent.length === 0 && (
+              {uniqueEvents.length === 0 && (
                 <tr>
                   <td colSpan={5 + (disciplines?.length || 0) * 2} className="px-4 py-5 text-center text-gray-500">
                     No events found for this user.

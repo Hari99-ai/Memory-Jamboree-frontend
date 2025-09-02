@@ -49,6 +49,7 @@ type Score = {
   raw_score:number;
   score:number;
   rank:number;
+  time_taken?:number;
 }
 
 
@@ -128,6 +129,7 @@ export interface PracticeTestRecord {
 export interface UserAssesmentRespone  {
   finalscore:number;
   calc_score:number;
+  time_taken?:number;
   createdat:string;
   events: EventData[]
 }
@@ -241,6 +243,7 @@ export interface AssesmentData {
   face_status?:VerifyFaceInput[];
   finalscore:number;
   created_at:string;
+  time_taken?:string;
 }
 
 export interface MonitoringData {

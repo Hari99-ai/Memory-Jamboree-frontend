@@ -16,7 +16,7 @@ export default function PhoneStreamCam() {
   const passcode = searchParams.get("passcode")!;
 
   const [started, setStarted] = useState(false);
-  const [timer, setTimer] = useState(30);
+  // const [timer, setTimer] = useState(30);
   const [showInstructions, setShowInstructions] = useState(false);
   const [cameraMode, setCameraMode] = useState<"user" | "environment">("environment");
 
@@ -25,7 +25,8 @@ export default function PhoneStreamCam() {
     verified,
     isMonitoring,
     // sendPhoneStatus,
-    startCameraPrecheck
+    startCameraPrecheck,
+    precheckTimer
     // phoneDetected,
 
     // multiplePeople,
@@ -90,52 +91,45 @@ export default function PhoneStreamCam() {
   // }, [headVisible, handsVisible, legsVisible, tableVisible, laptopVisible, onValidationChange])
 
   // /** ---- START MONITORING ---- */
+  // const handleStart = async () => {
+  //   if (!verified) return;
+
+  //   // Start pre-monitoring validation first
+  //   // startValidation();
+
+  //   // console.log("validation" , validationPassed)
+
+  //   // if (!validationPassed) {
+  //   //   alert("Please adjust your position until the camera captures you clearly.");
+  //   //   return;
+  //   // }
+
+  //   // If validation passes, start countdown
+  //   setShowInstructions(false);
+  //   setStarted(true);
+  //   setTimer(30);
+
+  //   const countdown = setInterval(() => {
+  //     setTimer((prev) => {
+  //       if (prev <= 1) {
+  //         clearInterval(countdown);
+  //         startCameraPrecheck()
+  //         // sendPhoneStatus();
+  //         return 0;
+  //       }
+  //       return prev - 1;
+  //     });
+  //   }, 1000);
+  // };
+
+
   const handleStart = async () => {
     if (!verified) return;
-
-    // Start pre-monitoring validation first
-    // startValidation();
-
-    // console.log("validation" , validationPassed)
-
-    // if (!validationPassed) {
-    //   alert("Please adjust your position until the camera captures you clearly.");
-    //   return;
-    // }
-
-    // If validation passes, start countdown
     setShowInstructions(false);
     setStarted(true);
-    setTimer(30);
 
-    const countdown = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdown);
-          startCameraPrecheck(30_000, (remainingSeconds) => {
-            // Update countdown timer dynamically
-            setTimer(Math.ceil(remainingSeconds / 1000));
-          });
-          // sendPhoneStatus();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    startCameraPrecheck(30_000);
   };
-
-
-//   const handleStart = async () => {
-//   if (!verified) return;
-
-//   setShowInstructions(false);
-//   setStarted(true);
-//   setTimer(30);
-
-//   // Start precheck immediately for 30s
-  
-// };
-
 
 
 
@@ -168,6 +162,7 @@ export default function PhoneStreamCam() {
         muted
       />
 
+
       {/* {missingParts.length > 0 && (
         <div className="text-red-500 p-4">
           Missing: {missingParts.join(", ")}
@@ -186,7 +181,7 @@ export default function PhoneStreamCam() {
       {/* Camera Toggle Button */}
       <button
         onClick={handleToggleCamera}
-        className="absolute top-5 right-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow-md z-50"
+        className="absolute bottom-0 right-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow-md z-50"
       >
         {cameraMode === "environment" ? "Switch to Front" : "Switch to Back"}
       </button>
@@ -195,7 +190,8 @@ export default function PhoneStreamCam() {
       <div className="absolute top-5 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
         {!started && !verified && "Verifying..."}
         {!started && verified && "Ready to start"}
-        {started && !isMonitoring && `⏳ Starting in ${formatTimer(timer)}`}
+        {started && !isMonitoring && precheckTimer > 0 && 
+          `⏳ Complete verification in ${formatTimer(precheckTimer)} seconds...`}
         {isMonitoring && "🎥 Monitoring Active"}
       </div>
 

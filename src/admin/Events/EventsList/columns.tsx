@@ -6,17 +6,16 @@ import { ArrowUpDown, Trash2 } from "lucide-react";
 import { deleteEvent } from "../../../lib/api";
 import toast from "react-hot-toast";
 import { NavLink } from "react-router-dom";
-// import { Badge } from "../../../components/ui/badge";
-// import { EventStatus, StatusTypes } from "../../data/data";
-// import clsx from "clsx"
-import { StatusCell } from "../../components/StatusCall";
+import { Badge } from "../../../components/ui/badge";
+import { EventStatus, StatusTypes } from "../../data/data";
+import clsx from "clsx"
 // import { useState } from "react";
 // import {  NavLink } from "react-router-dom";
 // import { deleteUser } from "../../../lib/api";
 // import toast from "react-hot-toast";
 
 export const columns = (
-refetchUsers?: () => void,
+  refetchUsers?: () => void,
   // handleEdit: (event: EventData) => void
 ): ColumnDef<EventData>[] => [
   {
@@ -90,23 +89,20 @@ refetchUsers?: () => void,
   accessorKey: 'etype',
   header: "Status",
   cell: ({ row }: any) => {
-    
-    //  const etype = row.original.etype;
+     const etype = row.original.etype;
 
-    //   let label: EventStatus = "expired";
-    //   if (etype === 1) label = "active"; // Live
-    //   else if (etype === 2) label = "upcoming"; // Upcoming
-    //   else label = "expired"; // Expired
+      let label: EventStatus = "expired";
+      if (etype === 1) label = "active"; // Live
+      else if (etype === 2) label = "upcoming"; // Upcoming
+      else label = "expired"; // Expired
 
-    //   const customClass = StatusTypes.get(label) ?? "";
+      const customClass = StatusTypes.get(label) ?? "";
 
-    //   return (
-    //     <Badge className={clsx("px-2 py-1 text-sm rounded-md border", customClass)}>
-    //       {label.charAt(0).toUpperCase() + label.slice(1)}
-    //     </Badge>
-    //   );
-
-    return <StatusCell eventId={row.original.event_id} etype={row.original.etype} />
+      return (
+        <Badge className={clsx("px-2 py-1 text-sm rounded-md border", customClass)}>
+          {label.charAt(0).toUpperCase() + label.slice(1)}
+        </Badge>
+      );
   },
 },
   // {

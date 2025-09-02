@@ -14,6 +14,7 @@ interface PhoneMonitoringProps {
   passcode?: string
 }
 
+
 export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode }: PhoneMonitoringProps) {
   const wsRef = useRef<WebSocket | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -30,7 +31,16 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
   const prevFaceDetectedRef = useRef(0)
   const prevHandDetectedRef = useRef(0)
 
- const phoneReadySentRef = useRef(false) //
+  const phoneReadySentRef = useRef(false) //
+  // Add near other useState calls
+  const [precheckTimer, setPrecheckTimer] = useState<number>(0);
+  const lastSentRef = useRef<number | null>(null);
+
+
+//  const [verificationTimer, setVerificationTimer] = useState<number | null>(null);
+// const verificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+// const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
 
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -75,104 +85,52 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
   }, [discipline_id, event_id, user_id, safeSend]);
 
 
-  const sendPrecheck = useCallback(() => {
-    if (
-      faceDetected === prevFaceDetectedRef.current &&
-      handDetected === prevHandDetectedRef.current
-    ) return;
+// 🔹 sendPrecheck with forced resend every 5 seconds
+const sendPrecheck = useCallback(() => {
+  const now = Date.now();
+  const shouldForceSend = !lastSentRef.current || now - lastSentRef.current >= 5000;
 
-    prevFaceDetectedRef.current = faceDetected;
-    prevHandDetectedRef.current = handDetected;
+  if (
+    !shouldForceSend &&
+    faceDetected === prevFaceDetectedRef.current &&
+    handDetected === prevHandDetectedRef.current
+  ) {
+    return; // Skip duplicate updates unless forced
+  }
 
-    safeSend({
-      type: "prechecking",
-      face: faceDetected,
-      hand: handDetected,
-      timestamp: Date.now()
-    });
+  prevFaceDetectedRef.current = faceDetected;
+  prevHandDetectedRef.current = handDetected;
+  lastSentRef.current = now;
 
-    if (faceDetected === 1 && handDetected === 1 && !phoneReadySentRef.current) {
-      phoneReadySentRef.current = true;
-      sendPhoneStatus();
-    }
-  }, [faceDetected, handDetected, safeSend, sendPhoneStatus]);
+  safeSend({
+    type: "prechecking",
+    face: faceDetected,
+    hand: handDetected,
+    timestamp: now,
+  });
 
-  // const startCameraPrecheck = useCallback(async () => {
-  //   if (!videoRef.current) {
-  //     console.error("❌ No video element found.");
-  //     return;
-  //   }
+  // Trigger phone ready status if both detected and not yet sent
+  if (faceDetected === 1 && handDetected === 1 && !phoneReadySentRef.current) {
+    phoneReadySentRef.current = true;
+    sendPhoneStatus();
+    console.log("✅ Phone ready sent to desktop");
+  }
+}, [faceDetected, handDetected, safeSend, sendPhoneStatus]);
 
-  //   const videoEl = videoRef.current;
-  //   console.log("📹 Starting camera precheck...");
-
-  //   try {
-  //     // Initialize TensorFlow
-  //     console.log("⚙ Initializing TensorFlow backend...");
-  //     await tf.setBackend("webgl");
-  //     await tf.ready();
-  //     console.log("✅ TensorFlow ready.");
-
-  //     // Start the camera
-  //     console.log("📷 Requesting camera access...");
-  //     const stream = await navigator.mediaDevices.getUserMedia({
-  //       video: { facingMode: "environment", width: 640, height: 480 },
-  //       audio: false,
-  //     });
-  //     videoEl.srcObject = stream;
-  //     videoEl.autoplay = true;
-  //     videoEl.playsInline = true;
-  //     videoEl.muted = true;
-  //     await videoEl.play();
-  //     console.log("✅ Camera stream started.");
-
-  //     // Load models
-  //     console.log("⏳ Loading detectors...");
-  //     const handDetector = await handPose.createDetector(
-  //       handPose.SupportedModels.MediaPipeHands,
-  //       { runtime: "tfjs", maxHands: 1 }
-  //     );
-
-  //     const faceDetector = await faceLandmarks.createDetector(
-  //       faceLandmarks.SupportedModels.MediaPipeFaceMesh,
-  //       { runtime: "tfjs", maxFaces: 1, refineLandmarks: false }
-  //     );
-  //     console.log("✅ Detectors loaded successfully.");
-
-  //     // Frame processing
-  //     const processFrame = async () => {
-  //       if (!videoEl) return;
-
-  //       try {
-  //         const hands = await handDetector.estimateHands(videoEl);
-  //         setHandDetected(hands.length ? 1 : 0);
-
-  //         const faces = await faceDetector.estimateFaces(videoEl);
-  //         setFaceDetected(faces.length ? 1 : 0);
-
-  //         sendPrecheck(); // Send current detection status
-  //       } catch (frameErr) {
-  //         console.error("⚠️ Frame processing error:", frameErr);
-  //       }
-
-  //       requestAnimationFrame(processFrame);
-  //     };
-
-  //     processFrame();
-  //   } catch (err) {
-  //     console.error("❌ Failed to start camera precheck:", err);
-  //   }
-  // }, [sendPrecheck]);
-
-  const startCameraPrecheck = useCallback(
-  async (durationMs: number = 30_000, onTick?: (remainingMs: number) => void) => {
+// 🔹 startCameraPrecheck with 30-second timer & final notification
+const startCameraPrecheck = useCallback(
+  async (durationMs: number = 30000, onTick?: (remainingMs: number) => void) => {
     if (!videoRef.current) return;
     const videoEl = videoRef.current;
 
     // Stop previous stream
     const prevStream = videoEl.srcObject as MediaStream | null;
-    prevStream?.getTracks().forEach(t => t.stop());
+    prevStream?.getTracks().forEach((t) => t.stop());
     videoEl.srcObject = null;
+
+    // Reset timer
+    setPrecheckTimer(Math.ceil(durationMs / 1000));
+    phoneReadySentRef.current = false;
 
     try {
       await tf.setBackend("webgl");
@@ -198,10 +156,7 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
         { runtime: "tfjs", modelType: "lite" }
       );
 
-      console.log("Detectors loaded.");
-
       const startTime = Date.now();
-
       let localHandDetected = 0;
       let localHeadDetected = 0;
 
@@ -212,38 +167,42 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
         }
 
         try {
-          // Hand detection
           const hands = await handDetector.estimateHands(videoEl);
-          localHandDetected = hands.length ? 1 : 0;
+          localHandDetected = hands.some((hand:any) => (hand.score?.[0] ?? 0) > 0.8) ? 1 : 0;
           setHandDetected(localHandDetected);
 
-          // Head detection using pose keypoints
           const poses = await poseDetector.estimatePoses(videoEl);
-          localHeadDetected = poses.some(pose =>
-            pose.keypoints.some(kp =>
-              ["nose", "left_eye", "right_eye"].includes(kp.name) && kp.score > 0.5
+          localHeadDetected = poses.some((pose) =>
+            pose.keypoints.some(
+              (kp) =>
+                ["nose", "left_eye", "right_eye"].includes(kp.name ?? "") &&
+                (kp.score ?? 0) > 0.5
             )
           )
             ? 1
             : 0;
           setFaceDetected(localHeadDetected);
 
-          // Send precheck status to WS
-          safeSend({
-            type: "prechecking",
-            hand: localHandDetected,
-            head: localHeadDetected,
-            timestamp: Date.now(),
-          });
+          sendPrecheck();
         } catch (err) {
           console.error("Frame processing error:", err);
         }
 
         const elapsed = Date.now() - startTime;
         const remaining = durationMs - elapsed;
-        if (onTick) onTick(remaining);
+
+        setPrecheckTimer(Math.max(Math.ceil(remaining / 1000), 0));
+        onTick?.(remaining);
 
         if (remaining <= 0) {
+          // Always send final status
+          safeSend({
+            type: "prechecking-final",
+            face: localHeadDetected,
+            hand: localHandDetected,
+            timestamp: Date.now(),
+          });
+
           if (localHandDetected === 1 && localHeadDetected === 1 && !phoneReadySentRef.current) {
             phoneReadySentRef.current = true;
             sendPhoneStatus();
@@ -251,6 +210,7 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
           } else {
             console.log("❌ Precheck failed: hand or head not detected");
           }
+
           return;
         }
 
@@ -262,10 +222,8 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
       console.error("Failed to start precheck:", err);
     }
   },
-  [sendPhoneStatus, safeSend]
+  [sendPhoneStatus, sendPrecheck, safeSend]
 );
-
-
 
 
 
@@ -440,6 +398,15 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
           startPhoneAlertLoop()
         }
       }
+
+      if (data.type === "precheck_reset") {
+        setHandDetected(0);
+        setFaceDetected(0);
+        startCameraPrecheck(10_000);
+        phoneReadySentRef.current = false;
+      }
+
+
       if (data.type === "pause_monitoring") {
         setPaused(true)
         if (monitorIntervalRef.current) {
@@ -505,6 +472,7 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
     setPhoneDetected,
     setMultiplePeople,
     sendPhoneStatus,
-    startCameraPrecheck
+    startCameraPrecheck,
+    precheckTimer
   }
 }

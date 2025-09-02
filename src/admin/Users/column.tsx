@@ -6,12 +6,10 @@ import { NavLink } from "react-router-dom";
 import { deleteUser } from "../../lib/api";
 import toast from "react-hot-toast";
 
-type UserWithSchoolDetails = RegisterUserInput & { city?: string; state?: string };
-
 export const columns = (
   refetchUsers?: () => void,
   navigate?: (path: string) => void
-): ColumnDef<UserWithSchoolDetails>[] => [
+): ColumnDef<RegisterUserInput>[] => [
   {
     id: "fullName",
     header: ({ column }) => (
@@ -23,10 +21,11 @@ export const columns = (
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    accessorFn: (row) => `${row.fname} ${row.lname || ''}`.trim(),
+    accessorFn: (row) => `${row.fname} ${row.lname}`, // used for sorting/filtering
     cell: ({ row }) => {
       const id = row.original.id;
-      const name = `${row.original.fname} ${row.original.lname || ''}`.trim();
+      console.log("user_id hii" , id)
+      const name = `${row.original.fname} ${row.original.lname}`;
       return (
         <NavLink to={`/admin/user/${id}`} className="text-blue-600 hover:underline">
           {name}
@@ -36,15 +35,18 @@ export const columns = (
   },
   {
     accessorKey: "email",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Email
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    // header: "Email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
   },
   {
     accessorKey: "mobile",
@@ -56,8 +58,9 @@ export const columns = (
   },
   {
     accessorKey: "school_class",
-    header: "Grade",
+    header: "School class",
   },
+  // START: New Columns Added
   {
     accessorKey: "city",
     header: "City",
@@ -66,34 +69,34 @@ export const columns = (
     accessorKey: "state",
     header: "State",
   },
+  // END: New Columns Added
   {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
       const user = row.original;
-      const userName = `${user.fname} ${user.lname || ''}`.trim();
+      
 
       const handleEdit = () => {
         if (navigate) {
           navigate(`/admin/user/update/${user.id}`);
         } else {
           console.warn("navigate function is not defined");
-        }
+      } // navigate to edit page with user ID
       };
 
       const handleDelete = async () => {
-        if (confirm(`Are you sure you want to delete ${userName}?`)) {
+        if (confirm(`Are you sure you want to delete ${String(user.fname) + String(user.lname)}?`)) {
           try {
             await deleteUser(String(user.id));
             toast.success("User deleted successfully");
-            refetchUsers?.();
+            refetchUsers?.(); // After User deletion Refresh Table
           } catch (error) {
             toast.error("Failed to delete user");
             console.error(error);
           }
         }
       };
-
       return (
         <div className="flex gap-2">
           <Button size="icon" variant="ghost" onClick={handleEdit}>

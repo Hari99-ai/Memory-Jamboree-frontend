@@ -9,6 +9,7 @@ import CountdownOverlay from "../../practiceTests/CountdownOverlay"
 
 const ROWS = 5
 const COLS = 5
+const RECALL_DURATION_MINUTES = 15 // Defined recall duration as a constant
 
 interface Props {
   time: number
@@ -51,7 +52,7 @@ export default function ImagesGame({
   const [positionInputs, setPositionInputs] = useState<{ [key: string]: string }>({})
   const [showPopup, setShowPopup] = useState(false)
   const [timeLeft, setTimeLeft] = useState(time * 60)
-  const [recallTimeLeft, setRecallTimeLeft] = useState(15 * 60) // Recall phase is 15 minutes
+  const [recallTimeLeft, setRecallTimeLeft] = useState(RECALL_DURATION_MINUTES * 60)
   const recallIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [score, setScore] = useState<{ total: number; rows: number[] } | null>(null)
@@ -65,6 +66,16 @@ export default function ImagesGame({
     const stored = sessionStorage.getItem("imagesGameImages")
     return stored ? JSON.parse(stored) : images
   })
+
+  // Cleanup effect to clear any running timers when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (recallIntervalRef.current) {
+        clearInterval(recallIntervalRef.current)
+      }
+    }
+  }, [])
+
 
   // Initial image fetch and game setup
   useEffect(() => {
@@ -87,21 +98,14 @@ export default function ImagesGame({
   const handleRecallStart = () => {
     setCountdownStarted(true)
 
-    // Reshuffle images for recall phase
-    const newShuffled = originalImagesByRow.map((row) => {
-      let shuffled = [...row]
-      do {
-        shuffled = shuffleArray(row)
-      } while (shuffled.join() === row.join()) // Retry if identical
-      return shuffled
-    })
-    setShuffledImagesByRow(newShuffled)
+    // The shuffledImagesByRow state is already prepared by the restart() function.
+    // This function now just handles the UI transition.
 
     // After 5 seconds, start the recall phase
     setTimeout(() => {
       setShowOriginal(false)
       setCurrentPage(0)
-      setRecallTimeLeft(15 * 60) // Set initial display time
+      setRecallTimeLeft(RECALL_DURATION_MINUTES * 60) // Use constant for initial time
       setCountdownStarted(false)
 
       // Notify parent that recall phase has started
@@ -110,7 +114,10 @@ export default function ImagesGame({
       }
 
       // Set the absolute end time for the recall phase
-      const endTime = Date.now() + 15 * 60 * 1000
+      const endTime = Date.now() + RECALL_DURATION_MINUTES * 60 * 1000
+
+      // Clear any existing interval before setting a new one
+      if (recallIntervalRef.current) clearInterval(recallIntervalRef.current)
 
       // Recall timer
       recallIntervalRef.current = setInterval(() => {
@@ -173,15 +180,14 @@ export default function ImagesGame({
             handleRecallStart()
           }
         }
-        // For recall phase - similar to NumberGame
+        // For recall phase
         else if (!showOriginal && score === null) {
           if (window.confirm("Are you sure you want to submit your answers?")) {
             if (recallIntervalRef.current) {
               clearInterval(recallIntervalRef.current)
             }
             ;(async () => {
-              const finalScore = await handleSubmit()
-              setScore(finalScore)
+              await handleSubmit()
             })()
           }
         }
@@ -237,7 +243,7 @@ export default function ImagesGame({
         return
       }
 
-      // Recall phase: input navigation (unchanged)
+      // Recall phase: input navigation
       const flatRefs = inputRefs.current.flat()
       let activeIndex = flatRefs.findIndex((ref) => ref === document.activeElement)
       if (activeIndex === -1) activeIndex = 0
@@ -316,7 +322,7 @@ export default function ImagesGame({
     countdownStarted,
   ])
 
-  // UPDATE: Auto-submit when recall timer ends
+  // Auto-submit when recall timer ends
   useEffect(() => {
     if (!showOriginal && score === null && recallTimeLeft === 0) {
       if (recallIntervalRef.current) {
@@ -384,7 +390,7 @@ export default function ImagesGame({
       setScore(null)
       setShowPopup(false)
       setTimeLeft(time * 60)
-      setRecallTimeLeft(15 * 60)
+      setRecallTimeLeft(RECALL_DURATION_MINUTES * 60) // Use constant
       setCurrentPage(0)
     } catch (error) {
       console.error("Error loading images:", error)
@@ -462,11 +468,11 @@ export default function ImagesGame({
 
     setScore(finalScore)
     setShowPopup(true)
-    setCurrentPage(0)
+    setCurrentPage(0) // Go to first page for results
 
     if (onGameComplete) {
       onGameComplete(finalScore.total)
-      return finalScore
+      return
     }
 
     try {
@@ -475,12 +481,12 @@ export default function ImagesGame({
 
       if (!userId) {
         console.warn("❌ Missing or invalid userId")
-        return finalScore
+        return
       }
 
       if (!Array.isArray(allDisciplines)) {
         console.warn("❌ allDisciplines is not a valid array:", allDisciplines)
-        return finalScore
+        return
       }
 
       const matchedDiscipline = allDisciplines.find(
@@ -494,7 +500,7 @@ export default function ImagesGame({
           disciplineName,
           allDisciplines,
         })
-        return finalScore
+        return
       }
 
       const postData = {
@@ -509,8 +515,6 @@ export default function ImagesGame({
     } catch (err) {
       console.error("🚨 Failed to submit ImageGame score:", err)
     }
-
-    return finalScore
   }
 
   // Helper to count total correct answers
@@ -542,7 +546,6 @@ export default function ImagesGame({
     const setPage = isResult ? setResultPage : setCurrentPage
     const totalPages = pages
 
-    // Do not render pagination if there is only one page
     if (totalPages <= 1) {
       return null
     }
@@ -574,10 +577,8 @@ export default function ImagesGame({
     <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col items-center relative w-[900px] mx-auto">
       {countdownStarted && <CountdownOverlay message="Recall Phase starts in..." />}
 
-      {/* Title */}
       <h2 className="text-3xl font-bold mb-4 text-black">🧠 5-Minute Images</h2>
 
-      {/* Timer & Instructions */}
       <p className="text-lg text-gray-900 mb-4">
         {showOriginal && !countdownStarted
           ? `Memorize the following images (${formatTime(timeLeft)})`
@@ -586,7 +587,6 @@ export default function ImagesGame({
             : ""}
       </p>
 
-      {/* Image Grid */}
       <div className="space-y-4">
         {(showOriginal ? originalImagesByRow : shuffledImagesByRow)
           .slice(currentPage * ROWS, currentPage * ROWS + ROWS)
@@ -604,7 +604,6 @@ export default function ImagesGame({
 
                 return (
                   <div key={colIdx} className="relative flex flex-row items-center w-16 sm:w-24">
-                    {/* Input Field */}
                     {!showOriginal && score === null && (
                       <input
                         ref={(el) => {
@@ -677,10 +676,8 @@ export default function ImagesGame({
           ))}
       </div>
 
-      {/* Pagination */}
       {renderPagination()}
 
-      {/* Submit / Recall Buttons */}
       {!showOriginal && score === null && (
         <button
           onClick={() => {
@@ -707,10 +704,8 @@ export default function ImagesGame({
         </button>
       )}
 
-      {/* Result Popup   */}
       {showPopup && (
         <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-indigo-900 to-indigo-950 z-50 flex flex-col items-center justify-start p-4 sm:p-8 overflow-auto">
-          {/* Score Display */}
           <div className="bg-white  border-2 border-green-600 text-green-700 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 mb-4 mr-12 sm:absolute sm:top-4 sm:right-6">
             <span className="text-2xl font-bold flex items-center">
               🏆 Score: <span className="text-4xl">{Math.max(0, score?.total || 0)}</span>
@@ -720,10 +715,7 @@ export default function ImagesGame({
             </span>
           </div>
 
-          {/* Result Content Wrapper */}
           <div className="flex flex-col items-center justify-center mt-16 bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl">
-            
-            {/* Result Image Grid */}
             <div className="flex flex-col items-center justify-center space-y-4 w-full">
               {shuffledImagesByRow.slice(resultPage * ROWS, resultPage * ROWS + ROWS).map((row, rowIdx) => {
                 const globalRowIdx = resultPage * ROWS + rowIdx
@@ -731,9 +723,7 @@ export default function ImagesGame({
 
                 return (
                   <div key={globalRowIdx} className="flex items-center gap-6">
-                    {/* Row number */}
                     <div className="text-black w-6 mr-2 font-bold text-right">{globalRowIdx + 1}</div>
-                    {/* Images and answer boxes */}
                     {row.map((img, colIdx) => {
                       const userInput = positionInputs[img]
                       const userInputNum = Number.parseInt(userInput, 10)
@@ -741,7 +731,7 @@ export default function ImagesGame({
                       const isCorrect =
                         !isNaN(userInputNum) &&
                         userInputNum >= 1 &&
-                        userInputNum <= originalRow.length && // Check against actual row length
+                        userInputNum <= originalRow.length &&
                         originalRow[userInputNum - 1] === img
 
                       const isWrong = userInput && !isCorrect
@@ -749,7 +739,6 @@ export default function ImagesGame({
 
                       return (
                         <div key={colIdx} className="flex flex-row items-center gap-2 w-28 sm:w-32">
-                          {/* Answer Box */}
                           <div className="-mr-2">
                             {isCorrect && (
                               <span className="inline-block w-8 h-8 rounded bg-green-500 text-white font-bold text-center leading-8 border-2 border-green-700 shadow text-base">
@@ -775,7 +764,6 @@ export default function ImagesGame({
                               </span>
                             )}
                           </div>
-                          {/* Image */}
                           <img
                             src={img || "/placeholder.svg"}
                             alt={`result-img-${globalRowIdx}-${colIdx}`}
@@ -792,10 +780,8 @@ export default function ImagesGame({
               })}
             </div>
 
-            {/* Result Pagination */}
             <div className="mt-8">{renderPagination(true)}</div>
 
-            {/* Close Button */}
             <div className="flex justify-center mt-4">
               <button
                 onClick={onRestart}
@@ -808,7 +794,6 @@ export default function ImagesGame({
         </div>
       )}
 
-      {/* Force browser to decode and cache all images for instant display */}
       {images.length > 0 && (
         <div style={{ display: "none" }}>
           {images.map((src, i) => (

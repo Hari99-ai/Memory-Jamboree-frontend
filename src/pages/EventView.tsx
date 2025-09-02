@@ -720,6 +720,12 @@ export default function EventView() {
         setHandDetected(true)
       }
 
+      else if(data.type === "prechecking-final"){
+        setFaceDetected(true)
+        setHandDetected(true)
+      }
+      
+
       else if (data.type === "frame") {
         console.log(data);
         setFrame(data.image);
@@ -765,6 +771,28 @@ export default function EventView() {
   setWs(socket);
 };
 
+
+  const handleVerificationReset = () => {
+    console.log("HII")
+    if (!ws) {
+      console.warn("⚠️ No WebSocket instance found");
+      return;
+    }
+
+    if (ws.readyState !== WebSocket.OPEN) {
+      console.warn("⚠️ WebSocket is not open, retrying in 1 second...");
+      setTimeout(handleVerificationReset, 1000);
+      return;
+    }
+
+    ws.send(
+      JSON.stringify({
+        type: "precheck_reset",
+        timestamp: Date.now(),
+      })
+    );
+    console.log("📡 Sent reset_verification to phone");
+  };
 
 
 
@@ -1741,28 +1769,44 @@ const retryConnection = (discipline: DisciplineData) => {
                   </div>
                 </div>
                 
+                <div className=" flex justify-between px-8 py-6 ">
+                  <button
+                  onClick={() => {
+                    // if (String(!selectedDiscipline?.disc_id)) {
+                    //   toast.error("Discipline ID is missing!");
+                    //   return;
+                    // }
+                    handleSend(String(selectedDiscipline?.disc_id));
+                  }}
+                  disabled={SendLoading || !phoneStarted}
+                  className={`flex items-center px-3 py-2 border rounded-sm font-medium transition-colors ${
+                    SendLoading || !phoneStarted
+                      ? 'bg-blue-400 cursor-not-allowed text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  <SendHorizontal className="mr-2 w-4 h-4" />
+                  {SendLoading
+                    ? 'Sending...'
+                    : phoneStarted
+                      ? 'ReSend Link'
+                      : 'Waiting for Phone ⌚'}
+                </button>
+
+
                 <button
-                onClick={() => {
-                  // if (String(!selectedDiscipline?.disc_id)) {
-                  //   toast.error("Discipline ID is missing!");
-                  //   return;
-                  // }
-                  handleSend(String(selectedDiscipline?.disc_id));
-                }}
-                disabled={SendLoading || !phoneStarted}
-                className={`flex items-center px-3 py-2 border rounded-sm font-medium transition-colors ${
-                  SendLoading || !phoneStarted
-                    ? 'bg-blue-400 cursor-not-allowed text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                <SendHorizontal className="mr-2 w-4 h-4" />
-                {SendLoading
-                  ? 'Sending...'
-                  : phoneStarted
-                    ? 'ReSend Link'
-                    : 'Waiting for Phone ⌚'}
-              </button>
+                  disabled={SendLoading || !phoneStarted}
+                  onClick={handleVerificationReset}
+                  className={`flex items-center px-4 py-2 rounded-md font-medium transition-all duration-200 
+                    ${SendLoading || !phoneStarted 
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg cursor-pointer"
+                    }`}
+                >
+                  Reset Verification
+                </button>
+                </div>
+                  
               </div>
 
               <div className="bg-blue-50 rounded-xl p-4 mb-6 text-left shadow-sm">

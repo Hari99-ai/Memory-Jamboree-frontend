@@ -313,10 +313,9 @@ export default function Results() {
                   </div>
                   <div className="flex-1">
                     <DisciplinesStepper
-                      disciplines={eventData?.disciplines || []}
-                      activeTab={String(activeDisciplineId)}
-                      setActiveTab={setActiveTab}
-                    />
+                        disciplines={eventData?.disciplines || []}
+                        activeTab={String(activeDisciplineId)}
+                        setActiveTab={setActiveTab} totalUsers={users.length}                    />
                   </div>
                 </div>
 

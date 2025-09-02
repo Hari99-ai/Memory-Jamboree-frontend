@@ -417,15 +417,13 @@ export function UpdateUser() {
 
         <div className="space-y-1">
           <Label htmlFor="birth_date" className="text-sm font-medium">
-            Birth Date*
+            Birth Date
           </Label>
           <input
             id="birth_date"
             type="date"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            {...register("birth_date" , {
-              required: "Birth Date is required"
-            })}
+            {...register("birth_date")}
           />
         </div>
 
@@ -733,11 +731,6 @@ export function UpdateUser() {
             id="pincode"
             placeholder="Pincode/ZIP"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            pattern="[0-9]*"
-              onInput={(e) => {
-                const input = e.target as HTMLInputElement;
-                input.value = input.value.replace(/\D/g, '').slice(0, 6);
-              }}
             {...register("pincode")}
           />
         </div>

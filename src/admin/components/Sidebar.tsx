@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "../../lib/utils";
 import { useLocation } from "react-router-dom";
-import { Award, LockKeyhole, MonitorPlay, ChevronLeft, ChevronRight, ClipboardPen } from "lucide-react";
+import { Award, LockKeyhole, MonitorPlay, ClipboardPen, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { LogoutDialogButton } from "./AlertDialog";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -217,7 +217,6 @@ const EnhancedChildLink = ({ link, location }: EnhancedChildLinkProps) => {
           : "text-gray-300 hover:text-white hover:bg-white/10"
       )}
     >
-      {/* MODIFIED: Removed explicit color class to inherit from parent */}
       <span className="transition-colors flex-shrink-0">
         {link.icon}
       </span>
@@ -254,7 +253,6 @@ const EnhancedSingleLink = ({
       )}
       title={!sidebarOpen ? item.label : undefined}
     >
-      {/* MODIFIED: Removed explicit color class to inherit from parent */}
       <span className="transition-colors flex-shrink-0">
         {item.icon}
       </span>
@@ -276,11 +274,8 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
   const [openDropdowns, setOpenDropdowns] = useState(new Set());
   const location = useLocation();
 
-  // Initialize open dropdowns based on current path
   useEffect(() => {
     const newOpenDropdowns = new Set();
-
-    // Check both main menu and bottom menu items
     const allMenuItems = [...menuItems, ...bottomMenuItems];
 
     allMenuItems.forEach((item) => {
@@ -297,22 +292,15 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
     setOpenDropdowns(newOpenDropdowns);
   }, [location.pathname]);
 
-  // Handle dropdown toggle with auto-close functionality and auto-expand
   const handleDropdownToggle = (dropdownId: any) => {
-    // If sidebar is collapsed, expand it first
     if (!open) {
       setOpen(true);
     }
-
     setOpenDropdowns((prev) => {
       const newSet = new Set();
-
-      // If the dropdown is currently closed, open it and close others
       if (!prev.has(dropdownId)) {
         newSet.add(dropdownId);
       }
-      // If it's already open, close it (toggle off)
-
       return newSet;
     });
   };
@@ -344,19 +332,6 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
   return (
     <div className="relative h-full">
       <Sidebar open={open} setOpen={setOpen}>
-        <button
-          onClick={() => setOpen(!open)}
-          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-          aria-expanded={open}
-          className="absolute z-10 flex items-center justify-center w-6 h-6 transition-colors bg-white border rounded-full shadow-sm -right-1 top-10 hover:bg-gray-50"
-        >
-          {open ? (
-            <ChevronLeft className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
-
         <SidebarBody className="flex flex-col h-full overflow-hidden">
           <div className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
             {/* TOP: Logo + App Name */}
@@ -377,17 +352,48 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
             </Link>
 
             {/* MAIN MENU SECTION: Dynamic rendering */}
-            <div className="flex flex-col flex-1 px-4 space-y-2">
+            <div className="flex flex-col flex-1 px-4 mt-4 space-y-2">
               {menuItems.map(renderMenuItem)}
             </div>
 
-            {/* BOTTOM SECTION: Change Password, Settings, Logout with increased margin */}
-            <div className="px-4 mt-auto space-y-2 ">
+            {/* BOTTOM SECTION: Change Password, Settings, Logout */}
+            <div className="px-4 mt-auto space-y-2">
               {bottomMenuItems.map(renderMenuItem)}
-
-              {/* LOGOUT - Special case */}
               <div className="flex flex-col gap-1">
                 <LogoutDialogButton />
+              </div>
+
+              {/* NEW: COLLAPSE BUTTON IN FOOTER */}
+              <div className="pt-2 mt-2 border-t border-white/20">
+                <button
+                  onClick={() => setOpen(!open)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md py-2 px-2 text-[12px] font-semibold text-white transition-all duration-200 hover:bg-white/10",
+                    !open && "justify-center"
+                  )}
+                  aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+                >
+                  <span>
+                    {open ? (
+                      <PanelLeftClose className="w-5 h-5 shrink-0" />
+                    ) : (
+                      <PanelLeftOpen className="w-5 h-5 shrink-0" />
+                    )}
+                  </span>
+                  <AnimatePresence>
+                    {open && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="truncate"
+                      >
+                        Collapse
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
               </div>
             </div>
           </div>

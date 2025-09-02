@@ -1,285 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { FaUser } from "react-icons/fa";
-// import { FaClock, FaMobile, FaMicrophone, FaRegEye } from "react-icons/fa6";
-// import { API_BASE_URL } from "../../lib/client";
-
-// // Utility functions for session storage
-// const getImageFromCache = (imageUrl: string): string | null => {
-//   try {
-//     return sessionStorage.getItem(`img_cache_${imageUrl}`);
-//   } catch (error) {
-//     console.error("Error getting image from cache:", error);
-//     return null;
-//   }
-// };
-
-// const setImageInCache = (imageUrl: string, base64Data: string): void => {
-//   try {
-//     sessionStorage.setItem(`img_cache_${imageUrl}`, base64Data);
-//   } catch (error) {
-//     console.error("Error setting image in cache:", error);
-//   }
-// };
-
-
-// const imageToBase64 = (url: string): Promise<string> => {
-//   return new Promise((resolve, reject) => {
-//     const img = new Image();
-//     img.crossOrigin = "anonymous";
-    
-//     img.onload = () => {
-//       const canvas = document.createElement("canvas");
-//       const ctx = canvas.getContext("2d");
-      
-//       canvas.width = img.width;
-//       canvas.height = img.height;
-      
-//       ctx?.drawImage(img, 0, 0);
-      
-//       try {
-//         const base64 = canvas.toDataURL("image/jpeg", 0.8);
-//         resolve(base64);
-//       } catch (error) {
-//         reject(error);
-//       }
-//     };
-    
-//     img.onerror = () => {
-//       reject(new Error(`Failed to load image: ${url}`));
-//     };
-    
-//     img.src = url;
-//   });
-// };
-
-// export default function CardWithLogs({
-//   title,
-//   logs,
-// }: {
-//   title: string;
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   logs: any[];
-// }) {
-//   const [showDetails, setShowDetails] = useState(false);
-//   const [imageCache, setImageCache] = useState<Record<string, string>>({});
-//   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
-//   const [preloadingProgress, setPreloadingProgress] = useState(0);
-//   const [isPreloading, setIsPreloading] = useState(false);
-
-//   // Extract all image URLs from logs
-//   const imageUrls = logs
-//     .filter(log => log?.img_log)
-//     .map(log => `${API_BASE_URL}/${log.img_log}`);
-
-//   // Preload images when component mounts or logs change
-//   useEffect(() => {
-//     const preloadImages = async () => {
-//       if (imageUrls.length === 0) return;
-
-//       setIsPreloading(true);
-//       setPreloadingProgress(0);
-
-//       const cache: Record<string, string> = {};
-//       const loading = new Set<string>();
-
-//       for (let i = 0; i < imageUrls.length; i++) {
-//         const url = imageUrls[i];
-        
-//         // Check if image is already in session storage
-//         const cachedImage = getImageFromCache(url);
-//         if (cachedImage) {
-//           cache[url] = cachedImage;
-//           setPreloadingProgress(((i + 1) / imageUrls.length) * 100);
-//           continue;
-//         }
-
-//         // If not in cache, load and cache it
-//         try {
-//           loading.add(url);
-//           setLoadingImages(new Set(loading));
-
-//           const base64 = await imageToBase64(url);
-//           cache[url] = base64;
-//           setImageInCache(url, base64);
-          
-//           loading.delete(url);
-//           setLoadingImages(new Set(loading));
-//         } catch (error) {
-//           console.error(`Failed to preload image: ${url}`, error);
-//           loading.delete(url);
-//           setLoadingImages(new Set(loading));
-//         }
-
-//         setPreloadingProgress(((i + 1) / imageUrls.length) * 100);
-//       }
-
-//       setImageCache(cache);
-//       setIsPreloading(false);
-//     };
-
-//     preloadImages();
-//   }, [logs]);
-
-//   // If no logs, show a card with a no-logs message instead of returning null
-//   if (!logs || logs.length === 0) {
-//     return (
-//       <div className="mb-6 p-6 bg-white rounded-2xl shadow-lg border border-slate-200">
-//         <div className="flex justify-between items-center mb-4">
-//           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
-//           <div className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
-//             0 logs
-//           </div>
-//         </div>
-//         <div className="text-center py-8">
-//           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-//             <FaRegEye className="w-8 h-8 text-slate-400" />
-//           </div>
-//           <p className="text-slate-500 italic">No logs available</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="mb-6 p-6 bg-white rounded-2xl shadow-lg border border-slate-200">
-//       <div className="flex justify-between items-center mb-4">
-//         <div className="flex items-center gap-3">
-//           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
-//           <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-//             {logs.length} logs
-//           </div>
-//         </div>
-//         <button
-//           onClick={() => setShowDetails(!showDetails)}
-//           className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-lg hover:shadow-xl"
-//         >
-//           {showDetails ? "Hide Details" : "Show Details"}
-//         </button>
-//       </div>
-
-//       {/* Preloading progress bar */}
-//       {isPreloading && imageUrls.length > 0 && (
-//         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-//           <div className="flex items-center justify-between mb-2">
-//             <span className="text-sm font-medium text-blue-700">
-//               Preloading images...
-//             </span>
-//             <span className="text-sm text-blue-600">
-//               {Math.round(preloadingProgress)}%
-//             </span>
-//           </div>
-//           <div className="w-full bg-blue-200 rounded-full h-2">
-//             <div
-//               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-//               style={{ width: `${preloadingProgress}%` }}
-//             />
-//           </div>
-//         </div>
-//       )}
-
-//       {showDetails && (
-//         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-//           {logs.map((log: any, index: number) =>
-//             log ? (
-//               <div key={index} className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:shadow-md transition-shadow">
-//                 {log.img_log && (
-//                   <div className="relative mb-4">
-//                     {imageCache[`${API_BASE_URL}/${log.img_log}`] ? (
-//                       <img
-//                         src={imageCache[`${API_BASE_URL}/${log.img_log}`]}
-//                         alt="Log"
-//                         className="rounded-lg w-full h-48 object-cover shadow-sm"
-//                       />
-//                     ) : loadingImages.has(`${API_BASE_URL}/${log.img_log}`) ? (
-//                       <div className="w-full h-48 bg-slate-200 rounded-lg flex items-center justify-center">
-//                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-//                       </div>
-//                     ) : (
-//                       <div className="w-full h-48 bg-slate-200 rounded-lg flex items-center justify-center">
-//                         <span className="text-slate-500 text-sm">Image unavailable</span>
-//                       </div>
-//                     )}
-//                   </div>
-//                 )}
-                
-//                 <div className="space-y-3">
-//                   <div className="flex items-center gap-2 text-sm text-slate-600">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaClock className="w-3 h-3" />
-//                     </div>
-//                     <span className="font-medium">{log.log_time}</span>
-//                   </div>
-                  
-//                   <div className="flex items-center gap-2 text-sm">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaMobile className="w-3 h-3" />
-//                     </div>
-//                     <span className="text-slate-600">Phone:</span>
-//                     {log.phone_detection ? (
-//                       <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-//                         Detected
-//                       </span>
-//                     ) : (
-//                       <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-//                         Not Detected
-//                       </span>
-//                     )}
-//                   </div>
-                  
-//                   <div className="flex items-center gap-2 text-sm text-slate-600">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaRegEye className="w-3 h-3" />
-//                     </div>
-//                     <span>Eyes:</span>
-//                     <span className="font-medium">{log.user_movements_eyes}</span>
-//                   </div>
-                  
-//                   {/* <div className="flex items-center gap-2 text-sm text-slate-600">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaUser className="w-3 h-3" />
-//                     </div>
-//                     <span>Head</span>
-//                     <span className="font-medium">{log.user_movements_lr}</span>
-//                   </div>
-//                    */}
-//                   <div className="flex items-center gap-2 text-sm text-slate-600">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaUser className="w-3 h-3" />
-//                     </div>
-//                     <span>Head:</span>
-//                     <span className="font-medium">{log.user_movements_updown}</span>
-//                   </div>
-                  
-//                   <div className="flex items-center gap-2 text-sm">
-//                     <div className="p-1 bg-white rounded">
-//                       <FaMicrophone className="w-3 h-3" />
-//                     </div>
-//                     <span className="text-slate-600">Voice DB:</span>
-//                     {log.voice_db < 10 ? (
-//                       <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-//                         Normal
-//                       </span>
-//                     ) : log.voice_db >= 10 && log.voice_db < 20 ? (
-//                       <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-//                         Little Disturbance
-//                       </span>
-//                     ) : (
-//                       <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-//                         More Disturbance
-//                       </span>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-//             ) : null
-//           )}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
 import { useState, useEffect } from "react";
 import { FaUser, FaClock, FaMobile, FaMicrophone, FaRegEye } from "react-icons/fa6";
 import { API_BASE_URL } from "../../lib/client";
@@ -287,6 +5,34 @@ import { API_BASE_URL } from "../../lib/client";
 // import { DownloadLogs } from "./DownloadLogs";
 import JSZip from "jszip";
 import saveAs from "file-saver";
+
+// Utility function to convert timestamp to Indian Standard Time (IST)
+export const convertToIST = (timeString: string): string => {
+  if (!timeString || typeof timeString !== 'string') return "Invalid Time";
+
+  try {
+    // Assuming the source time is in UTC or a compatible format
+    const date = new Date(timeString.replace(' ', 'T') + 'Z');
+
+    // Add 5 hours and 30 minutes for IST offset
+    date.setHours(date.getHours() + 5);
+    date.setMinutes(date.getMinutes() + 30);
+
+    // Format the date back to a readable string
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} IST`;
+  } catch (error) {
+    console.error("Error converting time:", error);
+    return timeString; // Return original string on error
+  }
+};
+
 
 // Session storage caching utilities
 const getImageFromCache = (url: string): string | null => {
@@ -461,7 +207,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <FaClock className="w-3 h-3" />
-                  <span className="font-medium">{log.log_time}</span>
+                  <span className="font-medium">{convertToIST(log.log_time)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">
@@ -661,7 +407,7 @@ export function ExternalLogs({ title, logs }: { title: string; logs: any[] }) {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <FaClock className="w-3 h-3" />
-                  <span className="font-medium">{log.log_time}</span>
+                  <span className="font-medium">{convertToIST(log.log_time)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">
@@ -891,7 +637,7 @@ export function PhoneDetectionLogs({
                   <div className="p-1 bg-white rounded">
                     <FaClock className="w-3 h-3" />
                   </div>
-                  <span className="font-medium">{log.log_time}</span>
+                  <span className="font-medium">{convertToIST(log.log_time)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">
@@ -928,36 +674,8 @@ export const WarningCountLogs = ({
 
   // Only warnings (phone detected or focus loss)
   const warningLogs = logs.filter(
-    (log) => log.phone_detection ||
-    log.final_focus?.includes("Incorrect Position") || log.final_focus?.includes("Partial Distraction") 
-    || log.person_status > 0
+    (log) => log.phone_detection || log.final_focus?.includes("Incorrect Position")
   );
-
-  // // Preload images
-  // useEffect(() => {
-  //   const preload = async () => {
-  //     const cache: Record<string, string> = {};
-  //     for (const log of warningLogs) {
-  //       for (const key of ["img_log", "external_img"] as const) {
-  //         if (log[key]) {
-  //           const cached = getImageFromCache(log[key]);
-  //           if (cached) {
-  //             cache[log[key]] = cached;
-  //           } else {
-  //             try {
-  //               const base64 = await imageToBase64(`${API_BASE_URL}/${log[key]}`);
-  //               cache[log[key]] = base64;
-  //             } catch (err) {
-  //               console.error("Failed to load image", log[key], err);
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //     setImageCache(cache);
-  //   };
-  //   preload();
-  // }, [warningLogs]);
 
   // Download logs with images
   const downloadWarnings = async () => {
@@ -968,7 +686,7 @@ export const WarningCountLogs = ({
     const csvRows = [
       ["Time", "Focus Warning", "Phone Detected", "Person Detected", "Images"],
       ...warningLogs.map((log) => [
-        log.log_time,
+        convertToIST(log.log_time),
         log.final_focus || "",
         log.phone_detection ? "Yes" : "No",
         log.person_status || 0,
@@ -1148,7 +866,7 @@ export const WarningCountLogs = ({
                 {log.person_status > 0 && (
                   <p>👤 Person Detected ({log.person_status})</p>
                 )}
-                <p className="text-xs text-slate-500">{log.log_time}</p>
+                <p className="text-xs text-slate-500">{convertToIST(log.log_time)}</p>
               </div>
             </div>
           ))}
@@ -1333,7 +1051,7 @@ export function PersonDetectionLogs({
                   <div className="p-1 bg-white rounded">
                     <FaClock className="w-3 h-3" />
                   </div>
-                  <span className="font-medium">{log.log_time}</span>
+                  <span className="font-medium">{convertToIST(log.log_time)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">

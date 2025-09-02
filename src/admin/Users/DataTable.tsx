@@ -1,5 +1,3 @@
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   type ColumnDef,
@@ -76,6 +74,7 @@ interface DataTableProps<TData, TValue> {
   showDownloadResultButton?: boolean
   resultData?: any[]
   eventName?: string
+  disciplines?: any[]
 }
 
 export function DataTable<TData extends Record<string, any>, TValue>({
@@ -87,6 +86,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   showDownloadResultButton = false,
   resultData,
   eventName,
+  disciplines,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -243,42 +243,53 @@ export function DataTable<TData extends Record<string, any>, TValue>({
       return
     }
 
+    // Create a map of discipline ID to name for easy lookup
+    const disciplineMap = new Map(disciplines?.map((d) => [d.disc_id, d.discipline_name]) || [])
+
     const formattedData = resultData.map((user) => {
-      const fullName = `${user.fname} ${user.lname || ""}`.trim()
-
-      // Extract score data based on the column structure
-      const totalScore = typeof user.total_score === "number" ? user.total_score.toFixed(2) : "-"
-      const categoryRank = user.category_overall_rank ?? "-"
-      const overallRank = user.event_overall_rank ?? "-"
-
-      return {
-        "Full Name": fullName,
+      // Base user data and overall scores
+      const rowData: { [key: string]: any } = {
+        "Full Name": `${user.fname} ${user.lname || ""}`.trim(),
         Email: user.email,
         "School Name": user.school_name,
         Class: user.school_class,
         City: user.city,
         State: stateFullNameMap[user.state?.toUpperCase()] || user.state,
-        "Total Score": totalScore,
-        "Category Rank": categoryRank,
-        "Overall Rank": overallRank,
+        "Total Score": typeof user.total_score === "number" ? user.total_score.toFixed(2) : "-",
+        "Category Rank": user.category_overall_rank ?? "-",
+        "Overall Rank": user.event_overall_rank ?? "-",
       }
+
+      // Dynamically add columns for each discipline's scores
+      user.scores?.forEach((score: any) => {
+        const discName = disciplineMap.get(score.disc_id) || `Discipline ${score.disc_id}`
+        const finalScoreValue = parseFloat(String(score.score))
+
+        rowData[`${discName} - Raw Score`] = score.raw_score ?? "-"
+        rowData[`${discName} - Final Score`] = !isNaN(finalScoreValue) ? finalScoreValue.toFixed(2) : "-"
+        rowData[`${discName} - Time Taken`] = score.time_taken ?? "-"
+        rowData[`${discName} - Rank`] = score.rank ?? "-"
+      })
+
+      return rowData
     })
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, "Results")
 
-    worksheet["!cols"] = [
-      { wch: 20 }, // Full Name
-      { wch: 30 }, // Email
-      { wch: 25 }, // School Name
-      { wch: 20 }, // Class
-      { wch: 15 }, // City
-      { wch: 20 }, // State
-      { wch: 15 }, // Total Score
-      { wch: 15 }, // Category Rank
-      { wch: 15 }, // Overall Rank
-    ]
+    // Auto-set column widths based on the generated data
+    const columnWidths = Object.keys(formattedData[0] || {}).map((key) => {
+      // Set a default width, but make some columns wider
+      if (key.toLowerCase().includes("email") || key.toLowerCase().includes("school name")) {
+        return { wch: 30 }
+      }
+      if (key.toLowerCase().includes("full name")) {
+        return { wch: 25 }
+      }
+      return { wch: 18 } // Default width for score/rank columns
+    })
+    worksheet["!cols"] = columnWidths
 
     const fileName = eventName ? `${eventName}_Results.xlsx` : "EventResults.xlsx"
     XLSX.writeFile(workbook, fileName)
