@@ -45,7 +45,7 @@ const menuItems = [
   {
     id: "paractice-test",
     type: "single",
-    label: "Paractice Test",
+    label: "Practice Test",
     to: "/admin/paractice-test-performance",
     icon: <ClipboardPen className="w-5 h-5 shrink-0" />,
   },

@@ -90,10 +90,10 @@ export default function Login() {
   // }
   // })
  
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async(e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      e.preventDefault();
-      login(email, password); 
+      await login(email, password); 
     
     } catch (error) {
       toast.error("Login failed Check your credentials")
@@ -218,6 +218,7 @@ export default function Login() {
               </div>
             ) : (
               <Button
+              
                 onClick={handleLogin}
                 className="h-12 text-lg font-semibold bg-[#245cab] hover:bg-[#95baed] transition-colors"
               >

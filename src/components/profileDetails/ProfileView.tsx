@@ -1,5 +1,5 @@
 export const defaultImg =
-  "data:image/jpeg;base64,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";
+  "data:image/jpeg;base64,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";
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -104,7 +104,7 @@ export default function ProfileView() {
     queryKey: ["user", userId],
     queryFn: () => getUserById(userId!),
     refetchOnWindowFocus: true,
-    enabled: !!userId,
+    enabled: !!userId && !!userId,
   });
 
   const isProfileFinalized = userData?.status === 1
@@ -190,8 +190,9 @@ export default function ProfileView() {
     const loadStates = async () => {
       setLoadingStates(true);
       try {
-        const data = await getStates(selectedCountry);
-        setStates(data);
+        const data: State[] = await getStates(selectedCountry);
+        const sortedData = data.sort((a: State, b: State) => a.name.localeCompare(b.name));
+        setStates(sortedData);
       } catch (error) {
         console.error("Failed to load states:", error);
         toast.error("Failed to load states");
@@ -377,11 +378,11 @@ export default function ProfileView() {
   }
 
   const getCountryName = (iso2: string) =>
-    countries.find((c) => c.iso2 === iso2)?.name || iso2 || "-";
+    countries.find((c) => c.iso2 === iso2)?.name || iso2 || "NA";
   const getStateName = (iso2: string) =>
-    states.find((s) => s.iso2 === iso2)?.name || iso2 || "-";
+    states.find((s) => s.iso2 === iso2)?.name || iso2 || "NA";
   const getCityName = (name: string) =>
-    cities.find((c) => c.name === name)?.name || name || "-";
+    cities.find((c) => c.name === name)?.name || name || "NA";
 
   return (
     <div className="max-w-5xl mx-auto pt-8 pb-4 px-4 md:pt-12 md:pb-8 md:px-8 bg-white rounded-lg shadow-lg">
@@ -548,6 +549,7 @@ export default function ProfileView() {
               id="birth_date"
               disabled={!isEditMode}
               type="date"
+              max={new Date().toISOString().split("T")[0]}
               onKeyDown={(e) => e.preventDefault()}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               {...register("birth_date")}
@@ -924,35 +926,35 @@ export default function ProfileView() {
           <div className="bg-gray-50 border rounded-lg p-6 mb-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">First Name:</span> <span className="ml-2">{userData?.fname || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Last Name:</span> <span className="ml-2">{userData?.lname || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Gender:</span> <span className="ml-2">{userData?.gender || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Birth Date:</span> <span className="ml-2">{formatBirthDate(String(userData?.birth_date)) || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.email || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Mobile Number:</span> <span className="ml-2">{userData?.mobile || "-"}</span></div>
+              <div><span className="font-medium text-gray-600">First Name:</span> <span className="ml-2">{userData?.fname || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Last Name:</span> <span className="ml-2">{userData?.lname || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Gender:</span> <span className="ml-2">{userData?.gender || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Birth Date:</span> <span className="ml-2">{formatBirthDate(String(userData?.birth_date)) || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.email || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Mobile Number:</span> <span className="ml-2">{userData?.mobile || "NA"}</span></div>
             </div>
           </div>
           {/* School Information Block */}
           <div className="bg-gray-50 border rounded-lg p-6 mb-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">School Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">School Name:</span> <span className="ml-2">{userData?.school_name || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Class/Grade:</span> <span className="ml-2">{userData?.school_class || "-"}</span></div>
+              <div><span className="font-medium text-gray-600">School Name:</span> <span className="ml-2">{userData?.school_name || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Class/Grade:</span> <span className="ml-2">{userData?.school_class || "NA"}</span></div>
             </div>
           </div>
           {/* Parent/Guardian Information Block */}
           <div className="bg-gray-50 border rounded-lg p-6 mb-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">Parents/Guardian Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">Name:</span> <span className="ml-2">{userData?.fa_name || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Mobile:</span> <span className="ml-2">{userData?.fa_mobile || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.fa_email || "-"}</span></div>
+              <div><span className="font-medium text-gray-600">Name:</span> <span className="ml-2">{userData?.fa_name || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Mobile:</span> <span className="ml-2">{userData?.fa_mobile || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.fa_email || "NA"}</span></div>
               <div>
                 <span className="font-medium text-gray-600">Alternate Mobile:</span>
                 <span className="ml-2">
                   {userData?.mo_mobile && userData.mo_mobile.trim().length > 0
                     ? userData.mo_mobile
-                    : "-"}
+                    : "NA"}
                 </span>
               </div>
             </div>
@@ -964,8 +966,8 @@ export default function ProfileView() {
               <div><span className="font-medium text-gray-600">Country:</span> <span className="ml-2">{getCountryName(String(userData?.country))}</span></div>
               <div><span className="font-medium text-gray-600">State/Province:</span> <span className="ml-2">{getStateName(String(userData?.state))}</span></div>
               <div><span className="font-medium text-gray-600">City:</span> <span className="ml-2">{getCityName(String(userData?.city))}</span></div>
-              <div><span className="font-medium text-gray-600">Address:</span> <span className="ml-2">{userData?.address || "-"}</span></div>
-              <div><span className="font-medium text-gray-600">Pincode/ZIP:</span> <span className="ml-2">{userData?.pincode || "-"}</span></div>
+              <div><span className="font-medium text-gray-600">Address:</span> <span className="ml-2">{userData?.address || "NA"}</span></div>
+              <div><span className="font-medium text-gray-600">Pincode/ZIP:</span> <span className="ml-2">{userData?.pincode || "NA"}</span></div>
             </div>
           </div>
         </div>

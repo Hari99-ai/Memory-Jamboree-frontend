@@ -109,7 +109,7 @@ function EventGamePage() {
     showTerminationPopup,
     handleTerminationClose,
     gameTerminated,
-    liveFrame
+    liveFrame,
   } = useMonitoring(
     {
       user_id: String(user_id || ""),
@@ -226,25 +226,23 @@ function EventGamePage() {
     return () => clearInterval(interval)
   }, [gameData])
 
-  // Start monitoring when game starts
   useEffect(() => {
-    if (!monitoringStartedRef.current && gameStarted && gameData && user_id && monitoringEnabled) {
-      // Only start monitoring if fullscreen is available and monitoring is enabled
-      if (isFullScreen) {
-        console.log("🔍 Starting monitoring for:", {
-          user_id,
-          discipline_id: gameData.selectedDiscipline.disc_id,
-          event_id: event_id,
-          monitoringEnabled,
-        })
+    if (!monitoringStartedRef.current && gameStarted && gameData && user_id) {
+      if (!monitoringEnabled) return;
 
-        startMonitoring()
-        monitoringStartedRef.current = true
+      if (isFullScreen) {
+        console.log("🔍 Starting monitoring");
+        startMonitoring();
+        monitoringStartedRef.current = true;
+      } else {
+        console.log("⚠️ Fullscreen not active. Monitoring paused.");
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: "pause_monitoring" }));
+        }
       }
-    } else if (!monitoringEnabled) {
-      console.log("🚫 Monitoring is disabled for this event (monitoring=0), skipping monitoring setup")
     }
-  }, [gameStarted, gameData, startMonitoring, user_id, event_id, isFullScreen, monitoringEnabled])
+  }, [gameStarted, gameData, user_id, isFullScreen, monitoringEnabled, startMonitoring]);
+
 
   useEffect(() => {
     // Block browser back button during game

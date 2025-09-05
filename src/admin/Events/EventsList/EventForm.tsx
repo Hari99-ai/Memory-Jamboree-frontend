@@ -182,13 +182,13 @@ export default function EventForm() {
     formData.append("estatus", values.estatus.toString());
     formData.append("emonitored", monitoringEnabled ? "1" : "0");
 
-    values.category.forEach((val:any) =>
+    values.category.forEach((val) =>
       formData.append("category", val.toString())
     );
-    values.disciplines.forEach((val:any) =>
+    values.disciplines.forEach((val) =>
       formData.append("disciplines", val.toString())
     );
-    (values.school_participants || []).forEach((val:any) =>
+    (values.school_participants || []).forEach((val) =>
       formData.append("school_participants", val.toString())
     );
 

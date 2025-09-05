@@ -256,28 +256,37 @@ export default function Monitorings() {
   // --- Event Table ---
   const eventDataForTable = useMemo(() => {
     if (!folders) return [];
-    return Object.entries(folders).map(
-      ([eventId, eventData]: [string, any], index) => {
-        const disciplines = eventData.disciplines || {};
-        const uniqueUsers = new Set(
-          Object.values(disciplines).flatMap((d: any) => Object.keys(d.users))
-        );
-        return {
-          srNo: index + 1,
-          eventName: eventData.event_name,
-          totalParticipants: uniqueUsers.size,
-          totalDisciplines: Object.keys(disciplines).length,
-          eventStart: formatDateTime(eventData.event_start),
-          eventEnd: formatDateTime(eventData.event_end),
-          eventId: eventId,
-        };
-      }
-    );
+    // Convert folder object to an array, sort it, then map to table data
+    return Object.entries(folders)
+      .sort(([, a]: [string, any], [, b]: [string, any]) => {
+        // Create Date objects for comparison to ensure correct sorting
+        const dateA = new Date(a.event_end);
+        const dateB = new Date(b.event_end);
+        // Subtract dateA from dateB for descending order (latest first)
+        return dateB.getTime() - dateA.getTime();
+      })
+      .map(
+        ([eventId, eventData]: [string, any], index) => {
+          const disciplines = eventData.disciplines || {};
+          const uniqueUsers = new Set(
+            Object.values(disciplines).flatMap((d: any) => Object.keys(d.users))
+          );
+          return {
+            srNo: index + 1,
+            eventName: eventData.event_name,
+            totalParticipants: uniqueUsers.size,
+            totalDisciplines: Object.keys(disciplines).length,
+            eventStart: formatDateTime(eventData.event_start),
+            eventEnd: formatDateTime(eventData.event_end),
+            eventId: eventId,
+          };
+        }
+      );
   }, [folders]);
 
   const eventColumns = useMemo<ColumnDef<any>[]>(
     () => [
-      { accessorKey: "srNo", header: "S.No." },
+      { accessorKey: "srNo", header: "S. No." },
       { accessorKey: "eventName", header: "Event Name" },
       { accessorKey: "totalParticipants", header: "Total Participants" },
       { accessorKey: "totalDisciplines", header: "Total Disciplines" },
@@ -465,7 +474,7 @@ export default function Monitorings() {
                     placeholder="Search by event name..."
                     value={eventFilter}
                     onChange={(e) => setEventFilter(e.target.value)}
-                    className="max-w-sm"
+                    className="max-w-sm text-black"
                 />
             </div>
             <MonitoringDataTable table={eventTable} columns={eventColumns} />
@@ -581,7 +590,7 @@ export default function Monitorings() {
             </div>
 
 
-              {/* --- REORDERED: Log Cards --- */}
+              {/* --- Log Cards --- */}
               <div className="space-y-4">
                  <WarningCountLogs
                   title="Total Warning Logs"
@@ -599,10 +608,6 @@ export default function Monitorings() {
                   title="External Camera Image Logs"
                   logs={userLogs}
                 />
-                <CardWithLogs
-                  title="Total Logs"
-                  logs={userLogs}
-                />
                 <VoiceLogs
                   title="Voice Detection Logs"
                   logs={userLogs.filter(
@@ -616,6 +621,11 @@ export default function Monitorings() {
                 <KeyboardLogsTable
                   title="Keyboard Detection Logs"
                   kdata={keys_log || []}
+                />
+                {/* MODIFIED: Total Logs card is now at the bottom */}
+                <CardWithLogs
+                  title="Total Logs"
+                  logs={userLogs}
                 />
               </div>
             </div>

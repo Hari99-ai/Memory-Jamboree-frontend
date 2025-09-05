@@ -52,6 +52,7 @@ const DateGame: React.FC<DateGameProps> = ({
   const [focusedRow, setFocusedRow] = useState<number>(0)
   const [timeLeft, setTimeLeft] = useState(300) // Default to 5 minutes
   const timerRef = useRef<number | null>(null)
+  const timerEndTimeRef = useRef<number | null>(null) // To ensure timer accuracy across browser tabs
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -75,11 +76,23 @@ const DateGame: React.FC<DateGameProps> = ({
   // Function to start timer
   const startTimer = (duration: number) => {
     if (timerRef.current) clearInterval(timerRef.current)
+
+    // Set the target end time to ensure timer continues correctly even if tab is inactive
+    timerEndTimeRef.current = Date.now() + duration * 1000
     setTimeLeft(duration)
+
     timerRef.current = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!)
+      const endTime = timerEndTimeRef.current
+      if (endTime) {
+        const remaining = Math.round((endTime - Date.now()) / 1000)
+
+        if (remaining <= 0) {
+          setTimeLeft(0)
+          if (timerRef.current) clearInterval(timerRef.current)
+          timerRef.current = null
+
+          // When timer ends, automatically proceed to the next phase.
+          // Using setTimeout to avoid potential state update conflicts within the interval.
           setTimeout(() => {
             setPhase((currentPhase) => {
               if (currentPhase === "memorize") {
@@ -87,13 +100,14 @@ const DateGame: React.FC<DateGameProps> = ({
               } else if (currentPhase === "recall") {
                 handleSubmit()
               }
+              // The phase is changed inside the handler functions.
               return currentPhase
             })
           }, 0)
-          return 0
+        } else {
+          setTimeLeft(remaining)
         }
-        return prev - 1
-      })
+      }
     }, 1000)
   }
 

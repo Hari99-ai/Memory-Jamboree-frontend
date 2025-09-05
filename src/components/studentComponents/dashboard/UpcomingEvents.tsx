@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Calendar,  Users, Camera, BookOpen, Mail} from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Users, Camera, BookOpen, Mail, AlertTriangle } from "lucide-react";
 import { getUserEvents, register_event } from "../../../lib/api";
 import type { EventData } from "../../../types";
 import { eventImg, API_BASE_URL } from "../../../lib/client";
@@ -53,6 +53,8 @@ const createComingSoonCard = (id: number): EventData => ({
 export default function UpcomingEvents() {
   const [showModal, setShowModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false); // State for the error modal
+  const [errorMessage, setErrorMessage] = useState(""); // State for the error message
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRegLoading, setIsRegLoading] = useState(true);
@@ -280,10 +282,10 @@ export default function UpcomingEvents() {
     onError: (error: any) => {
       const errorMsg =
         error?.response?.data?.msg || error?.response?.data?.error || "Failed to register. Please try again.";
-      if (errorMsg.includes("You are not eligible to register based on your class.")) {
-        toast.error("Your class/grade is not eligible for this event.");
-      } else if (errorMsg.includes("User already registered for this event.")) {
-        toast.error("You are already registered.");
+      // MODIFICATION: Show a modal for specific, user-facing errors
+      if (errorMsg.includes("You are not eligible to register based on your class.") || errorMsg.includes("User already registered for this event.")) {
+        setErrorMessage(errorMsg);
+        setShowErrorModal(true);
       } else {
         toast.error(errorMsg);
       }
@@ -398,7 +400,7 @@ export default function UpcomingEvents() {
                   </div>
 
                   <div className="flex flex-col flex-1 p-5 bg-white">
-                    <h3 className={`text-lg font-bold text-center ${isPlaceholder ? 'text-gray-500' : 'text-black'}`}>
+                    <h3 className={`text-xl font-bold text-center ${isPlaceholder ? 'text-gray-500' : 'text-black'}`}>
                       {event.ename}
                     </h3>
                     {!isPlaceholder && (
@@ -450,7 +452,8 @@ export default function UpcomingEvents() {
             );
           })}
         </div>
-
+        
+        {/* MODIFICATION: Updated Registration Modal */}
         {showModal && selectedEvent && !selectedEvent.isPlaceholder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="relative w-full max-w-lg overflow-hidden bg-white border shadow-2xl rounded-2xl border-slate-200">
@@ -477,6 +480,26 @@ export default function UpcomingEvents() {
                     </div>
                   </div>
                 </div>
+
+                {/* NEW: Categories Section */}
+                {selectedEvent.category && selectedEvent.category.length > 0 && (
+                  <div className="pt-4 mt-2 border-t border-gray-200">
+                    <h5 className="mb-3 font-semibold text-center text-gray-700">
+                      Eligible Categories
+                    </h5>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {selectedEvent.category.map((cat:any) => (
+                        <span
+                          key={cat.cat_id}
+                          className="px-3 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full"
+                        >
+                          {cat.category_name}: {cat.classes}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="pt-6 border-t border-gray-200">
                   <button
                     onClick={handleRegistrationAction}
@@ -529,20 +552,20 @@ export default function UpcomingEvents() {
                         {
                           label: "First Name",
                           icon: <Users className="w-4 h-4 text-red-500" />,
-                          description: "Your legal first name",
+                          description: "Your first name",
                         },
                         {
                           label: "Last Name",
                           icon: <Users className="w-4 h-4 text-red-500" />,
-                          description: "Your legal last name",
+                          description: "Your last name",
                         },
                         {
                           label: "Profile Image",
                           icon: <Camera className="w-4 h-4 text-red-500" />,
-                          description: "A clear photo of yourself",
+                          description: "A clear portrait photo that shows your face clearly",
                         },
                         {
-                          label: "School Class",
+                          label: "Your Class/Grade",
                           icon: <BookOpen className="w-4 h-4 text-red-500" />,
                           description: "Your current grade/class",
                         },
@@ -585,6 +608,38 @@ export default function UpcomingEvents() {
             </div>
           </div>
         )}
+
+        {/* NEW: Error Modal */}
+        {showErrorModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="relative w-full max-w-md overflow-hidden bg-white border shadow-2xl border-slate-200 rounded-2xl">
+              <div className="flex items-center justify-between p-6 font-bold text-white bg-red-500">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h3 className="text-lg font-bold">Registration Failed</h3>
+                </div>
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="flex items-center justify-center w-8 h-8 text-xl transition rounded-full hover:bg-red-400"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-6 space-y-6 text-center">
+                <p className="font-medium text-slate-700">
+                  {errorMessage}
+                </p>
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="w-full px-6 py-2 mt-2 text-sm font-bold text-white transition bg-black shadow-lg hover:bg-gray-800 rounded-xl"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

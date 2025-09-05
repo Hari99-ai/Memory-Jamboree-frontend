@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
@@ -26,6 +26,11 @@ import {
   AlertTriangle,
   X,
   SendHorizontal,
+  Video,
+  Smartphone,
+  CheckCircle2,
+  RefreshCw,
+  
 } from "lucide-react";
 import CountdownOverlay from "../practiceTests/CountdownOverlay";
 import FacialRecognitionStep from "../myEvents/FacialRecognitionStep";
@@ -41,7 +46,6 @@ import trophyImg from "../../public/Landing/memoryChampion_2.png";
 import { useRecoilValue } from "recoil";
 import { eventStatusState } from "../atoms/eventAtom";
 import { useEventWebSocket } from "../hooks/useEventStatusUpdate";
-import { FaLongArrowAltRight } from "react-icons/fa";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { SocketURL } from "../lib/client";
@@ -197,6 +201,7 @@ export default function EventView() {
   const { event_id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const desktopVideoRef = useRef<HTMLVideoElement>(null);
 
   const userId =
     sessionStorage.getItem("userId") || localStorage.getItem("userId");
@@ -222,9 +227,8 @@ export default function EventView() {
   const [frame, setFrame] = useState<string | null>(null);
   // const wsRef = useRef<WebSocket | null>(null);
 
-  const [faceDetected , setFaceDetected] = useState(false)
-  const [handDetected , setHandDetected ] = useState(false)
-
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [handDetected, setHandDetected] = useState(false);
 
   // Add countdown state
   const [countdown, setCountdown] = useState<{
@@ -234,13 +238,24 @@ export default function EventView() {
     seconds: number;
   } | null>(null);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
+  const [hasRefreshedForLive, setHasRefreshedForLive] = useState(false);
 
   // Add media permissions state
-  const [mediaPermissions, setMediaPermissions] = useState<MediaPermissions>({
+  const [, setMediaPermissions] = useState<MediaPermissions>({
     audio: false,
     video: false,
   });
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [recieved , setRecieved] = useState(false)
+
+  // MODIFICATION: Refresh page once on first load to get fresh data
+  useEffect(() => {
+    const key = `refreshed_${event_id}`;
+    if (sessionStorage.getItem(key) !== "true") {
+      sessionStorage.setItem(key, "true");
+      window.location.reload();
+    }
+  }, [event_id]);
 
   // Countdown calculation function
   const calculateCountdown = useCallback(() => {
@@ -267,13 +282,14 @@ export default function EventView() {
     } else {
       setCountdown(null);
       setIsCountdownActive(false);
-      console.log("🔄 Event should be live now, refreshing page...");
-      // window.location.reload() // FIXED: This was causing a refresh loop if the backend hadn't updated the event status yet.
+      // MODIFICATION: Refresh page automatically when countdown ends
+      if (!hasRefreshedForLive) {
+        console.log("🔄 Event should be live now, refreshing page...");
+        setHasRefreshedForLive(true); // Prevent refresh loop
+        window.location.reload();
+      }
     }
-  }, [eventData]);
-
-
-
+  }, [eventData, hasRefreshedForLive]);
 
   // Countdown effect
   useEffect(() => {
@@ -288,7 +304,7 @@ export default function EventView() {
   const [error, setError] = useState<string | null>(null);
   const [countdownStarted, setCountdownStarted] = useState(false);
   const [showProctoringModal, setShowProctoringModal] = useState(false);
-  const [phoneStarted , setPhoneStarted] = useState(false)
+  const [phoneStarted, setPhoneStarted] = useState(false);
 
   // Flow control states
   const [showFacialRecognition, setShowFacialRecognition] = useState(false);
@@ -311,9 +327,9 @@ export default function EventView() {
   //   event_id: String(event_id || ""),
   // });
 
-  const { mutate: sendLink , isPending: SendLoading } = useMutation({
+  const { mutate: sendLink, isPending: SendLoading } = useMutation({
     mutationKey: ["send-phone-link"],
-    mutationFn: (data: PhoneSendData ) => sendPhoneLinkedMail(data),
+    mutationFn: (data: PhoneSendData) => sendPhoneLinkedMail(data),
     onSuccess: () => {
       toast.success("📩 Check your email, phone link has been sent!");
     },
@@ -323,27 +339,28 @@ export default function EventView() {
   });
 
   const handleSend = (discipline_id: string) => {
-  const email = sessionStorage.getItem("email");
+    const email = sessionStorage.getItem("email");
 
-  if (!email || !eventData?.event.event_id || !discipline_id) {
-    toast.error(`Missing required fields: email=${email}, event_id=${eventData?.event.event_id}, disc_id=${discipline_id}`);
-    return;
-  }
+    if (!email || !eventData?.event.event_id || !discipline_id) {
+      toast.error(
+        `Missing required fields: email=${email}, event_id=${eventData?.event.event_id}, disc_id=${discipline_id}`
+      );
+      return;
+    }
 
-  console.log("email:", email);
-  console.log("event_id:", eventData.event.event_id);
-  console.log("disc_id:", discipline_id);
+    console.log("email:", email);
+    console.log("event_id:", eventData.event.event_id);
+    console.log("disc_id:", discipline_id);
 
-  const payload: PhoneSendData = {
-    email: email,
-    event_id: String(eventData.event.event_id),
-    disc_id: discipline_id,
+    const payload: PhoneSendData = {
+      email: email,
+      event_id: String(eventData.event.event_id),
+      disc_id: discipline_id,
+    };
+
+    // Call the mutation directly
+    sendLink(payload);
   };
-
-  // Call the mutation directly
-  sendLink(payload);
-};
-
 
   // Function to request media permissions
   const requestMediaPermissions = async (): Promise<MediaPermissions> => {
@@ -428,9 +445,11 @@ export default function EventView() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("keydown", handleKeyDown, true);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);  
+
     };
   }, [isInFullScreenFlow]);
 
@@ -527,6 +546,7 @@ export default function EventView() {
                   discipline: "",
                 })
               );
+              
             apiLeaderboard.sort((a, b) => a.rank - b.rank);
 
             setLeaderboard(apiLeaderboard);
@@ -649,102 +669,71 @@ export default function EventView() {
   useEventWebSocket(event_id!);
   const eventStatus = useRecoilValue(eventStatusState(event_id!));
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const MAX_CONNECTION_ATTEMPTS = 5;
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const manualDisconnectRef = useRef(false); // Only true when server sends disconnect
 
-  const connectWebSocket = (discipline: DisciplineData) => {
-  // Close previous connection if still open
+const RETRY_INTERVAL = 2000; // 2s retry interval
+
+const connectWebSocket = (discipline: DisciplineData) => {
+  // Close previous WS if open
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.close(1000, "Reconnecting");
   }
 
-  const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${event.event_id}/${userId}`;
+  const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${event_id}/${userId}`;
   const socket = new WebSocket(wsUrl);
+  setWs(socket);
+  manualDisconnectRef.current = false;
 
-  let heartbeat: NodeJS.Timeout | null = null;
   const connectionTimeout = setTimeout(() => {
     if (socket.readyState !== WebSocket.OPEN) {
-      console.warn("⌛ Connection timeout");
+      console.warn("⌛ WS connection timeout");
       socket.close();
-      retryConnection(discipline);
     }
   }, 5000);
 
   socket.onopen = () => {
     clearTimeout(connectionTimeout);
     console.log("✅ Desktop WS connected");
-    setConnectionAttempts(0);
 
-    // Send verify message
+    // Send verify
     socket.send(JSON.stringify({ type: "verify" }));
 
-    // // Immediately request phone status after reconnect
-    // socket.send(JSON.stringify({
-    //   type: "phone_status",
-    //   disciplineId: discipline.disc_id,
-    //   event_id: event.event_id,
-    //   user_id: userId
-    // }));
-
-    // Start heartbeat to keep connection alive
-    heartbeat = setInterval(() => {
+    // Start heartbeat
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    heartbeatRef.current = setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "ping" }));
-      } else if (heartbeat) {
-        clearInterval(heartbeat);
       }
-    }, 20000);
+    }, 25000);
   };
 
   socket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log("📩 Desktop WS message:", data);
+      // console.log("📩 Desktop WS message:", data);
 
-      // if (data.type === "phone_status") {
-      //   setPhoneStarted(data.started);
-      //   if (data.started) {
-      //     toast.success("📱 Phone Connected");
-      //   }
-      // } 
-      if (data.type === "phone_ready") {
-        console.log("✅ Phone is ready to start monitoring for user:", data.user_id);
-        // toast.success("📱 Phone Ready");
-        setPhoneStarted(true)
-        // Optionally, auto-start monitoring:
-        // socket.send(JSON.stringify({ type: "start_monitoring" }));
-      }
-      
-      else if(data.type === "prechecking"){
-        setFaceDetected(true)
-        setHandDetected(true)
+      if (data.type === "disconnect") {
+        console.warn("🔌 Server requested disconnect:", data.message);
+        manualDisconnectRef.current = true;
+        socket.close();
       }
 
-      else if(data.type === "prechecking-final"){
-        setFaceDetected(true)
-        setHandDetected(true)
+      if (data.type === "phone_ready") setPhoneStarted(true);
+      if (data.type === "prechecking" || data.type === "prechecking-final") {
+        const faceOk = data.face === 1;
+        const handOk = data.hand === 1;
+        setFaceDetected(faceOk);
+        setHandDetected(handOk);
+        setRecieved(true);
+        toast[faceOk && handOk ? "success" : "error"](
+          faceOk && handOk ? "✅ Verified" : "❌ Not Verified"
+        );
       }
-      
-
-      else if (data.type === "frame") {
-        console.log(data);
-        setFrame(data.image);
-      }
-
-      // if (data.type === "phone_ready") {
-      //   setPhoneStarted(true);
-      //   toast.success("📱 Phone Ready");
-      //   console.log("✅ Phone ready, Start button enabled");
-      // }
-
-      else if (data.type === "phone_started") {
+      if (data.type === "frame") setFrame(data.image);
+      if (data.type === "phone_started") {
         setIsMonitoringEnabled(true);
         toast.success("▶️ Monitoring Started");
-        console.log("▶️ Desktop notified that monitoring started");
-      }
-      else if (data.type === "disconnect") {
-        console.warn("🔌 Disconnected by server:", data.message);
-        socket.close();
       }
     } catch (err) {
       console.error("⚠️ Failed to parse WS message:", err);
@@ -752,149 +741,37 @@ export default function EventView() {
   };
 
   socket.onerror = (err) => {
-    console.error("❌ Desktop WS error:", err);
+    console.error("❌ WS error:", err);
     clearTimeout(connectionTimeout);
-    if (heartbeat) clearInterval(heartbeat);
-    retryConnection(discipline);
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    socket.close();
   };
 
   socket.onclose = (event) => {
     clearTimeout(connectionTimeout);
-    if (heartbeat) clearInterval(heartbeat);
-    console.log(`🔌 Desktop WS closed (clean: ${event.wasClean})`);
-
-    if (!event.wasClean && connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
-      retryConnection(discipline);
-    }
-  };
-
-  setWs(socket);
-};
-
-
-  const handleVerificationReset = () => {
-    console.log("HII")
-    if (!ws) {
-      console.warn("⚠️ No WebSocket instance found");
-      return;
-    }
-
-    if (ws.readyState !== WebSocket.OPEN) {
-      console.warn("⚠️ WebSocket is not open, retrying in 1 second...");
-      setTimeout(handleVerificationReset, 1000);
-      return;
-    }
-
-    ws.send(
-      JSON.stringify({
-        type: "precheck_reset",
-        timestamp: Date.now(),
-      })
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    console.warn(
+      `❌ WS closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`
     );
-    console.log("📡 Sent reset_verification to phone");
-  };
 
-
-
-
-// const connectWebSocket = useCallback((discipline: DisciplineData) => {
-//   if (ws && ws.readyState === WebSocket.OPEN) return; // already connected
-
-//   const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${eventData?.event.event_id}/${userId}`;
-//   const socket = new WebSocket(wsUrl);
-
-//   let heartbeat: NodeJS.Timeout;
-
-//   socket.onopen = () => {
-//     console.log("✅ Desktop WS connected");
-
-//     // Send verify message
-//     socket.send(JSON.stringify({ type: "verify" }));
-
-//     // Heartbeat
-//     heartbeat = setInterval(() => {
-//       if (socket.readyState === WebSocket.OPEN) {
-//         socket.send(JSON.stringify({ type: "ping" }));
-//       } else clearInterval(heartbeat);
-//     }, 20000);
-//   };
-
-//   socket.onmessage = (event) => {
-//     try {
-//       const data = JSON.parse(event.data);
-//       console.log("📩 Desktop WS message:", data);
-
-//       switch (data.type) {
-//         case "phone_ready":
-//           if (data.discipline_id === discipline.disc_id) { // Ensure correct discipline
-//           console.log("✅ Phone is ready for user:", data.user_id);
-//           // toast.success("📱 Phone Ready");  // Only show info
-//           setPhoneStarted(true)
-//         }
-//           break
-
-//         case "phone_started":
-//           setIsMonitoringEnabled(true);
-//           toast.success("▶️ Monitoring Started");
-//           console.log("▶️ Desktop notified monitoring started");
-//           break;
-
-//         case "disconnect":
-//           console.warn("🔌 Disconnected by server:", data.message);
-//           socket.close();
-//           break;
-
-//         default:
-//           break;
-//       }
-//     } catch (err) {
-//       console.error("⚠️ Failed to parse WS message:", err);
-//     }
-//   };
-
-//   socket.onerror = (err) => {
-//     console.error("❌ Desktop WS error:", err);
-//     clearInterval(heartbeat);
-//     retryConnection(discipline);
-//   };
-
-//   socket.onclose = (event) => {
-//     clearInterval(heartbeat);
-//     console.log(`🔌 Desktop WS closed (clean: ${event.wasClean})`);
-//     if (!event.wasClean) retryConnection(discipline);
-//   };
-
-//   setWs(socket);
-// }, [ws, eventData?.event.event_id, userId]);
-
-
-
-
-
-const retryConnection = (discipline: DisciplineData) => {
-  setConnectionAttempts((prev) => {
-    if (prev < MAX_CONNECTION_ATTEMPTS) {
-      setTimeout(() => connectWebSocket(discipline), 2000);
-      return prev + 1;
+    if (!manualDisconnectRef.current) {
+      console.log(`🔄 Retrying desktop WS in ${RETRY_INTERVAL / 1000}s...`);
+      setTimeout(() => connectWebSocket(discipline), RETRY_INTERVAL);
+    } else {
+      console.log("🔌 WS closed by server, no retry.");
     }
-    return prev;
-  });
+  };
 };
 
-  // const handleConnectionError = (discipline: DisciplineData) => {
-  //   if (connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
-  //     const delay = Math.min(1000 * 2 ** connectionAttempts, 10000); // Exponential backoff
-  //     console.log(`Retrying in ${delay / 1000} seconds...`);
 
-  //     setTimeout(() => {
-  //       setConnectionAttempts((prev) => prev + 1);
-  //       connectWebSocket(discipline);
-  //     }, delay);
-  //   } else {
-  //     console.error("Max connection attempts reached");
-  //     // Show error to user
-  //     alert("Failed to connect to proctoring service. Please try again later.");
-  //   }
+  // const retryConnection = (discipline: DisciplineData) => {
+  //   setConnectionAttempts((prev) => {
+  //     if (prev < MAX_CONNECTION_ATTEMPTS) {
+  //       setTimeout(() => connectWebSocket(discipline), 2000);
+  //       return prev + 1;
+  //     }
+  //     return prev;
+  //   });
   // };
 
   // GAME FLOW HANDLERS
@@ -902,20 +779,13 @@ const retryConnection = (discipline: DisciplineData) => {
     console.log("🎮 Starting discipline:", discipline.discipline_name);
 
     try {
-      // localStorage.removeItem("passcode"); // Clear any old passcode
-      // setPasscode(""); // Reset passcode state
       connectWebSocket(discipline);
-
-
-      // send Mobile Link
-      
 
       // 2. Continue with UI flow
       setSelectedDiscipline(discipline);
       setShowProctoringModal(true);
 
-      handleSend(String(discipline.disc_id))
-
+      handleSend(String(discipline.disc_id));
     } catch (error) {
       console.error("Discipline start failed:", error);
       alert("Failed to initialize proctoring session");
@@ -935,7 +805,6 @@ const retryConnection = (discipline: DisciplineData) => {
       alert("Please allow fullscreen mode to continue with the challenge.");
       return;
     }
-
     setShowFacialRecognition(true);
   };
 
@@ -993,15 +862,13 @@ const retryConnection = (discipline: DisciplineData) => {
             eventName: eventData.event.event_name,
             eventDisciplines: eventDisciplines,
             fromEvent: true,
-            monitoringEnabled: true, // ✅ force pass true
+            monitoringEnabled: true,
           },
           replace: true,
         }
       );
     }, 5000);
   };
-
-
 
   const handleClose = async () => {
     console.log("❌ Closing game flow");
@@ -1022,6 +889,64 @@ const retryConnection = (discipline: DisciplineData) => {
       }
     }
   };
+  
+  // MODIFICATION: useEffect to manage desktop camera preview stream in the new modal
+  useEffect(() => {
+    if (showPermissionModal) {
+      const startDesktopPreview = async () => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+            });
+            if (desktopVideoRef.current) {
+              desktopVideoRef.current.srcObject = stream;
+            }
+          } catch (err) {
+            console.error("Error accessing desktop camera for preview:", err);
+            toast.error(
+              "Desktop camera access denied. Please allow camera access in your browser settings."
+            );
+          }
+        }
+      };
+      startDesktopPreview();
+
+      // Cleanup function to stop the camera stream when the modal is closed
+      return () => {
+        if (
+          desktopVideoRef.current &&
+          desktopVideoRef.current.srcObject
+        ) {
+          const stream = desktopVideoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => track.stop());
+          desktopVideoRef.current.srcObject = null;
+        }
+      };
+    }
+  }, [showPermissionModal]);
+
+  // Handler for the new Reset button
+  const handleResetVerification = () => {
+    console.log("🔄 Resetting verification status...");
+    setFaceDetected(false);
+    setHandDetected(false);
+    alert("Verification checks have been reset.");
+
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "precheck_reset", 
+          timestamp: new Date().toISOString()
+        }));
+        console.log("📡 Sent precheck_reset message to backend");
+    } else {
+        console.warn("⚠️ WebSocket not connected, cannot reset verification");
+    }
+  };
+
+  
+  const isVerified = faceDetected && handDetected;
 
   // Early return if no userId is found
   if (!userId) {
@@ -1294,37 +1219,66 @@ const retryConnection = (discipline: DisciplineData) => {
                         const isEventUpcoming = event.etype === 2;
                         const isEventExpired = event.etype === 0;
 
-                        let buttonDisabled = false;
+                        const buttonDisabled =
+                          isComplete ||
+                          isWarned ||
+                          isEventUpcoming ||
+                          isEventExpired;
                         let buttonLabel = "Start Challenge";
 
+                        // MODIFICATION: Logic to dynamically style cards
+                        let cardStyle = {
+                          card: "hover:border-indigo-300",
+                          topBar: "bg-indigo-600",
+                          title: "text-gray-800 group-hover:text-indigo-600",
+                          button:
+                            "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:scale-[1.02]",
+                        };
+
                         if (isComplete) {
-                          buttonDisabled = true;
                           buttonLabel = "Attempted";
+                          cardStyle = {
+                            card: "border-red-300 bg-red-50/50 cursor-not-allowed",
+                            topBar: "bg-red-500",
+                            title: "text-red-600",
+                            button:
+                              "bg-red-100 text-red-700 border border-red-300 cursor-not-allowed hover:bg-red-100",
+                          };
                         } else if (isWarned) {
-                          buttonDisabled = true;
                           buttonLabel = "Disabled by Admin";
+                          cardStyle = {
+                            card: "border-red-300 bg-red-50/50 cursor-not-allowed",
+                            topBar: "bg-red-500",
+                            title: "text-red-600",
+                            button:
+                              "bg-red-100 text-red-700 border border-red-300 cursor-not-allowed hover:bg-red-100",
+                          };
                         } else if (isEventUpcoming) {
-                          buttonDisabled = true;
                           buttonLabel = "Coming Soon";
+                          cardStyle = {
+                            card: "border-blue-300 bg-blue-50/50 cursor-not-allowed",
+                            topBar: "bg-blue-500",
+                            title: "text-blue-600",
+                            button:
+                              "bg-blue-100 text-blue-700 border border-blue-300 cursor-not-allowed hover:bg-blue-100",
+                          };
                         } else if (isEventExpired) {
-                          buttonDisabled = true;
                           buttonLabel = "Event Ended";
+                          cardStyle = {
+                            card: "border-gray-300 bg-gray-50/50 cursor-not-allowed",
+                            topBar: "bg-gray-500",
+                            title: "text-gray-600",
+                            button:
+                              "bg-gray-100 text-gray-700 border border-gray-300 cursor-not-allowed hover:bg-gray-100",
+                          };
                         }
 
                         return (
                           <Card
                             key={discipline.disc_id}
-                            className={`group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 overflow-hidden ${
-                              buttonDisabled
-                                ? "border-red-300 bg-red-50/50"
-                                : "hover:border-indigo-300"
-                            }`}
+                            className={`group hover:shadow-lg transition-all duration-300 border-2 overflow-hidden ${cardStyle.card}`}
                           >
-                            <div
-                              className={`h-1 ${
-                                buttonDisabled ? "bg-red-500" : " bg-indigo-600"
-                              }`}
-                            />
+                            <div className={`h-1 ${cardStyle.topBar}`} />
                             <CardContent className="p-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
@@ -1335,11 +1289,7 @@ const retryConnection = (discipline: DisciplineData) => {
                                   </div>
                                   <div>
                                     <h3
-                                      className={`text-xl font-semibold transition-colors ${
-                                        buttonDisabled
-                                          ? "text-red-600"
-                                          : "text-gray-800 group-hover:text-indigo-600"
-                                      }`}
+                                      className={`text-xl font-semibold transition-colors ${cardStyle.title}`}
                                     >
                                       {discipline.discipline_name}
                                     </h3>
@@ -1366,16 +1316,11 @@ const retryConnection = (discipline: DisciplineData) => {
                                 disabled={buttonDisabled}
                                 onClick={() =>
                                   !buttonDisabled &&
-                                  handleStartDiscipline(discipline) 
-                          
+                                  handleStartDiscipline(discipline)
                                 }
-                                className={`w-full h-11 text-base font-semibold transition-all duration-300 ${
-                                  buttonDisabled
-                                    ? "bg-red-100 text-red-700 border border-red-300 cursor-not-allowed hover:bg-red-100"
-                                    : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:scale-[1.02]"
-                                }`}
+                                className={`w-full h-11 text-base font-semibold transition-all duration-300 ${cardStyle.button}`}
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center gap-2">
                                   {isComplete ? (
                                     <>
                                       <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
@@ -1704,173 +1649,166 @@ const retryConnection = (discipline: DisciplineData) => {
         </div>
       )}
 
-      {/* Media Permission Modal */}
+      {/* MODIFICATION: New Redesigned Media Permission Modal */}
+      {/* MODIFICATION: New Redesigned Media Permission Modal */}
       {showPermissionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full relative border border-gray-200">
-            <div className="p-8 text-center">
-              <div className="mb-6 flex space-x-5">
-                <div className="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 mb-4">
-                  <AlertTriangle className="h-4 w-4 text-blue-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Media Permissions Required
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full relative border border-gray-200 animate-in fade-in-0 zoom-in-95 duration-300">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">
+                  Dual Camera Verification
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  To continue with the challenge, we need access to your camera
-                  and microphone for monitoring purposes.
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleSend(String(selectedDiscipline?.disc_id))
+                    }
+                    disabled={SendLoading}
+                  >
+                    <SendHorizontal className="mr-2 w-4 h-4" />
+                    {SendLoading ? "Sending..." : "Resend Link"}
+                  </Button>
+                  <button
+                    onClick={handleClose}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded-r-lg">
+                <p className="text-blue-800 text-sm">
+                  <strong>Disclaimer:</strong> Check the email sent to you for
+                  a link to connect your mobile device. Open it in your mobile
+                  browser.
                 </p>
               </div>
-              <div className="flex flex-col justify-center space-y-4 mb-4  bg-white rounded-xl p-4 shadow-lg">
-                {/* <QRGenerate/> */}
-                {/* <p className="text-xl font-bold">
-                  Your Phone linked passcode is:{" "}
-                  <span className="text-green-600">{passcode}</span>
-                </p> */}
-                <div className="flex">
-                  <FaLongArrowAltRight className="text-3xl text-red-500  w-28" />
-                  <span className="text-sm  font-semibold text-red-500 px-2 blink">
-                    {" "}
-                   Open the link sent to your email on your Mobile Browser and start monitoring to enable dual camera mode.
-                  </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Desktop Preview */}
+                <div className="border rounded-lg p-3 bg-gray-50 flex flex-col">
+                  <div className="flex items-center gap-2 font-semibold mb-2 text-gray-700">
+                    <Video className="w-5 h-5" />
+                    <span>Desktop Preview</span>
+                  </div>
+                  <div className="w-full h-48 md:h-56 bg-black rounded overflow-hidden">
+                    <video
+                      ref={desktopVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    ></video>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <p>Phone Review</p>
-                  <div className="w-[250px] h-full flex items-center justify-center bg-black">
+
+                {/* Mobile Preview */}
+                <div className="border rounded-lg p-3 bg-gray-50 flex flex-col">
+                  <div className="flex items-center gap-2 font-semibold mb-2 text-gray-700">
+                    <Smartphone className="w-5 h-5" />
+                    <span>Mobile Preview</span>
+                  </div>
+                  <div className="w-full h-48 md:h-56 bg-black rounded flex items-center justify-center text-white">
                     {frame ? (
-                      <img src={frame} className="object-cover w-full h-full" alt="Phone stream" />
+                      <img
+                        src={frame}
+                        className="object-cover w-full h-full"
+                        alt="Phone stream"
+                      />
                     ) : (
-                      <div className="text-white">Waiting for phone camera...</div>
+                      <div className="text-center p-4">
+                        <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
+                        <p>Waiting for phone camera...</p>
+                      </div>
                     )}
                   </div>
-
-                  <div className="flex flex-col space-y-2">
-                    <p className="font-semibold">Biometric Verification</p>
-
-                    {/* Face Detection */}
-                    <div className="flex items-center gap-2">
-                      <p>Face:</p>
-                      {faceDetected ? (
-                        <span className="text-green-600 font-bold">✅ Detected</span>
-                      ) : (
-                        <span className="text-red-600 font-bold">❌ Not Detected</span>
-                      )}
-                    </div>
-
-                    {/* Hand Detection */}
-                    <div className="flex items-center gap-2">
-                      <p>Hand:</p>
-                      {handDetected ? (
-                        <span className="text-green-600 font-bold">✅ Detected</span>
-                      ) : (
-                        <span className="text-red-600 font-bold">❌ Not Detected</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
-                
-                <div className=" flex justify-between px-8 py-6 ">
-                  <button
-                  onClick={() => {
-                    // if (String(!selectedDiscipline?.disc_id)) {
-                    //   toast.error("Discipline ID is missing!");
-                    //   return;
-                    // }
-                    handleSend(String(selectedDiscipline?.disc_id));
-                  }}
-                  disabled={SendLoading || !phoneStarted}
-                  className={`flex items-center px-3 py-2 border rounded-sm font-medium transition-colors ${
-                    SendLoading || !phoneStarted
-                      ? 'bg-blue-400 cursor-not-allowed text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+              </div>
+              
+              {/* Simplified Unified Verification Status (Compact) */}
+              <div className="mb-4">
+                <div
+                  className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all duration-300 ${
+                    isVerified
+                      ? "bg-green-50 border-green-500"
+                      : "bg-red-50 border-red-400"
                   }`}
                 >
-                  <SendHorizontal className="mr-2 w-4 h-4" />
-                  {SendLoading
-                    ? 'Sending...'
-                    : phoneStarted
-                      ? 'ReSend Link'
-                      : 'Waiting for Phone ⌚'}
-                </button>
-
-
-                <button
-                  disabled={SendLoading || !phoneStarted}
-                  onClick={handleVerificationReset}
-                  className={`flex items-center px-4 py-2 rounded-md font-medium transition-all duration-200 
-                    ${SendLoading || !phoneStarted 
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg cursor-pointer"
+                  <div
+                    className={`w-8 h-8 rounded-full text-white flex items-center justify-center flex-shrink-0 ${
+                      isVerified ? "bg-green-500" : "bg-red-500"
                     }`}
-                >
-                  Reset Verification
-                </button>
-                </div>
-                  
-              </div>
-
-              <div className="bg-blue-50 rounded-xl p-4 mb-6 text-left shadow-sm">
-                <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
-                  Required Permissions
-                </h4>
-
-                <ul className="space-y-3 text-sm">
-                  {/* Camera & Microphone Combined */}
-                  <li className="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm border">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-3 h-3 rounded-full ${
-                          mediaPermissions.video && mediaPermissions.audio
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }`}
-                      />
-                      <span>Camera & Microphone Access</span>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        mediaPermissions.video && mediaPermissions.audio
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                  >
+                    {isVerified ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      <X className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <p
+                      className={`font-semibold text-sm ${
+                        isVerified ? "text-green-800" : "text-red-800"
                       }`}
                     >
-                      {mediaPermissions.video && mediaPermissions.audio
-                        ? "Granted"
-                        : "Required"}
-                    </span>
-                  </li>
-                </ul>
+                      User Verification
+                    </p>
+                    <p
+                      className={`text-xs font-medium ${
+                        isVerified ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {isVerified ? "Verified" : "Not Verified"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
+              {/* Reset Button Area */}
+              <div className="bg-gray-100 p-3 rounded-lg mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p className="text-sm text-gray-600 text-center sm:text-left">
+                  If you have issues with verification, you can reset the checks.
+                </p>
+                <Button
+                  disabled={!recieved}
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetVerification}
+                >
+                  <RefreshCw className="mr-2 w-4 h-4" />
+                  Reset Checks
+                </Button>
+              </div>
 
-              <div className="flex gap-3">
-                <button
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
                   onClick={handleClose}
-                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                  variant="outline"
+                  className="w-full sm:w-auto flex-1"
                 >
                   Cancel
-                </button>
-
-                <button
-                  disabled={!phoneStarted}
+                </Button>
+                <Button
+                  disabled={!phoneStarted && !isVerified}
                   onClick={async () => {
                     const permissions = await requestMediaPermissions();
                     setMediaPermissions(permissions);
-
                     if (permissions.audio && permissions.video) {
                       handlePermissionGranted();
                     } else {
-                      alert(
-                        "Both camera and microphone access are required to continue with the challenge."
+                      toast.error(
+                        "Camera and microphone access are required to continue."
                       );
                     }
                   }}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${phoneStarted
-      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg" // Active style
-      : "bg-gray-300 text-gray-600 cursor-not-allowed"} // Disabled style`}>
-                  {phoneStarted ? "Grant Permissions" : "Waiting for Phone... ⏳"}
-                </button>
+                  className="w-full sm:w-auto flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                >
+                  Continue to Start
+                </Button>
               </div>
             </div>
           </div>
@@ -1918,4 +1856,3 @@ const retryConnection = (discipline: DisciplineData) => {
     </>
   );
 }
-

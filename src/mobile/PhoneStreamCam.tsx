@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { usePhoneMonitoring } from "../hooks/usePhoneMonitoring.ts";
 // import { usePreMonitoring } from "../hooks/usePreMonitoring.ts";
@@ -18,17 +18,23 @@ export default function PhoneStreamCam() {
   const [started, setStarted] = useState(false);
   // const [timer, setTimer] = useState(30);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [cameraMode, setCameraMode] = useState<"user" | "environment">("environment");
+  // const [cameraMode, setCameraMode] = useState<"user" | "environment">("environment");
 
   const {
     videoRef,
     verified,
     isMonitoring,
     // sendPhoneStatus,
-    startCameraPrecheck,
-    precheckTimer
+    // startCameraPrecheck,
+    // precheckTimer
+    precheckTimer,
+    sendPrecheck,
+    // setPrecheckTimer,
+    cameraMode,
+    // setCameraMode,
+    startCamera,
+    startPrecheckCountdown
     // phoneDetected,
-
     // multiplePeople,
   } = usePhoneMonitoring({ event_id, discipline_id, user_id, passcode });
 
@@ -51,30 +57,30 @@ export default function PhoneStreamCam() {
   // });
 
   /** ---- CAMERA ACCESS ---- */
-  const initCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: cameraMode },
-        audio: true,
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      console.log(`📷 Camera ready (${cameraMode})`);
-    } catch (err) {
-      console.error("Cannot access camera:", err);
-      alert("Cannot access camera or microphone.");
-    }
-  }, [cameraMode, videoRef]);
+  // const initCamera = useCallback(async () => {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: { facingMode: cameraMode },
+  //       audio: true,
+  //     });
+  //     if (videoRef.current) {
+  //       videoRef.current.srcObject = stream;
+  //       await videoRef.current.play();
+  //     }
+  //     console.log(`📷 Camera ready (${cameraMode})`);
+  //   } catch (err) {
+  //     console.error("Cannot access camera:", err);
+  //     alert("Cannot access camera or microphone.");
+  //   }
+  // }, [cameraMode, videoRef]);
 
-  useEffect(() => {
-    initCamera();
-    return () => {
-      const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks();
-      tracks?.forEach((t) => t.stop());
-    };
-  }, [initCamera]);
+  // useEffect(() => {
+  //   initCamera();
+  //   return () => {
+  //     const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks();
+  //     tracks?.forEach((t) => t.stop());
+  //   };
+  // }, [initCamera]);
 
   // useEffect(() => {
   //   const missing: string[] = []
@@ -91,47 +97,54 @@ export default function PhoneStreamCam() {
   // }, [headVisible, handsVisible, legsVisible, tableVisible, laptopVisible, onValidationChange])
 
   // /** ---- START MONITORING ---- */
-  // const handleStart = async () => {
-  //   if (!verified) return;
-
-  //   // Start pre-monitoring validation first
-  //   // startValidation();
-
-  //   // console.log("validation" , validationPassed)
-
-  //   // if (!validationPassed) {
-  //   //   alert("Please adjust your position until the camera captures you clearly.");
-  //   //   return;
-  //   // }
-
-  //   // If validation passes, start countdown
-  //   setShowInstructions(false);
-  //   setStarted(true);
-  //   setTimer(30);
-
-  //   const countdown = setInterval(() => {
-  //     setTimer((prev) => {
-  //       if (prev <= 1) {
-  //         clearInterval(countdown);
-  //         startCameraPrecheck()
-  //         // sendPhoneStatus();
-  //         return 0;
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-  // };
-
-
   const handleStart = async () => {
     if (!verified) return;
+
+    // Start pre-monitoring validation first
+    // startValidation();
+
+    // console.log("validation" , validationPassed)
+
+    // if (!validationPassed) {
+    //   alert("Please adjust your position until the camera captures you clearly.");
+    //   return;
+    // }
+
+    // If validation passes, start countdown
     setShowInstructions(false);
     setStarted(true);
 
-    startCameraPrecheck(30_000);
+    startPrecheckCountdown(30)
+    setTimeout(() => {
+      sendPrecheck();
+    }, 30 * 1000);
+
+    // const countdown = setInterval(() => {
+    //   setPrecheckTimer((prev) => {
+    //     if (prev <= 1) {
+    //       clearInterval(countdown);
+    //       // startCameraPrecheck()
+    //       // sendPhoneStatus();
+    //       return 0;
+    //     }
+    //     return prev - 1;
+    //   });
+    // }, 1000);
   };
 
 
+  // const handleStart = async () => {
+  //   if (!verified) return;
+  //   setShowInstructions(false);
+  //   setStarted(true);
+
+  //   startCameraPrecheck(30_000);
+  // };
+
+  const handleToggleCamera = () => {
+  const newMode = cameraMode === "environment" ? "user" : "environment"
+  startCamera(newMode)
+}
 
   /** ---- TIMER FORMAT ---- */
   const formatTimer = (seconds: number) => {
@@ -147,10 +160,7 @@ export default function PhoneStreamCam() {
     }
   }, [verified]);
 
-  /** ---- CAMERA TOGGLE ---- */
-  const handleToggleCamera = () => {
-    setCameraMode((prev) => (prev === "environment" ? "user" : "environment"));
-  };
+
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center">

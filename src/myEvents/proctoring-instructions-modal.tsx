@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { X, Shield,  Camera, AlertTriangle, User,  Video } from "lucide-react"
+import { X, Shield, Camera, AlertTriangle, User,  Video } from "lucide-react"
 
 interface ProctoringInstructionsModalProps {
   isOpen: boolean
@@ -47,63 +47,63 @@ export default function ProctoringInstructionsModal({
   const renderPageContent = () => {
     switch (currentPage) {
       case 1:
-        return (
-          // Page 1: General Instructions
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <User className="w-5 h-5 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">General Instructions</h3>
-            </div>
-            <div className="bg-green-50 rounded-xl p-4 space-y-3">
-              <p className="text-gray-700">• Take the test all by yourself in a quiet, bright room.</p>
-              <p className="text-gray-700">• No one else can be in the room or help you.</p>
-              <p className="text-gray-700">• Make sure your profile picture is clear.</p>
-              <p className="text-gray-700">• The computer will check your face before the test begins.</p>
-            </div>
-          </section>
-        )
+  return (
+    // Page 1: General Instructions
+    <section className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-green-100 rounded-lg">
+          <User className="w-5 h-5 text-green-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900">General Instructions</h3>
+      </div>
+      <div className="bg-green-50 rounded-xl p-4 space-y-3">
+        <p className="text-gray-700">• Take the test by yourself in a quiet, well-lit room.</p>
+        <p className="text-gray-700">• No one else is permitted in the room or allowed to assist you.</p>
+        <p className="text-gray-700">• Ensure your profile picture is clear and recent.</p>
+        <p className="text-gray-700">• The system will verify your identity before the test begins.</p>
+      </div>
+    </section>
+  )
       case 2:
-        return (
-          // Page 2: Room Environment and Device requirements
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Camera className="w-5 h-5 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Room Environment and Device requirements</h3>
-            </div>
-            <div className="bg-purple-50 rounded-xl p-4 space-y-3">
-              <p className="text-gray-700">• Your desk must be empty. No books, papers, or phones.</p>
-              <p className="text-gray-700">• Make sure the walls behind you are clear.</p>
-              <p className="text-gray-700">• Your room should be very bright so the camera can see you.</p>
-              <p className="text-gray-700">• Your computer's camera and microphone must be on.</p>
-              <p className="text-gray-700">• You need a good internet connection.</p>
-              <p className="text-gray-700">• No screenshots or screen sharing.</p>
-            </div>
-          </section>
-        )
+  return (
+    // Page 2: Room and Device Requirements
+    <section className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-purple-100 rounded-lg">
+          <Camera className="w-5 h-5 text-purple-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900">Room and Device Requirements</h3>
+      </div>
+      <div className="bg-purple-50 rounded-xl p-4 space-y-3">
+        <p className="text-gray-700">• Your desk must be clear of all items, including books, papers, and phones.</p>
+        <p className="text-gray-700">• The walls behind you must be clear of any writing or pictures.</p>
+        <p className="text-gray-700">• Your room must be well-lit so the camera can clearly see you.</p>
+        <p className="text-gray-700">• Your computer's camera and microphone must be enabled.</p>
+        <p className="text-gray-700">• A stable internet connection is required.</p>
+        <p className="text-gray-700">• Taking screenshots or sharing your screen is not permitted.</p>
+      </div>
+    </section>
+  )
       case 3:
-        return (
-          // Page 3: You'll be tracked during the event.
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <Video className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">You'll be tracked during the event.</h3>
-            </div>
-            <div className="bg-indigo-50 rounded-xl p-4 space-y-3">
-              <p className="text-gray-700">• Always stay in front of the camera. Don't leave your seat.</p>
-              <p className="text-gray-700">• No talking to anyone during the test.</p>
-              <p className="text-gray-700">• You cannot wear headphones, earbuds, or smartwatches.</p>
-              <p className="text-gray-700">
-                • The computer will record your screen, video, and sound to make sure the test is fair.
-              </p>
-            </div>
-          </section>
-        )
+  return (
+    // Page 3: Test Monitoring
+    <section className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-indigo-100 rounded-lg">
+          <Video className="w-5 h-5 text-indigo-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900">Test Monitoring</h3>
+      </div>
+      <div className="bg-indigo-50 rounded-xl p-4 space-y-3">
+        <p className="text-gray-700">• You must remain in front of the camera and stay in your seat for the entire test.</p>
+        <p className="text-gray-700">• Do not talk to anyone during the test.</p>
+        <p className="text-gray-700">• Headphones, earbuds, and smartwatches are not allowed.</p>
+        <p className="text-gray-700">
+          • Your screen, video, and audio will be recorded to ensure the integrity of the test.
+        </p>
+      </div>
+    </section>
+  )
       case 4:
         return (
           // Page 4: Cheating and Academic Integrity

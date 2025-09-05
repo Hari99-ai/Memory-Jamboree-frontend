@@ -11,6 +11,7 @@
 //   },
 // });
 
+// export const SocketURL = `wss://aidev.memoryjamboree.com:5000/ws`
 export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 
 // export const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
