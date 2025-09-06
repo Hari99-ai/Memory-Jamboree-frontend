@@ -388,8 +388,7 @@ const stopMonitoring = useCallback(() => {
         toast.success("Phone monitoring started!");
         setPhoneStarted(true); 
       }
-
-
+      
       if (response.type === "phone_alert" || response.type === "alert" || response.data) {
         const alertData = response.alert || response.data || {};
         let violationType = "";
@@ -433,7 +432,6 @@ const stopMonitoring = useCallback(() => {
           wsRef.current = null;
         }
       }
-
 
       if (response.type === "desktop_disconnected") {
         console.log("⚠️ Desktop disconnected, stopping phone side");

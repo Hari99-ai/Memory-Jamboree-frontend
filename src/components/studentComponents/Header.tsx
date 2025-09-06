@@ -24,9 +24,7 @@ export default function Header() {
   const { logout } = useAuth();
 
   const [id, setId] = useState(() => sessionStorage.getItem("userId"));
-  const [, setToken] = useState(() =>
-    sessionStorage.getItem("auth_token")
-  );
+  const [, setToken] = useState(() => sessionStorage.getItem("auth_token"));
 
   useEffect(() => {
     const storedId = sessionStorage.getItem("userId");
@@ -69,7 +67,7 @@ export default function Header() {
           </span>
         </div>
       </div>
-      
+
       <div className="flex items-center relative">
         <AlertMsgBox />
         <DropdownMenu>
