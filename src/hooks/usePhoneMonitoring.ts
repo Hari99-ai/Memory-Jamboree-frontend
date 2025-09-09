@@ -41,6 +41,15 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
   const [precheckTimer, setPrecheckTimer] = useState<number>(0);
 
   const [cameraMode, setCameraMode] = useState<"user" | "environment">("environment");
+  const [reconnectMessage, setReconnectMessage] = useState<string | null>(null)
+
+  const showReconnectOverlay = (msg: string) => {
+    setReconnectMessage(msg)
+  }
+
+  const hideReconnectOverlay = () => {
+    setReconnectMessage(null)
+  }
 
   
 
@@ -477,27 +486,13 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
     wsRef.current = ws
 
 
-    let retryCount = 0
-    const MAX_RETRIES = 20 // 20 retries ~ 40 seconds if interval is 2s
-    const RETRY_INTERVAL = 2000 // 2 seconds
-
-
-    const retryConnection = () => {
-      if (retryCount >= MAX_RETRIES) {
-        console.error("❌ Max WS retry attempts reached. Could not connect to desktop.")
-        alert("Unable to connect to desktop after multiple attempts.")
-        return
-      }
-      retryCount += 1
-      console.log(`🔁 Retrying WS connection in ${RETRY_INTERVAL / 1000}s (attempt ${retryCount})`)
-      setTimeout(() => {
-        initWebSocket()
-      }, RETRY_INTERVAL)
-    }
-
+    let retryDelay = 1000 // start with 1s
+    const MAX_DELAY = 10000 // cap at 10s
+    
     ws.onopen = () => {
       console.log("Phone WS connected")
-      retryCount = 0 
+      retryDelay = 1000 // reset backoff
+      hideReconnectOverlay() // hide reconnect UI
       safeSend({ type: "verify", passcode })
       startCamera()
       // sendPhoneStatus()
@@ -543,18 +538,15 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
       }
     
       if (data.type === "stop_monitoring") {
-        console.log("⛔ Stop monitoring received");
-        stopMonitoring();
-        safeSend({ type: "stop_ack" }); 
-        alert("Monitoring stopped");
+        console.log("🛑 Stop monitoring received from desktop");
+        stopMonitoring(); // stop camera/ML
+        ws.send(JSON.stringify({ type: "phone_stopped" })); // confirm back
       }
 
-        
       if (data.type === "monitoring") {
         setPhoneDetected(data.phone_detected == 1 ? 1 : 0)
         setMultiplePeople(data.multiple_people == 1 ? 1 : 0)
       }
-
 
       if (data.type === "precheck_reset" || data.type === "preset") {
         setHandDetected(0);
@@ -584,17 +576,17 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
 
     
     ws.onclose = () => {
-      console.log("Phone WS closed")
-        safeSend({
-        type: "phone_disconnected",
-        user_id,
-        event_id,
-        discipline_id,
-      });
-      retryConnection()
-      stopMonitoring()
-      setTimeout(initWebSocket, 5000)
+      console.warn("⚠️ Phone WS closed. Retrying...")
+      showReconnectOverlay("📶 Reconnecting to desktop...") // friendly UI
+      stopMonitoring() // pause monitoring gracefully
+
+      setTimeout(() => {
+        initWebSocket()
+      }, retryDelay)
+
+      retryDelay = Math.min(retryDelay * 2, MAX_DELAY) // exponential backoff
     }
+
 
     ws.onerror = (err) => console.error("Phone WS error:", err)
   }, [discipline_id, event_id, user_id, passcode, stopMonitoring, safeSend])
@@ -632,6 +624,7 @@ export function usePhoneMonitoring({ event_id, discipline_id, user_id, passcode 
     setPrecheckTimer,
     cameraMode,
     startCamera,
-    startPrecheckCountdown
+    startPrecheckCountdown,
+    reconnectMessage
   }
 }

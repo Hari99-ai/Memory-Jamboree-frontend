@@ -129,112 +129,62 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
 
 // Updated pauseMonitoring
   // --- Command Queue System ---
-type CommandType = "pause" | "resume" | "stop";
 
-const commandQueueRef = useRef<CommandType[]>([]);
-const isProcessingCommandRef = useRef(false);
+  const pauseMonitoring = useCallback(() => {
+    console.log("⏸️ Pausing monitoring API calls due to warning dialog...")
+    setMonitoringPaused(true)
+    monitoringPausedRef.current = true
+    logToWindow("⏸️ Monitoring API calls paused - Dialog open")
 
-// Send command safely
-const sendCommand = useCallback((cmd: CommandType) => {
-  commandQueueRef.current.push(cmd);
-  processCommandQueue();
-}, []);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN  && monitoringPausedRef.current) {
+      wsRef.current.send(JSON.stringify({ type: "pause_monitoring" }));
+      console.log("📡 Sent pause_monitoring to phone");
+    }
+  }, [])
 
-// Process queue
-const processCommandQueue = useCallback(() => {
-  if (isProcessingCommandRef.current) return; // already sending
-  if (commandQueueRef.current.length === 0) return;
+  // Function to resume monitoring API calls
+  const resumeMonitoring = useCallback(() => {
+    console.log("▶️ Resuming monitoring API calls...")
+    setMonitoringPaused(false)
+    monitoringPausedRef.current = false
 
-  const cmd = commandQueueRef.current.shift()!;
-  isProcessingCommandRef.current = true;
-
-  if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-    console.log(`⚠️ Cannot send ${cmd} - WS not open`);
-    isProcessingCommandRef.current = false;
-    return;
-  }
-
-  let messageType = "";
-  if (cmd === "pause") messageType = "pause_monitoring";
-  else if (cmd === "resume") messageType = "resume_monitoring";
-  else if (cmd === "stop") messageType = "stop_monitoring";
-
-  wsRef.current.send(JSON.stringify({ type: messageType }));
-  console.log(`📡 Sent ${messageType} to phone`);
-
-  // Small delay to avoid collisions (100ms)
-  setTimeout(() => {
-    isProcessingCommandRef.current = false;
-    processCommandQueue(); // next command
-  }, 100);
-}, []);
-
-// --- Pause Monitoring ---
-const autoResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-const pauseMonitoring = useCallback(() => {
-  console.log("⏸ Pausing monitoring...");
-  setMonitoringPaused(true);
-  monitoringPausedRef.current = true;
-
-  // Clear previous timer if any
-  if (autoResumeTimeoutRef.current) clearTimeout(autoResumeTimeoutRef.current);
-
-  sendCommand("pause");
-
-  // Auto-resume after 5s
-  autoResumeTimeoutRef.current = setTimeout(() => {
-    console.log("▶️ Auto-resume after 5s");
-    setMonitoringPaused(false);
-    monitoringPausedRef.current = false;
-    sendCommand("resume");
-    autoResumeTimeoutRef.current = null;
-  }, 5000);
-}, [sendCommand]);
-
-// --- Resume Monitoring manually ---
-const resumeMonitoring = useCallback(() => {
-  console.log("▶️ Resuming monitoring manually...");
-  setMonitoringPaused(false);
-  monitoringPausedRef.current = false;
-  sendCommand("resume");
-}, [sendCommand]);
-
+    // const ws = wsRef.current
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN  && monitoringPausedRef.current) {
+      wsRef.current.send(JSON.stringify({ type: "resume_monitoring" }))
+      console.log("📡 Sent resume_monitoring to phone")
+    } else {
+      console.log("⚠️ Cannot resume monitoring - WS not open")
+    }
+  }, [])
 // --- Stop Monitoring ---
-const stopMonitoring = useCallback(() => {
-  console.log("🛑 Stopping monitoring...");
+  const stopMonitoring = useCallback(() => {
+    if (!enabled) return
+    
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "stop_monitoring" }))
+      console.log("📡 Sent stop_monitoring request to backend")
+    }
+      
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current)
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop())
+    videoRef.current?.remove()
 
-  // Clear auto-resume timer
-  if (autoResumeTimeoutRef.current) {
-    clearTimeout(autoResumeTimeoutRef.current);
-    autoResumeTimeoutRef.current = null;
-  }
+    window.removeEventListener("blur", handleWindowChangeRef.current!)
+    window.removeEventListener("keydown", keyDownRef.current!)
+    document.removeEventListener("copy", copyRef.current)
+    document.removeEventListener("paste", pasteRef.current)
+    document.removeEventListener("cut", cutRef.current)
+    document.removeEventListener("contextmenu", contextMenuRef.current!)
+    document.removeEventListener("fullscreenchange", handleFullScreenChange)
 
-  sendCommand("stop");
-
-  // Stop local stuff immediately
-  if (intervalRef.current) clearInterval(intervalRef.current);
-  if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
-  mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
-  videoRef.current?.remove();
-
-  window.removeEventListener("blur", handleWindowChangeRef.current!);
-  window.removeEventListener("keydown", keyDownRef.current!);
-  document.removeEventListener("copy", copyRef.current);
-  document.removeEventListener("paste", pasteRef.current);
-  document.removeEventListener("cut", cutRef.current);
-  document.removeEventListener("contextmenu", contextMenuRef.current!);
-  document.removeEventListener("fullscreenchange", handleFullScreenChange);
-
-  isMonitoringRef.current = false;
-  setIsMonitoring(false);
-  setGamePaused(false);
-  setMonitoringPaused(false);
-  monitoringPausedRef.current = false;
-
-  logToWindow("🛑 Monitoring stopped.");
-}, [sendCommand]);
-
+    isMonitoringRef.current = false
+    setIsMonitoring(false)
+    setGamePaused(false)
+    setMonitoringPaused(false)
+    monitoringPausedRef.current = false
+    logToWindow("🛑 Monitoring stopped.")
+  }, [enabled])
 
   // Function to handle automatic game termination
   const handleGameTermination = useCallback(async () => {
@@ -286,61 +236,76 @@ const stopMonitoring = useCallback(() => {
 
   // const alertQueueRef = useRef<string[]>([]);
   const isProcessingAlertRef = useRef(false);
-  const [, setCurrentViolation] = useState<string | null>();
+  const monitoringStoppedRef = useRef(false); 
+  // const [, setCurrentViolation] = useState<string | null>();
 
-  const processQueue = useCallback(() => {
-  if (isProcessingAlertRef.current) return;
+  const lastAlertTimeRef = useRef<number>(0);
+
+const processQueue = useCallback(() => {
+  if (isProcessingAlertRef.current || monitoringStoppedRef.current) return;
   if (alertQueueRef.current.length === 0) return;
+
+  const now = Date.now();
+  if (now - lastAlertTimeRef.current < 2000) {
+    // Too soon, schedule next attempt after 2s
+    setTimeout(processQueue, 2000 - (now - lastAlertTimeRef.current));
+    return;
+  }
+  lastAlertTimeRef.current = now;
 
   isProcessingAlertRef.current = true;
   const nextViolation = alertQueueRef.current.shift()!;
-  setCurrentViolation(nextViolation);
-  pauseMonitoring();
-
+  
   setWarningCount((prev) => {
     const nextCount = prev + 1;
 
+    // Don't show warnings after 3
+    if (nextCount > 3) {
+      isProcessingAlertRef.current = false;
+      processQueue(); // process next in queue
+      return prev;
+    }
+
     if (nextCount === 1) setWarningTitle("⚠️ First Warning!");
     else if (nextCount === 2) setWarningTitle("⚠️ Second Warning - Final Chance!");
-    else if (nextCount >= 3) setWarningTitle("⚠️ Game Terminated!");
-    setLastType(nextViolation);
+    else if (nextCount === 3) setWarningTitle("⚠️ Game Terminated!");
 
+    setLastType(nextViolation);
     setViolationHistory((prev) => [...prev, `${getTimeStamp()}: ${nextViolation}`]);
 
-    
     setDialogOpen(true);
     console.log(`⚠️ Warning ${nextCount}: ${nextViolation}`);
 
     setTimeout(() => {
       setDialogOpen(false);
-      setCurrentViolation(null);
-
       if (nextCount >= 3) {
         handleGameTermination();
-        alertQueueRef.current = [];
-        isProcessingAlertRef.current = false;
-        stopMonitoring()
-        return;
-      }
+        stopMonitoring();
+        monitoringStoppedRef.current = true;
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+        }
 
-      resumeMonitoring();
-      isProcessingAlertRef.current = false;
-      processQueue(); // process next violation if queued
+        navigate(`/events/${event_id}`);
+      } else {
+        resumeMonitoring();
+        isProcessingAlertRef.current = false;
+        processQueue(); // continue with next alert
+      }
     }, 5000);
 
     return nextCount;
   });
-}, [pauseMonitoring, resumeMonitoring, handleGameTermination]);
+}, [pauseMonitoring, resumeMonitoring, handleGameTermination, navigate, event_id, stopMonitoring]);
 
-
-  
     
 
 
   const wsRef = useRef<WebSocket | null>(null);
   const focus_loss_count = useRef<number>(0)
     // const isFocusCooldown = useRef(false);
-  // const foucus_warn_count = useRef<number>(0)
+  const foucus_warn_count = useRef<number>(0)
   const startWebSocket = useCallback(async (passcode: string) => {
         
     if (!enabled) return;
@@ -388,33 +353,63 @@ const stopMonitoring = useCallback(() => {
         toast.success("Phone monitoring started!");
         setPhoneStarted(true); 
       }
+
       
-      if (response.type === "phone_alert" || response.type === "alert" || response.data) {
-        const alertData = response.alert || response.data || {};
-        let violationType = "";
+    if (response.type === "phone_stopped") {
+      console.log("🛑 Phone monitoring stopped");
+      toast.success("Phone monitoring stopped!");
+      setPhoneStarted(false);
+      stopMonitoring();
+    }
 
-        console.log("violation 🚨🚨🚨🚨🚨🚨")
-        console.log("phone alert 📱📱📱📱📱" , alertData.phone_detected)
+    if (response.type === "monitoring_stopped") {
+      console.log("🛑 Desktop notified: monitoring stopped");
+      stopMonitoring();
+    }
 
-        console.log("person_count 🕵️🕵️🕵️🕵️" , alertData.persons_status > 0)
-        console.log("NO person ❌❌❌❌❌" , alertData.person_count < 1)
-        if (alertData.phone_detected) violationType = "Phone detected";
-        else if (alertData.person_count < 1) violationType = "No Person Found";
-        else if (alertData.persons_status > 0 && alertData.multiple_people) violationType = "Multiple people detected";
-        else if (focus_loss_count.current > 5) violationType = "Focus continuously lost";
-        else if (alertData.voice_detected > 5) violationType = "Continuous voice detected";
+      
+    if (response.type === "phone_alert" || response.type === "desktop_alert" || response.data) {
+      const alertData = response.alert || response.data || {};
+      let violationType = "";
 
-        if (violationType) {
-          alertQueueRef.current.push(violationType);
-          processQueue();
+
+      if (alertData.final_focus) {
+        focus_loss_count.current++;
+
+        // When focus_loss_count reaches 3, increment foucus_warn_count and reset focus_loss_count
+        if (focus_loss_count.current > 3) {
+          foucus_warn_count.current++;
+          focus_loss_count.current = 0; // reset for next batch
+          console.log(`⚠️ Focus warning count increased: ${foucus_warn_count.current}`);
         }
-        return;
       }
+
+      console.log("violation 🚨🚨🚨🚨🚨🚨")
+      console.log("phone alert 📱📱📱📱📱" , alertData.phone_detected)
+
+      console.log("person_count 🕵️🕵️🕵️🕵️" , alertData.persons_status > 0)
+      console.log("NO person ❌❌❌❌❌" , alertData.person_count < 1)
+      if (alertData.phone_detected) violationType = "Phone detected";
+      else if (alertData.person_count < 1) violationType = "No Person Found";
+      else if (alertData.persons_status > 0 && alertData.multiple_people) violationType = "Multiple people detected";
+      else if (foucus_warn_count.current > 5) violationType = "Focus continuously lost";
+      else if (alertData.voice_detected > 5) violationType = "Continuous voice detected";
+
+      focus_loss_count.current = 0
+      foucus_warn_count.current = 0
+
+      if (violationType) {
+        alertQueueRef.current.push(violationType);
+        processQueue();
+      }
+      return;
+    }
+      
   
-      if ((response.type === "alert" || response.type === "desktop_alert") && response.from === "desktop") {
-        console.log("💻 Desktop info alert:", response.alert);
-        return;
-      }
+      // if ((response.type === "alert" || response.type === "desktop_alert") && response.from === "desktop") {
+      //   console.log("💻 Desktop info alert:", response.alert);
+      //   return;
+      // }
 
       if (response.type === "disconnect") {
         alert(response.message);
@@ -577,7 +572,7 @@ const stopMonitoring = useCallback(() => {
 
     console.log("📹 Video is playing:", !video.paused)
 
-    const passcode = localStorage.getItem("passcode"); // or dynamic
+    const passcode = localStorage.getItem("passcode");
     await startWebSocket(passcode!);
 
     const audioCtx = new (window.AudioContext || window.AudioContext)()

@@ -422,16 +422,16 @@ function EventGamePage() {
       })
     }
   }
-  const wsRef = useRef<WebSocket | null>(null);
-  useEffect(() => {
-    if (dialogOpen) {
-      stopMonitoring()
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: "stop_monitoring" }));
-        console.log("📡 Sent resume_monitoring to phone");
-      }
-    }
-  }, [dialogOpen, stopMonitoring])
+  // const wsRef = useRef<WebSocket | null>(null);
+  // useEffect(() => {
+  //   if (dialogOpen) {
+  //     stopMonitoring()
+  //     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+  //       wsRef.current.send(JSON.stringify({ type: "stop_monitoring" }));
+  //       console.log("📡 Sent resume_monitoring to phone");
+  //     }
+  //   }
+  // }, [dialogOpen, stopMonitoring])
 
   const handleClose = async () => {
     console.log("🔄 Closing dialog")

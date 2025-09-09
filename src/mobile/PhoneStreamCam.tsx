@@ -33,7 +33,8 @@ export default function PhoneStreamCam() {
     cameraMode,
     // setCameraMode,
     startCamera,
-    startPrecheckCountdown
+    startPrecheckCountdown,
+    reconnectMessage
     // phoneDetected,
     // multiplePeople,
   } = usePhoneMonitoring({ event_id, discipline_id, user_id, passcode });
@@ -153,14 +154,13 @@ export default function PhoneStreamCam() {
     return `${m}:${s}`;
   };
 
-  /** ---- SHOW INSTRUCTIONS AFTER VERIFY ---- */
+  /** ---- SHOW INSTRUCTIONS AFTER VERIFY ---- **/
+
   useEffect(() => {
     if (verified) {
       setShowInstructions(true);
     }
   }, [verified]);
-
-
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center">
@@ -171,8 +171,7 @@ export default function PhoneStreamCam() {
         playsInline
         muted
       />
-
-
+      
       {/* {missingParts.length > 0 && (
         <div className="text-red-500 p-4">
           Missing: {missingParts.join(", ")}
@@ -203,6 +202,7 @@ export default function PhoneStreamCam() {
         {started && !isMonitoring && precheckTimer > 0 && 
           `⏳ Complete verification in ${formatTimer(precheckTimer)} seconds...`}
         {isMonitoring && "🎥 Monitoring Active"}
+        {reconnectMessage && reconnectMessage} 
       </div>
 
       {/* Pre-monitoring instructions */}
@@ -226,6 +226,7 @@ export default function PhoneStreamCam() {
         </div>
       )}
 
+      
       {/* Status footer */}
       {/* <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1 rounded font-bold">
         Phone Detected: {phoneDetected} | Multiple People: {multiplePeople}

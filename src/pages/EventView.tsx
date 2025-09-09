@@ -705,7 +705,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "ping" }));
       }
-    }, 25000);
+    }, 5000);
   };
 
   socket.onmessage = (event) => {
@@ -720,6 +720,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
       }
 
       if (data.type === "phone_ready") setPhoneStarted(true);
+      if (data.type === "frame") setFrame(data.image);
       if (data.type === "prechecking" || data.type === "prechecking-final") {
         const faceOk = data.face === 1;
         const handOk = data.hand === 1;
@@ -730,7 +731,6 @@ const connectWebSocket = (discipline: DisciplineData) => {
           faceOk && handOk ? "✅ Verified" : "❌ Not Verified"
         );
       }
-      if (data.type === "frame") setFrame(data.image);
       if (data.type === "phone_started") {
         setIsMonitoringEnabled(true);
         toast.success("▶️ Monitoring Started");
@@ -1728,8 +1728,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
                   </div>
                 </div>
               </div>
-              
-              {/* Simplified Unified Verification Status (Compact) */}
+
               <div className="mb-4">
                 <div
                   className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all duration-300 ${

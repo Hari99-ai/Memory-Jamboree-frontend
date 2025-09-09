@@ -139,13 +139,12 @@ export const useAuth = () => {
         setToken(response.access_token);
 
         const role = getRole();
-
         if (role === 'admin') {
           navigate('/admin', { replace: true });
         } else if (role === 'user') {
-          if (role === 'user') {
-          navigate("/dashboard", { replace: true });
-        }
+            if (role === 'user') {
+            navigate("/dashboard", { replace: true });
+          }
         }
       } else {
         setError("Invalid email or password");
@@ -194,6 +193,7 @@ export const useAuth = () => {
   };
 
   return { token, login, logout, loading, error, setToken, refreshToken };
+
 };
 
 
