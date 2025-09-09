@@ -1729,6 +1729,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
                 </div>
               </div>
 
+
               <div className="mb-4">
                 <div
                   className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all duration-300 ${
