@@ -321,7 +321,7 @@ return (
           <span className="font-semibold">Event Name:</span> {event?.event_name}
         </p>
         <p className="text-white">
-          <span className="font-semibold">Event Category:</span> {formatCategory(Number(event?.category.length))}
+          <span className="font-semibold">Event Category:</span> {formatCategory(Number(event?.category))}
         </p>
         <p className="text-white">
           <span className="font-semibold">Event Status:</span> {formatEventStatus(event?.etype)}
@@ -558,7 +558,7 @@ return (
               Close
             </button>
           </div>
-
+          
           <form onSubmit={handleEventSubmit} className="space-y-6">
             {/* Event Name */}
             <div>
@@ -608,13 +608,13 @@ return (
             </div>
 
             {/* Event Status */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
               </label>
               <select
                 name="estatus"
-                value={formData.estatus}
+                value={formData.etype}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!canEdit}
@@ -622,7 +622,7 @@ return (
                 <option value="1">Active</option>
                 <option value="0">Inactive</option>
               </select>
-            </div>
+            </div> */}
 
             {/* Event Type */}
             <div>
@@ -631,7 +631,7 @@ return (
               </label>
               <select
                 name="etype"
-                value={formData.etype}
+                value={formData.estatus}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!canEdit}
@@ -647,7 +647,7 @@ return (
                 Monitoring
               </label>
               <select
-                name="emonitoring"
+                name="emonitored"   // match the state key
                 value={formData.emonitored}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -657,6 +657,7 @@ return (
                 <option value="1">Enabled</option>
               </select>
             </div>
+
 
             {/* Event Image */}
             <div>

@@ -265,8 +265,6 @@ export interface MonitoringData {
   external_img?: string;         
 }
 
-
-
 export interface ImagesData {
   id:number;
   filename:string;
@@ -287,8 +285,6 @@ export interface MessageData {
   userType:string;
 }
 
-
-
 export interface KeyboardEventData {
   kid?:number;
   user_id:number;
@@ -296,7 +292,6 @@ export interface KeyboardEventData {
   keyboard_event:string;
   transaction_log:string; 
 }
-
 
 export interface WindowLogs {
   logs:WindowData[]
@@ -316,8 +311,6 @@ export interface MessageData {
   message:string;
   userType:string;
 }
-
-
 
 export interface PhoneSendData  {
   email:string;

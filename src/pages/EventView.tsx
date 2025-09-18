@@ -29,14 +29,16 @@ import {
   Video,
   Smartphone,
   CheckCircle2,
-  RefreshCw,
+  SearchCheckIcon,
+  // RefreshCw,
+  // SearchCheckIcon,
   
 } from "lucide-react";
 import CountdownOverlay from "../practiceTests/CountdownOverlay";
 import FacialRecognitionStep from "../myEvents/FacialRecognitionStep";
 import InstructionPanel from "../practiceTests/instructionPanel/InstructionPanel";
 import ProctoringInstructionsModal from "../myEvents/proctoring-instructions-modal";
-import { getUserEventDetails, sendPhoneLinkedMail } from "../lib/api";
+import {  capture_request, getUserEventDetails,  precheck_verification, sendPhoneLinkedMail } from "../lib/api";
 import {
   getCompletedDisciplines,
   isDisciplineAttempted,
@@ -46,9 +48,11 @@ import trophyImg from "../../public/Landing/memoryChampion_2.png";
 import { useRecoilValue } from "recoil";
 import { eventStatusState } from "../atoms/eventAtom";
 import { useEventWebSocket } from "../hooks/useEventStatusUpdate";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { SocketURL } from "../lib/client";
+import { api } from "../lib/client";
+import { IconCapture } from "@tabler/icons-react";
+// import { usePhoneCaptured } from "../hooks/usePhoneCaptured";f
 // import { useMonitoring } from "../hooks/useGiveTest";
 
 // Types for API response
@@ -120,6 +124,14 @@ interface MediaPermissions {
   video: boolean;
 }
 
+
+
+// interface CapturedResponse {
+//   event_id:string;
+//   user_id:string;
+//   disc_id:string;
+//   captured_image: string | File | undefined
+// }
 const getDisciplineIcon = (disciplineName: string) => {
   const name = disciplineName.toLowerCase();
   if (name.includes("number")) return "🔢";
@@ -224,11 +236,13 @@ export default function EventView() {
   const [, setEventTimeExpired] = useState(false);
   const [isInFullScreenFlow, setIsInFullScreenFlow] = useState(false);
 
-  const [frame, setFrame] = useState<string | null>(null);
+  // const [frame, setFrame] = useState<string | null>(null);
   // const wsRef = useRef<WebSocket | null>(null);
 
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [handDetected, setHandDetected] = useState(false);
+  // const [faceDetected, setFaceDetected] = useState(false);
+  // const [handDetected, setHandDetected] = useState(false);
+  // const [phoneDetected , setPhoneDetected] = useState(false)
+
 
   // Add countdown state
   const [countdown, setCountdown] = useState<{
@@ -246,7 +260,12 @@ export default function EventView() {
     video: false,
   });
   const [showPermissionModal, setShowPermissionModal] = useState(false);
-  const [recieved , setRecieved] = useState(false)
+
+
+
+
+
+  // const [recieved , setRecieved] = useState(false)
 
   // MODIFICATION: Refresh page once on first load to get fresh data
   useEffect(() => {
@@ -304,8 +323,9 @@ export default function EventView() {
   const [error, setError] = useState<string | null>(null);
   const [countdownStarted, setCountdownStarted] = useState(false);
   const [showProctoringModal, setShowProctoringModal] = useState(false);
-  const [phoneStarted, setPhoneStarted] = useState(false);
+  // const [phoneStarted, setPhoneStarted] = useState(false);
 
+  const [isVerified , setIsVerified] = useState(false)
   // Flow control states
   const [showFacialRecognition, setShowFacialRecognition] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -327,6 +347,28 @@ export default function EventView() {
   //   event_id: String(event_id || ""),
   // });
 
+
+  // const {captureAndSend , capturedImage , loading} = usePhoneCaptured({
+  //   event_id: event_id!,
+  //   disc_id: String(selectedDiscipline?.disc_id),
+  //   user_id: userId!
+  // })
+
+  const { data: capturdata, isLoading:capturedLoading } = useQuery({
+    queryKey: ['captured-img', event_id, String(selectedDiscipline?.disc_id), userId],
+    queryFn: async () => {
+      const res = await api.get(
+        `/get-captured/${event_id}/${String(selectedDiscipline?.disc_id)}/${userId}`,
+        { responseType: "blob" } 
+      )
+      return URL.createObjectURL(res.data) // convert blob → URL for <img>
+    },
+    enabled: showPermissionModal,
+    refetchInterval: showPermissionModal ? 500 : false,  
+  })
+
+  console.log("captured data 🚀🚀" , capturdata)
+
   const { mutate: sendLink, isPending: SendLoading } = useMutation({
     mutationKey: ["send-phone-link"],
     mutationFn: (data: PhoneSendData) => sendPhoneLinkedMail(data),
@@ -347,7 +389,6 @@ export default function EventView() {
       );
       return;
     }
-
     console.log("email:", email);
     console.log("event_id:", eventData.event.event_id);
     console.log("disc_id:", discipline_id);
@@ -358,11 +399,9 @@ export default function EventView() {
       disc_id: discipline_id,
     };
 
-    // Call the mutation directly
     sendLink(payload);
   };
 
-  // Function to request media permissions
   const requestMediaPermissions = async (): Promise<MediaPermissions> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -575,6 +614,11 @@ export default function EventView() {
     loadEventData();
   }, [event_id, userId]);
 
+
+
+
+
+
   // Check event time every minute
   useEffect(() => {
     if (!eventData?.event) return;
@@ -668,100 +712,103 @@ export default function EventView() {
 
   useEventWebSocket(event_id!);
   const eventStatus = useRecoilValue(eventStatusState(event_id!));
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
-  const manualDisconnectRef = useRef(false); // Only true when server sends disconnect
+//   const [ws, setWs] = useState<WebSocket | null>(null);
+//   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+//   const manualDisconnectRef = useRef(false); // Only true when server sends disconnect
 
-const RETRY_INTERVAL = 2000; // 2s retry interval
+// const RETRY_INTERVAL = 2000; // 2s retry interval
 
-const connectWebSocket = (discipline: DisciplineData) => {
-  // Close previous WS if open
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.close(1000, "Reconnecting");
-  }
 
-  const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${event_id}/${userId}`;
-  const socket = new WebSocket(wsUrl);
-  setWs(socket);
-  manualDisconnectRef.current = false;
+// const connectWebSocket = (discipline: DisciplineData) => {
+//   // Close previous WS if open
+//   if (ws && ws.readyState === WebSocket.OPEN) {
+//     ws.close(1000, "Reconnecting");
+//   }
 
-  const connectionTimeout = setTimeout(() => {
-    if (socket.readyState !== WebSocket.OPEN) {
-      console.warn("⌛ WS connection timeout");
-      socket.close();
-    }
-  }, 5000);
+//   const wsUrl = `${SocketURL}/desktop/${discipline.disc_id}/${event_id}/${userId}`;
+//   const socket = new WebSocket(wsUrl);
+//   setWs(socket);
+//   manualDisconnectRef.current = false;
 
-  socket.onopen = () => {
-    clearTimeout(connectionTimeout);
-    console.log("✅ Desktop WS connected");
+//   const connectionTimeout = setTimeout(() => {
+//     if (socket.readyState !== WebSocket.OPEN) {
+//       console.warn("⌛ WS connection timeout");
+//       socket.close();
+//     }
+//   }, 5000);
 
-    // Send verify
-    socket.send(JSON.stringify({ type: "verify" }));
+//   socket.onopen = () => {
+//     clearTimeout(connectionTimeout);
+//     console.log("✅ Desktop WS connected");
 
-    // Start heartbeat
-    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    heartbeatRef.current = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: "ping" }));
-      }
-    }, 5000);
-  };
+//     // Send verify
+//     socket.send(JSON.stringify({ type: "verify" }));
 
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      // console.log("📩 Desktop WS message:", data);
+//     // Start heartbeat
+//     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+//     heartbeatRef.current = setInterval(() => {
+//       if (socket.readyState === WebSocket.OPEN) {
+//         socket.send(JSON.stringify({ type: "ping" }));
+//       }
+//     }, 5000);
+//   };
 
-      if (data.type === "disconnect") {
-        console.warn("🔌 Server requested disconnect:", data.message);
-        manualDisconnectRef.current = true;
-        socket.close();
-      }
+//   socket.onmessage = (event) => {
+//     try {
+//       const data = JSON.parse(event.data);
+//       // console.log("📩 Desktop WS message:", data);
 
-      if (data.type === "phone_ready") setPhoneStarted(true);
-      if (data.type === "frame") setFrame(data.image);
-      if (data.type === "prechecking" || data.type === "prechecking-final") {
-        const faceOk = data.face === 1;
-        const handOk = data.hand === 1;
-        setFaceDetected(faceOk);
-        setHandDetected(handOk);
-        setRecieved(true);
-        toast[faceOk && handOk ? "success" : "error"](
-          faceOk && handOk ? "✅ Verified" : "❌ Not Verified"
-        );
-      }
-      if (data.type === "phone_started") {
-        setIsMonitoringEnabled(true);
-        toast.success("▶️ Monitoring Started");
-      }
-    } catch (err) {
-      console.error("⚠️ Failed to parse WS message:", err);
-    }
-  };
+//       if (data.type === "disconnect") {
+//         console.warn("🔌 Server requested disconnect:", data.message);
+//         manualDisconnectRef.current = true;
+//         socket.close();
+//       }
 
-  socket.onerror = (err) => {
-    console.error("❌ WS error:", err);
-    clearTimeout(connectionTimeout);
-    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    socket.close();
-  };
+//       if (data.type === "phone_ready") setPhoneStarted(true);
+//       if (data.type === "frame") setFrame(data.image);
+//       // if (data.type === "prechecking" || data.type === "prechecking-final") {
+//       //   const faceOk = data.face === 1;
+//       //   const laptopOk = data.laptop === 1;
+//       //   const phoneOk = data.phone === 0
+//       //   setFaceDetected(faceOk);
+//       //   setHandDetected(laptopOk);
+//       //   setPhoneDetected(phoneOk)
+//       //   setRecieved(true);
+//       //   toast[faceOk && laptopOk && phoneOk  ? "success" : "error"](
+//       //     faceOk && laptopOk && phoneOk ? "✅ Verified" : "❌ Not Verified"
+//       //   );
+//       // }
+//       if (data.type === "phone_started") {
+//         setIsMonitoringEnabled(true);
+//         toast.success("▶️ Monitoring Started");
+//       }
+//     } catch (err) {
+//       console.error("⚠️ Failed to parse WS message:", err);
+//     }
+//   };
 
-  socket.onclose = (event) => {
-    clearTimeout(connectionTimeout);
-    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    console.warn(
-      `❌ WS closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`
-    );
+//   socket.onerror = (err) => {
+//     console.error("❌ WS error:", err);
+//     clearTimeout(connectionTimeout);
+//     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+//     socket.close();
+//   };
 
-    if (!manualDisconnectRef.current) {
-      console.log(`🔄 Retrying desktop WS in ${RETRY_INTERVAL / 1000}s...`);
-      setTimeout(() => connectWebSocket(discipline), RETRY_INTERVAL);
-    } else {
-      console.log("🔌 WS closed by server, no retry.");
-    }
-  };
-};
+//   socket.onclose = (event) => {
+//     clearTimeout(connectionTimeout);
+//     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+//     console.warn(
+//       `❌ WS closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`
+//     );
+
+//     if (!manualDisconnectRef.current) {
+//       console.log(`🔄 Retrying desktop WS in ${RETRY_INTERVAL / 1000}s...`);
+//       setTimeout(() => connectWebSocket(discipline), RETRY_INTERVAL);
+//     } else {
+//       console.log("🔌 WS closed by server, no retry.");
+//     }
+//   };
+// };
 
 
   // const retryConnection = (discipline: DisciplineData) => {
@@ -775,17 +822,90 @@ const connectWebSocket = (discipline: DisciplineData) => {
   // };
 
   // GAME FLOW HANDLERS
+
+
+
+
+  //  const {mutate: captured} = useMutation({
+  //   mutationFn: async () => {
+  //     if (!frame) throw new Error("No frame available to capture");
+
+  //     const formData = new FormData();
+  //     formData.append("imgData", frame);
+  //     formData.append("event_id", event_id!); // replace dynamically
+  //     formData.append("user_id", userId!);    // replace dynamically
+  //     formData.append("disc_id", String(selectedDiscipline?.disc_id));    // replace dynamically     // optional folder name
+
+  //     const res = await capture_img(formData)
+  //     return res
+  //   },
+  //   onSuccess: (data) => {
+  //     toast.success(data.message);
+  //     // Optional: update local state to show captured image
+  //     // setCapturedImage(data.file_path);
+  //   },
+  //   onError: (err: any) => {
+  //     toast.error(err.message || "Capture failed");
+  //   },
+  // });
+
+  // const handleCapture = () => {
+  //   if (!frame) return;
+  //   captured(frame);
+  // }
+
+
+  // const {captureAndSend} = usePhoneCaptured({
+  //   event_id: event_id!,
+  //   disc_id: String(selectedDiscipline?.disc_id),
+  //   user_id: userId!
+  // })
+
+
+  
+  const { mutate: sendCaptureRequest, isPending } = useMutation({
+    mutationKey: ['capture_request'],
+    mutationFn: () =>
+      capture_request(event_id!, userId!, String(selectedDiscipline?.disc_id)),
+  })
+
+  const handleCaptureSend = () => {
+    sendCaptureRequest() 
+  }
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      return await precheck_verification(event_id!, userId!, String(selectedDiscipline?.disc_id));
+    },
+    onSuccess: (data) => {
+      if (data.verified) {
+        setIsVerified(true);
+        toast.success("✅ Precheck passed! You can continue.");
+      } else {
+        setIsVerified(false);
+        toast.error("❌ Adjust your camera and try again.");
+      }
+    },
+    onError: () => {
+      toast.error("❌ Something went wrong. Please retry.");
+    },
+  });
+
+  const runPrecheck = () => {
+    mutation.mutate();
+  };
+  
   const handleStartDiscipline = async (discipline: DisciplineData) => {
     console.log("🎮 Starting discipline:", discipline.discipline_name);
 
     try {
-      connectWebSocket(discipline);
+      // connectWebSocket(discipline);
 
       // 2. Continue with UI flow
       setSelectedDiscipline(discipline);
       setShowProctoringModal(true);
 
-      handleSend(String(discipline.disc_id));
+      // handleSend(String(discipline.disc_id));
     } catch (error) {
       console.error("Discipline start failed:", error);
       alert("Failed to initialize proctoring session");
@@ -831,12 +951,12 @@ const connectWebSocket = (discipline: DisciplineData) => {
     // enable monitoring only after permission
     setIsMonitoringEnabled(true);
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "start_monitoring" }));
-      console.log("▶️ Start monitoring sent");
-    } else {
-      console.warn("⚠️ WebSocket not ready");
-    }
+    // if (ws && ws.readyState === WebSocket.OPEN) {
+    //   ws.send(JSON.stringify({ type: "start_monitoring" }));
+    //   console.log("▶️ Start monitoring sent");
+    // } else {
+    //   console.warn("⚠️ WebSocket not ready");
+    // }
 
     setTimeout(() => {
       setCountdownStarted(false);
@@ -927,26 +1047,27 @@ const connectWebSocket = (discipline: DisciplineData) => {
   }, [showPermissionModal]);
 
   // Handler for the new Reset button
-  const handleResetVerification = () => {
-    console.log("🔄 Resetting verification status...");
-    setFaceDetected(false);
-    setHandDetected(false);
-    alert("Verification checks have been reset.");
+  // const handleResetVerification = () => {
+  //   console.log("🔄 Resetting verification status...");
+  //   // setFaceDetected(false);
+  //   // setPhoneDetected(false)
+  //   // setHandDetected(false);
+  //   alert("Verification checks have been reset.");
 
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: "precheck_reset", 
-          timestamp: new Date().toISOString()
-        }));
-        console.log("📡 Sent precheck_reset message to backend");
-    } else {
-        console.warn("⚠️ WebSocket not connected, cannot reset verification");
-    }
-  };
+  //   if (ws && ws.readyState === WebSocket.OPEN) {
+  //       ws.send(JSON.stringify({
+  //         type: "precheck_reset", 
+  //         timestamp: new Date().toISOString()
+  //       }));
+  //       console.log("📡 Sent precheck_reset message to backend");
+  //   } else {
+  //       console.warn("⚠️ WebSocket not connected, cannot reset verification");
+  //   }
+  // };
 
   
-  const isVerified = faceDetected && handDetected;
+  // const isVerified = faceDetected && handDetected && ;
 
   // Early return if no userId is found
   if (!userId) {
@@ -1591,7 +1712,6 @@ const connectWebSocket = (discipline: DisciplineData) => {
             >
               <X className="w-6 h-6" />
             </button>
-
             <div className="p-8 text-center">
               <div className="mb-6">
                 <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
@@ -1650,7 +1770,6 @@ const connectWebSocket = (discipline: DisciplineData) => {
       )}
 
       {/* MODIFICATION: New Redesigned Media Permission Modal */}
-      {/* MODIFICATION: New Redesigned Media Permission Modal */}
       {showPermissionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full relative border border-gray-200 animate-in fade-in-0 zoom-in-95 duration-300">
@@ -1669,7 +1788,7 @@ const connectWebSocket = (discipline: DisciplineData) => {
                     disabled={SendLoading}
                   >
                     <SendHorizontal className="mr-2 w-4 h-4" />
-                    {SendLoading ? "Sending..." : "Resend Link"}
+                    {SendLoading ? "Sending..." : "Send Link"}
                   </Button>
                   <button
                     onClick={handleClose}
@@ -1682,15 +1801,15 @@ const connectWebSocket = (discipline: DisciplineData) => {
 
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded-r-lg">
                 <p className="text-blue-800 text-sm">
-                  <strong>Disclaimer:</strong> Check the email sent to you for
-                  a link to connect your mobile device. Open it in your mobile
-                  browser.
+                  <strong>Disclaimer:</strong> Use the <em>Send Link</em> button to receive a connection link in your email. 
+                  Check your inbox and open the link on your mobile browser. After connecting, use the 
+                  <em>Start</em> and <em>Capture</em> buttons as instructed.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Desktop Preview */}
-                <div className="border rounded-lg p-3 bg-gray-50 flex flex-col">
+                {/* <div className="border rounded-lg p-3 bg-gray-50 flex flex-col">
                   <div className="flex items-center gap-2 font-semibold mb-2 text-gray-700">
                     <Video className="w-5 h-5" />
                     <span>Desktop Preview</span>
@@ -1704,112 +1823,141 @@ const connectWebSocket = (discipline: DisciplineData) => {
                       className="w-full h-full object-cover"
                     ></video>
                   </div>
-                </div>
+                </div> */}
 
-                {/* Mobile Preview */}
+               {/* Mobile Preview */}
                 <div className="border rounded-lg p-3 bg-gray-50 flex flex-col">
                   <div className="flex items-center gap-2 font-semibold mb-2 text-gray-700">
                     <Smartphone className="w-5 h-5" />
                     <span>Mobile Preview</span>
                   </div>
-                  <div className="w-full h-48 md:h-56 bg-black rounded flex items-center justify-center text-white">
-                    {frame ? (
-                      <img
-                        src={frame}
-                        className="object-cover w-full h-full"
-                        alt="Phone stream"
-                      />
-                    ) : (
-                      <div className="text-center p-4">
-                        <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
-                        <p>Waiting for phone camera...</p>
-                      </div>
-                    )}
+                  <div className="w-full h-48 md:h-80 flex justify-center">
+                    <div className="bg-black rounded-lg overflow-hidden relative h-full" style={{ aspectRatio: "9/16" }}>
+                      {capturedLoading ? (
+                        <div className="text-center p-4 flex flex-col justify-center items-center h-full text-white">
+                          <Loader className="w-6 h-6 animate-spin mb-2" />
+                          <p>Waiting for phone camera...</p>
+                        </div>
+                      ) : (
+                        <img
+                          // src={`${API_BASE_URL}/${capturdata}`}
+                          src={capturdata}
+                          className="object-cover w-full h-full"
+                          alt="Phone stream"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-
-
-              <div className="mb-4">
-                <div
-                  className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all duration-300 ${
-                    isVerified
-                      ? "bg-green-50 border-green-500"
-                      : "bg-red-50 border-red-400"
-                  }`}
-                >
+                <div>
+                  <div className="mb-4">
                   <div
-                    className={`w-8 h-8 rounded-full text-white flex items-center justify-center flex-shrink-0 ${
-                      isVerified ? "bg-green-500" : "bg-red-500"
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all duration-300 ${
+                      isVerified
+                        ? "bg-green-50 border-green-500"
+                        : "bg-red-50 border-red-400"
                     }`}
                   >
-                    {isVerified ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <X className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div>
-                    <p
-                      className={`font-semibold text-sm ${
-                        isVerified ? "text-green-800" : "text-red-800"
+                    <div
+                      className={`w-8 h-8 rounded-full text-white flex items-center justify-center flex-shrink-0 ${
+                        isVerified ? "bg-green-500" : "bg-red-500"
                       }`}
                     >
-                      User Verification
-                    </p>
-                    <p
-                      className={`text-xs font-medium ${
-                        isVerified ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {isVerified ? "Verified" : "Not Verified"}
-                    </p>
+                      {isVerified ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <X className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p
+                        className={`font-semibold text-sm ${
+                          isVerified ? "text-green-800" : "text-red-800"
+                        }`}
+                      >
+                        User Verification
+                      </p>
+                      <p
+                        className={`text-xs font-medium ${
+                          isVerified ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {isVerified ? "Verified" : "Not Verified"}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                <div className="bg-gray-100 p-3 rounded-lg mb-4 flex flex-col justify-between items-center gap-4 ">
+                  <p className="text-sm text-gray-600 text-center sm:text-left">
+                    Capture and Verify your face 
+                  </p>
+                  <div className="flex space-x-4">
+                    {isPending ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                      >
+                        Capturing...
+                      </Button>
+                    ): (
+                      <>
+                        <Button
+                      // disabled={!recieved}
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCaptureSend}
+                    >
+                      <IconCapture className="mr-2 w-4 h-4" />
+                      Capture
+                    </Button>
+                      </>
+                    )}
+                    <Button
+                      // disabled={!recieved}
+                      variant="outline"
+                      size="sm"
+                      onClick={runPrecheck}
+                    >
+                      <SearchCheckIcon className="mr-2 w-4 h-4" />
+                      Verify
+                    </Button>
+                  </div>
+                </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={handleClose}
+                      variant="outline"
+                      className="w-full sm:w-auto flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={!isVerified}
+                      onClick={async () => {
+                        const permissions = await requestMediaPermissions();
+                        setMediaPermissions(permissions);
+                        if (permissions.audio && permissions.video) {
+                          handlePermissionGranted();
+                          
+                        } else {
+                          toast.error(
+                            "Camera and microphone access are required to continue."
+                          );
+                        }
+                      }}
+                      className="w-full sm:w-auto flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    >
+                      Continue to Start
+                    </Button>
+                  </div>
+                </div>
+                
+
+
               </div>
 
-              {/* Reset Button Area */}
-              <div className="bg-gray-100 p-3 rounded-lg mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <p className="text-sm text-gray-600 text-center sm:text-left">
-                  If you have issues with verification, you can reset the checks.
-                </p>
-                <Button
-                  disabled={!recieved}
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetVerification}
-                >
-                  <RefreshCw className="mr-2 w-4 h-4" />
-                  Reset Checks
-                </Button>
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleClose}
-                  variant="outline"
-                  className="w-full sm:w-auto flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={!phoneStarted && !isVerified}
-                  onClick={async () => {
-                    const permissions = await requestMediaPermissions();
-                    setMediaPermissions(permissions);
-                    if (permissions.audio && permissions.video) {
-                      handlePermissionGranted();
-                    } else {
-                      toast.error(
-                        "Camera and microphone access are required to continue."
-                      );
-                    }
-                  }}
-                  className="w-full sm:w-auto flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                >
-                  Continue to Start
-                </Button>
-              </div>
             </div>
           </div>
         </div>

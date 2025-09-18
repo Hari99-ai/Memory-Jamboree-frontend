@@ -25,7 +25,7 @@ import type { SchoolsMasterData } from "../../types"
 import { Checkbox } from "../../components/ui/checkbox"
 import toast from "react-hot-toast"
 
-// Utility to convert state abbreviations to full names
+
 const stateFullNameMap: { [key: string]: string } = {
   AP: "Andhra Pradesh",
   AR: "Arunachal Pradesh",

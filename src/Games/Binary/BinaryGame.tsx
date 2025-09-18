@@ -44,16 +44,12 @@ export default function BinaryGame({
   const [results, setResults] = useState<string[][]>([])
   const [score, setScore] = useState(0)
   const [currentPage, setCurrentPage] = useState(0)
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0) // New: Global group index
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0)
   const [totalCorrect, setTotalCorrect] = useState(0)
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null)
   const [scoreSubmitted, setScoreSubmitted] = useState(false)
 
-  // Refs for robust timer
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const startTimeRef = useRef<number>(Date.now())
-  const timeRemainingRef = useRef<number>(5 * 60 * 1000) // 5 minutes in ms
-
+  const timerId = useRef<NodeJS.Timeout | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[][]>([])
 
   // Initialize digits and inputs
@@ -78,255 +74,9 @@ export default function BinaryGame({
     }
   }, [phase])
 
-  const startTimer = useCallback(
-    (durationInSeconds: number) => {
-      timeRemainingRef.current = durationInSeconds * 1000
-      startTimeRef.current = Date.now()
-
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-
-      timerRef.current = setInterval(() => {
-        if (paused) {
-          startTimeRef.current = Date.now() - (durationInSeconds * 1000 - timeRemainingRef.current)
-          return
-        }
-
-        const elapsed = Date.now() - startTimeRef.current
-        const remaining = timeRemainingRef.current - elapsed
-
-        if (remaining <= 0) {
-          setTimer(0)
-          if (timerRef.current) clearInterval(timerRef.current)
-        } else {
-          setTimer(Math.ceil(remaining / 1000))
-        }
-      }, 100)
-    },
-    [paused],
-  )
-
-  const handleRecallStart = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    setCountdownStarted(true)
-
-    setTimeout(() => {
-      setPhase("recall")
-      setCountdownStarted(false)
-      startTimer(15 * 60) // 15 minutes for recall
-
-      if (onRecallPhaseStart) {
-        onRecallPhaseStart()
-      }
-    }, 5000)
-  }, [onRecallPhaseStart, startTimer])
-
-  // Timer expiration logic
-  useEffect(() => {
-    if (timer <= 0 && !countdownStarted) {
-      if (phase === "memorize") {
-        handleRecallStart()
-      } else if (phase === "recall") {
-        handleSubmit()
-      }
-    }
-  }, [timer, phase, countdownStarted, handleRecallStart])
-
-  // Start initial timer
-  useEffect(() => {
-    startTimer(5 * 60)
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [startTimer])
-
-  // Keep activeCell in view when page changes
-  useEffect(() => {
-    if (activeCell && config) {
-      const start = currentPage * rowsPerPage
-      const end = start + rowsPerPage
-      if (activeCell.row < start || activeCell.row >= end) {
-        const newRow = start
-        const newCol = 0
-        setActiveCell({ row: newRow, col: newCol })
-        const globalIndex = newRow * digitsPerRow + newCol
-        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
-      }
-    }
-  }, [currentPage, activeCell, rowsPerPage, config, digitsPerRow])
-
-  // Input change handler with navigation
-  const handleInputChange = (r: number, c: number, val: string) => {
-    if (!/^[01]?$/.test(val) || !config) return
-    const copy = [...inputs]
-    copy[r][c] = val
-    setInputs(copy)
-
-    const isLastCol = c === digitsPerRow - 1
-    const isLastRow = r === totalRows - 1
-
-    if (val) {
-      if (!isLastCol) {
-        inputRefs.current[r][c + 1]?.focus()
-        inputRefs.current[r][c + 1]?.select()
-      } else if (!isLastRow) {
-        const newRow = r + 1
-        const newCol = 0
-        inputRefs.current[newRow][newCol]?.focus()
-        inputRefs.current[newRow][newCol]?.select()
-        setActiveCell({ row: newRow, col: newCol })
-
-        const globalIndex = newRow * digitsPerRow + newCol
-        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
-
-        const nextRowPage = Math.floor(newRow / rowsPerPage)
-        if (nextRowPage !== currentPage) {
-          setCurrentPage(nextRowPage)
-        }
-      }
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
-    const maxCol = digitsPerRow - 1
-
-    const moveFocus = (newRow: number, newCol: number) => {
-      setActiveCell({ row: newRow, col: newCol })
-      const globalIndex = newRow * digitsPerRow + newCol
-      setActiveGroupIndex(Math.floor(globalIndex / (config?.grouping || 1)))
-      setTimeout(() => {
-        inputRefs.current[newRow]?.[newCol]?.focus()
-      }, 50)
-    }
-
-    const pageStartRow = currentPage * rowsPerPage
-    const pageEndRow = Math.min(totalRows, pageStartRow + rowsPerPage)
-
-    switch (e.key) {
-      case "ArrowLeft":
-        if (col > 0) {
-          moveFocus(row, col - 1)
-          setTimeout(() => inputRefs.current[row]?.[col - 1]?.select(), 10)
-        } else if (col === 0 && row > pageStartRow) {
-          moveFocus(row - 1, digitsPerRow - 1)
-          setTimeout(() => inputRefs.current[row - 1]?.[digitsPerRow - 1]?.select(), 10)
-        }
-        break
-      case "ArrowRight":
-        if (col < maxCol) moveFocus(row, col + 1)
-        else if (col === maxCol && row < pageEndRow - 1) moveFocus(row + 1, 0)
-        break
-      case "ArrowUp":
-        if (row > pageStartRow) moveFocus(row - 1, col)
-        break
-      case "ArrowDown":
-        if (row < pageEndRow - 1) moveFocus(row + 1, col)
-        break
-      case "Backspace":
-        e.preventDefault()
-        const copy = [...inputs]
-        copy[row][col] = ""
-        setInputs(copy)
-
-        if (col > 0) {
-          moveFocus(row, col - 1)
-        } else if (row > pageStartRow) {
-          moveFocus(row - 1, digitsPerRow - 1)
-        }
-        break
-      case "Enter":
-        if (row === pageEndRow - 1 && col === maxCol) {
-          if (currentPage < totalPages - 1) {
-            setCurrentPage((p) => p + 1)
-            setTimeout(() => moveFocus((currentPage + 1) * rowsPerPage, 0), 100)
-          }
-        } else if (col < maxCol) {
-          moveFocus(row, col + 1)
-        } else if (col === maxCol && row < pageEndRow - 1) {
-          moveFocus(row + 1, 0)
-        }
-        break
-    }
-  }
-
-  // New: Keyboard navigation for memorize phase with cross-row grouping
-  useEffect(() => {
-    if (phase !== "memorize" || !config) return
-
-    const totalGroups = Math.ceil(totalDigits / config.grouping)
-
-    const move = (newGroupIndex: number) => {
-      if (newGroupIndex < 0 || newGroupIndex >= totalGroups) {
-        return // Out of bounds
-      }
-
-      setActiveGroupIndex(newGroupIndex)
-
-      const groupStartGlobalIndex = newGroupIndex * config.grouping
-      const newRow = Math.floor(groupStartGlobalIndex / digitsPerRow)
-      const newCol = groupStartGlobalIndex % digitsPerRow
-
-      setActiveCell({ row: newRow, col: newCol })
-
-      const newPage = Math.floor(newRow / rowsPerPage)
-      if (newPage !== currentPage) {
-        setCurrentPage(newPage)
-      }
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!activeCell) return
-
-      switch (e.key) {
-        case "ArrowLeft":
-          e.preventDefault()
-          move(activeGroupIndex - 1)
-          break
-        case "ArrowRight":
-          e.preventDefault()
-          move(activeGroupIndex + 1)
-          break
-        case "ArrowUp": {
-          e.preventDefault()
-          const { row, col } = activeCell
-          if (row > 0) {
-            const targetGlobalIndex = (row - 1) * digitsPerRow + col
-            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
-            move(newGroupIndex)
-          }
-          break
-        }
-        case "ArrowDown": {
-          e.preventDefault()
-          const { row, col } = activeCell
-          if (row < totalRows - 1) {
-            const targetGlobalIndex = (row + 1) * digitsPerRow + col
-            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
-            move(newGroupIndex)
-          }
-          break
-        }
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [
-    phase,
-    activeGroupIndex,
-    activeCell,
-    config,
-    currentPage,
-    totalDigits,
-    digitsPerRow,
-    rowsPerPage,
-    totalRows,
-  ])
-
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (phase === "done") return
-    if (timerRef.current) clearInterval(timerRef.current)
+    if (timerId.current) clearInterval(timerId.current)
 
     const output: string[][] = []
     let finalScore = 0
@@ -426,9 +176,254 @@ export default function BinaryGame({
         alert(`Failed to submit score: ${err instanceof Error ? err.message : "Unknown error"}`)
       }
     }
+  }, [phase, inputs, digits, onGameComplete, scoreSubmitted, allDisciplines, disciplineName, totalRows, digitsPerRow])
+
+  const handleRecallStart = useCallback(() => {
+    setCountdownStarted(true)
+
+    setTimeout(() => {
+      setPhase("recall")
+      setCountdownStarted(false)
+      if (onRecallPhaseStart) {
+        onRecallPhaseStart()
+      }
+    }, 5000)
+  }, [onRecallPhaseStart])
+
+  // Corrected Timer Logic
+  useEffect(() => {
+    if (paused || countdownStarted || phase === "done") {
+      if (timerId.current) {
+        clearInterval(timerId.current)
+      }
+      return
+    }
+
+    // Determine the correct duration for the current phase.
+    const phaseDuration = phase === "memorize" ? 5 * 60 : 15 * 60
+
+    // Use full duration if starting a new phase (timer is 0), otherwise use remaining time.
+    const timeToRun = timer === 0 ? phaseDuration : timer
+
+    // If starting a new phase, update the state to reflect the new full duration.
+    if (timer === 0) {
+      setTimer(phaseDuration)
+    }
+
+    // Calculate the end time using the correct `timeToRun` value, NOT the potentially stale `timer` state.
+    const phaseEndTime = Date.now() + timeToRun * 1000
+
+    const tick = () => {
+      const remaining = Math.round((phaseEndTime - Date.now()) / 1000)
+
+      if (remaining <= 0) {
+        setTimer(0)
+        if (timerId.current) {
+          clearInterval(timerId.current)
+        }
+
+        if (phase === "memorize") {
+          handleRecallStart()
+        } else if (phase === "recall") {
+          handleSubmit()
+        }
+      } else {
+        setTimer(remaining)
+      }
+    }
+
+    tick() // Initial tick for immediate UI update.
+    timerId.current = setInterval(tick, 1000)
+
+    return () => {
+      if (timerId.current) {
+        clearInterval(timerId.current)
+      }
+    }
+  }, [paused, countdownStarted, phase, handleRecallStart, handleSubmit])
+
+
+  // Keep activeCell in view when page changes
+  useEffect(() => {
+    if (activeCell && config) {
+      const start = currentPage * rowsPerPage
+      const end = start + rowsPerPage
+      if (activeCell.row < start || activeCell.row >= end) {
+        const newRow = start
+        const newCol = 0
+        setActiveCell({ row: newRow, col: newCol })
+        const globalIndex = newRow * digitsPerRow + newCol
+        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
+      }
+    }
+  }, [currentPage, activeCell, rowsPerPage, config, digitsPerRow])
+
+  const handleInputChange = (r: number, c: number, val: string) => {
+    if (!/^[01]?$/.test(val) || !config) return
+    const copy = [...inputs]
+    copy[r][c] = val
+    setInputs(copy)
+
+    const isLastCol = c === digitsPerRow - 1
+    const isLastRow = r === totalRows - 1
+
+    if (val) {
+      if (!isLastCol) {
+        inputRefs.current[r][c + 1]?.focus()
+        inputRefs.current[r][c + 1]?.select()
+      } else if (!isLastRow) {
+        const newRow = r + 1
+        const newCol = 0
+        inputRefs.current[newRow][newCol]?.focus()
+        inputRefs.current[newRow][newCol]?.select()
+        setActiveCell({ row: newRow, col: newCol })
+
+        const globalIndex = newRow * digitsPerRow + newCol
+        setActiveGroupIndex(Math.floor(globalIndex / config.grouping))
+
+        const nextRowPage = Math.floor(newRow / rowsPerPage)
+        if (nextRowPage !== currentPage) {
+          setCurrentPage(nextRowPage)
+        }
+      }
+    }
   }
 
-  // New: Click handler for global grouping
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
+    const maxCol = digitsPerRow - 1
+
+    const moveFocus = (newRow: number, newCol: number) => {
+      setActiveCell({ row: newRow, col: newCol })
+      const globalIndex = newRow * digitsPerRow + newCol
+      setActiveGroupIndex(Math.floor(globalIndex / (config?.grouping || 1)))
+      setTimeout(() => {
+        inputRefs.current[newRow]?.[newCol]?.focus()
+      }, 50)
+    }
+
+    const pageStartRow = currentPage * rowsPerPage
+    const pageEndRow = Math.min(totalRows, pageStartRow + rowsPerPage)
+
+    switch (e.key) {
+      case "ArrowLeft":
+        if (col > 0) {
+          moveFocus(row, col - 1)
+          setTimeout(() => inputRefs.current[row]?.[col - 1]?.select(), 10)
+        } else if (col === 0 && row > pageStartRow) {
+          moveFocus(row - 1, digitsPerRow - 1)
+          setTimeout(() => inputRefs.current[row - 1]?.[digitsPerRow - 1]?.select(), 10)
+        }
+        break
+      case "ArrowRight":
+        if (col < maxCol) moveFocus(row, col + 1)
+        else if (col === maxCol && row < pageEndRow - 1) moveFocus(row + 1, 0)
+        break
+      case "ArrowUp":
+        if (row > pageStartRow) moveFocus(row - 1, col)
+        break
+      case "ArrowDown":
+        if (row < pageEndRow - 1) moveFocus(row + 1, col)
+        break
+      case "Backspace":
+        e.preventDefault()
+        const copy = [...inputs]
+        copy[row][col] = ""
+        setInputs(copy)
+
+        if (col > 0) {
+          moveFocus(row, col - 1)
+        } else if (row > pageStartRow) {
+          moveFocus(row - 1, digitsPerRow - 1)
+        }
+        break
+      case "Enter":
+        if (row === pageEndRow - 1 && col === maxCol) {
+          if (currentPage < totalPages - 1) {
+            setCurrentPage((p) => p + 1)
+            setTimeout(() => moveFocus((currentPage + 1) * rowsPerPage, 0), 100)
+          }
+        } else if (col < maxCol) {
+          moveFocus(row, col + 1)
+        } else if (col === maxCol && row < pageEndRow - 1) {
+          moveFocus(row + 1, 0)
+        }
+        break
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== "memorize" || !config) return
+
+    const totalGroups = Math.ceil(totalDigits / config.grouping)
+
+    const move = (newGroupIndex: number) => {
+      if (newGroupIndex < 0 || newGroupIndex >= totalGroups) {
+        return // Out of bounds
+      }
+
+      setActiveGroupIndex(newGroupIndex)
+
+      const groupStartGlobalIndex = newGroupIndex * config.grouping
+      const newRow = Math.floor(groupStartGlobalIndex / digitsPerRow)
+      const newCol = groupStartGlobalIndex % digitsPerRow
+
+      setActiveCell({ row: newRow, col: newCol })
+
+      const newPage = Math.floor(newRow / rowsPerPage)
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage)
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeCell) return
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault()
+          move(activeGroupIndex - 1)
+          break
+        case "ArrowRight":
+          e.preventDefault()
+          move(activeGroupIndex + 1)
+          break
+        case "ArrowUp": {
+          e.preventDefault()
+          const { row, col } = activeCell
+          if (row > 0) {
+            const targetGlobalIndex = (row - 1) * digitsPerRow + col
+            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
+            move(newGroupIndex)
+          }
+          break
+        }
+        case "ArrowDown": {
+          e.preventDefault()
+          const { row, col } = activeCell
+          if (row < totalRows - 1) {
+            const targetGlobalIndex = (row + 1) * digitsPerRow + col
+            const newGroupIndex = Math.floor(targetGlobalIndex / config.grouping)
+            move(newGroupIndex)
+          }
+          break
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [
+    phase,
+    activeGroupIndex,
+    activeCell,
+    config,
+    currentPage,
+    totalDigits,
+    digitsPerRow,
+    rowsPerPage,
+    totalRows,
+  ])
+
   const handleBoxClick = (r: number, c: number) => {
     if (!config) return
     const globalIndex = r * digitsPerRow + c
@@ -481,13 +476,8 @@ export default function BinaryGame({
                     />
                   ))}
                 <div className="flex space-x-1 relative z-10">
-                  {Array.from({ length: digitsPerRow + (phase === "done" ? 1 : 0) }).map((_, colIndex) => {
+                  {Array.from({ length: digitsPerRow }).map((_, colIndex) => {
                     const globalIndex = rowIndex * digitsPerRow + colIndex
-
-                    if (phase === "done" && colIndex === digitsPerRow) {
-                      return <div key={`score-${colIndex}`}></div>
-                    }
-
                     const value = phase === "memorize" ? digits[globalIndex] : inputs[rowIndex][colIndex]
                     const globalGroupIndex = Math.floor(globalIndex / grouping)
                     const isGroupHighlighted =
@@ -590,7 +580,6 @@ export default function BinaryGame({
     )
   }
 
-  // Global Enter key handling
   useEffect(() => {
     const handleGlobalEnter = (e: KeyboardEvent) => {
       if (e.key === "Enter") {

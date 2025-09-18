@@ -21,6 +21,7 @@ import {
   setPasswordData,
   WindowLogs,
   PhoneSendData,
+  // CapturedResponse,
 } from "../types";
 
 // The static 'token' and 'headers' constants have been removed.
@@ -398,7 +399,17 @@ export const create_assesment = async (data: AssesmentData) => {
 };
 
 export const give_test = async (formData: FormData) => {
-  const res = await api.post("/live_monitoring", formData, {
+  const res = await api.post("/web_monitoring", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  if (!res.data) {
+    throw new Error("No data received from server");
+  }
+  return res.data;
+};
+
+export const phone_monitoring = async (formData: FormData) => {
+  const res = await api.post("/phone_monitoring", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   if (!res.data) {
@@ -533,3 +544,47 @@ export const publishResult = async (event_id:string) => {
   const response = await api.post(`/publish_result`, { event_id });
   return response.data;
 };
+
+export const precheck_verication = async (formData: FormData) => {
+  const res = await api.post("/prechecking", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+export const capture_img = async (formData = FormData) => {
+  const res = await api.post('/capture' , formData , {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+  return res.data
+}
+
+export const get_captured_image = async (
+  event_id: string,
+  disc_id: string,
+  user_id: string
+) => {
+  const res = await api.get(
+    `/get-captured/${event_id}/${disc_id}/${user_id}`
+  )
+  console.log("captured data 🔥🔥" , res)
+  return res.data.captured_image
+}
+
+export const precheck_verification = async (
+  event_id: string,
+  user_id: string,
+  disc_id: string
+) => {
+  const res = await api.get(`/prechecking/${event_id}/${disc_id}/${user_id}`);
+  return res.data;
+};
+
+export const capture_request = async(
+  event_id:string,
+  user_id:string,
+  disc_id:string
+) => {
+  const res = await api.post(`/request-capture/${event_id}/${disc_id}/${user_id}`)
+  return res.data
+}

@@ -882,9 +882,7 @@ export const WarningCountLogs = ({
       )}
     </div>
   );
-
 };
-
 
 
 // Person Detection Logs Component

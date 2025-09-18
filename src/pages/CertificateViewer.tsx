@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-constant-binary-expression */
 import { useRef, useEffect, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -7,13 +6,13 @@ import jsPDF from "jspdf";
 import Certificate from "../components/ui/Certificate";
 import { getcertificates } from "../lib/api"; // adjust path
 
-
 // const urlParams = new URLSearchParams(window.location.search);
 
 // const eventId = Number(urlParams.get("event_id"));
 
 const CertificateViewer = () => {
   const certificateRef = useRef<HTMLDivElement>(null);
+
   const [certificateData, setCertificateData] = useState({
     championship: "",
     name: "",
@@ -33,7 +32,7 @@ const CertificateViewer = () => {
       try {
         const data = await getcertificates(Number(userId));
         const targetEvent = data.find((e: any) => e.event_id === eventId) ?? data[0];
- 
+
         if (targetEvent) {
           setCertificateData({
             championship: targetEvent.event_name ?? "Championship",
@@ -46,13 +45,14 @@ const CertificateViewer = () => {
             date: new Date().toLocaleDateString(),
           });
         }
- 
+
       } catch (error) {
         console.error("Error fetching certificate:", error);
       }
     };
- 
+
     fetchCertificate();
+    
   }, []);
 
 

@@ -57,7 +57,7 @@ const getFullStateName = (code: string) => stateCodeToName[code] || code;
 
 export default function Users() {
   const navigate = useNavigate();
-
+  
   const {
     data: users,
     isLoading: isLoadingUsers,
@@ -70,7 +70,7 @@ export default function Users() {
 
   const processedUsers = useMemo(() => {
     if (!users) return [];
-
+    
     const enriched = users.map((user: any) => {
       return {
         ...user,

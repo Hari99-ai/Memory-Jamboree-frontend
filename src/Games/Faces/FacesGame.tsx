@@ -210,37 +210,43 @@ export default function FacesGame({
   }, [phase]);
 
   // TIMER LOGIC: Effect that runs the countdown tick
-  useEffect(() => {
-    if (!endTime || (phase !== "memorize" && phase !== "recall")) {
-      return;
+ // TIMER LOGIC: Effect that runs the countdown tick
+useEffect(() => {
+  // If there's no end time set, or we're not in a phase with a timer, do nothing.
+  if (!endTime || (phase !== "memorize" && phase !== "recall")) {
+    return;
+  }
+
+  // This function runs every second to update the timer.
+  const timerTick = () => {
+    const remaining = Math.max(0, endTime - Date.now());
+    const remainingSeconds = Math.round(remaining / 1000);
+    setTimeLeft(remainingSeconds);
+
+    // ✅ This is the key part: check if time has run out.
+    if (remaining <= 0) {
+
+      // If the memorization timer ends, start the recall process.
+      if (phase === "memorize") {
+        handleRecall();
+
+      // If the recall timer ends, trigger the submit process.
+      } else if (phase === "recall") {
+        handleSubmit();
+      }
     }
+  };
 
-    const timerTick = () => {
-      const remaining = Math.max(0, endTime - Date.now());
-      const remainingSeconds = Math.round(remaining / 1000);
-      setTimeLeft(remainingSeconds);
+  // Start the timer interval.
+  countdownRef.current = setInterval(timerTick, 1000);
 
-      if (remaining <= 0) {
-        if (phase === "memorize") {
-          handleRecall();
-        } else if (phase === "recall") {
-          handleSubmit();
-        }
-      }
-    };
-
-    // Run a tick immediately to have an accurate start time.
-    timerTick();
-
-    countdownRef.current = setInterval(timerTick, 1000);
-
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, [phase, endTime, handleRecall, handleSubmit]);
-
+  // Clean up the interval when the component updates or unmounts.
+  return () => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
+  };
+}, [phase, endTime, handleRecall, handleSubmit]);
   // Focus the first input when recall phase starts
   useEffect(() => {
     if (phase === "recall") {
