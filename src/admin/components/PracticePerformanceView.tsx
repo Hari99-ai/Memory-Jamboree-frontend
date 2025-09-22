@@ -39,7 +39,7 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [timeFilter, setTimeFilter] = useState<string>('all'); // 'all', 'daily', 'weekly', 'monthly'
+  const [timeFilter, setTimeFilter] = useState<string>('all');
 
   // Fetches and sorts practice data for the selected user from the API
   const fetchPracticeData = async () => {
@@ -50,7 +50,6 @@ const PracticePerformanceView = ({ userId }: PracticePerformanceViewProps) => {
       if (!token) {
         throw new Error("Authentication token not found. Please log in.");
       }
-
       const response = await fetch(`${API_BASE_URL}/user-practice-details/${userId}`, {
         method: "GET",
         headers: {

@@ -171,7 +171,7 @@ export default function RegisterPage() {
              
             <p className=" text-black text-sm text-center">
               Already have an Account ?{" "}
-              <Link to={"/auth/login"} className="text-[#245cab]">
+              <Link to={"/"} className="text-[#245cab]">
                 Login
               </Link>
             </p>

@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "../../lib/utils";
 import { useLocation } from "react-router-dom";
-import { Award, LockKeyhole, MonitorPlay, ClipboardPen, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Award, LockKeyhole, MonitorPlay, ClipboardPen, PanelLeftClose, PanelLeftOpen, ClipboardMinus } from "lucide-react";
 import { LogoutDialogButton } from "./AlertDialog";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -48,6 +48,13 @@ const menuItems = [
     label: "Practice Test",
     to: "/admin/paractice-test-performance",
     icon: <ClipboardPen className="w-5 h-5 shrink-0" />,
+  },
+  {
+    id: "paractice-report",
+    type:"single",
+    label: "Practice Scores",
+    to: "/admin/paractice-report",
+    icon:<ClipboardMinus className="w-5 h-5 shrink-0"/>
   },
   {
     id: "results",

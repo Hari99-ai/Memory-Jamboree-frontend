@@ -118,7 +118,7 @@ export const useAuth = () => {
     sessionStorage.clear();
     localStorage.clear();
     setToken(null);
-    navigate('/auth/login');
+    navigate('/');
   };
 
   const login = async (email: string, password: string) => {

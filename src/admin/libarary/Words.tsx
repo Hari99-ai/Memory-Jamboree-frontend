@@ -39,8 +39,8 @@ async function generateWordsData(level: string, count: number = 300): Promise<st
   }
 }
 
-const categories = ["Easy", "Moderate", "Hard", "Master" , "GrandMaster"];
-const action_type = ["concrete" , "abstract" , "action"]
+const categories = ["Easy", "Moderate", "Hard", "Master", "GrandMaster"];
+const action_type = ["concrete", "abstract", "action"]
 const ITEMS_PER_PAGE = 100;
 
 type WordEntry = {
@@ -54,7 +54,7 @@ export default function Words() {
   const [word, setWord] = useState("");
   const [words, setWords] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Select");
-  const [selectdType , setSelectedType] = useState("Select")
+  const [selectdType, setSelectedType] = useState("Select")
   const [searchTerm, setSearchTerm] = useState("");
   const [postedWords, setPostedWords] = useState<WordEntry[]>([]);
   const [fetchedWords, setFetchedWords] = useState<Record<string, WordEntry[]>>({
@@ -125,7 +125,7 @@ export default function Words() {
     try {
       const token = sessionStorage.getItem("auth_token");
       const response = await axios.post(
-        `${API_BASE_URL}/insert_words`,
+        `${API_BASE_URL}/add_words`,
         {
           category: selectedCategory,
           word: words,
@@ -136,7 +136,7 @@ export default function Words() {
             "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
-          withCredentials: true,
+          // Remove this line: withCredentials: true,
         }
       );
 
@@ -147,10 +147,10 @@ export default function Words() {
       }
 
       if (skipped_duplicates.length > 0) {
-        toast( 
+        toast(
           `Skipped duplicates: ${skipped_duplicates.join(", ")}`
-        , {
-           icon: '⚠️',
+          , {
+            icon: '⚠️',
           }
         );
       }
@@ -161,7 +161,7 @@ export default function Words() {
         type: selectdType
       }));
 
-      console.log("new Entries" , newEntries)
+      console.log("new Entries", newEntries)
 
       setPostedWords((prev) => [...newEntries, ...prev]);
       setWords([]);
@@ -175,7 +175,6 @@ export default function Words() {
     }
     setLoading(false);
   };
-
   // Combine fetched and posted words for the current tab
   const allWords = [
     ...postedWords.filter((w) => w.category === activeTab),
@@ -206,35 +205,35 @@ export default function Words() {
         </div>
         <div className="flex gap-x-4">
           <div>
-          <Label className="mb-1 block">Select Category</Label>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select category..." />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="mb-1 block">Select Type</Label>
-          <Select value={selectdType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select category..." />
-            </SelectTrigger>
-            <SelectContent>
-              {action_type.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <Label className="mb-1 block">Select Category</Label>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Select category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1 block">Select Type</Label>
+            <Select value={selectdType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Select category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {action_type.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -315,11 +314,10 @@ export default function Words() {
               setCurrentPage(1);
               setSearchTerm("");
             }}
-            className={`flex-1 text-center py-2 font-semibold ${
-              activeTab === cat
+            className={`flex-1 text-center py-2 font-semibold ${activeTab === cat
                 ? "text-[#245cab] border-b-2 border-[#245cab]"
                 : "text-gray-500"
-            }`}
+              }`}
           >
             {cat}
           </button>

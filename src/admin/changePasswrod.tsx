@@ -85,7 +85,7 @@ const ChangePassword: React.FC = () => {
         setToast("Password changed successfully! Please login with your new password.");
         setTimeout(() => {
           setToast(null);
-          navigate("/login");
+          navigate("/");
         }, 3000); // 2 seconds before navigating
       } else {
         setError(data.message || "Failed to change password.");

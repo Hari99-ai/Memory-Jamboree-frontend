@@ -99,7 +99,7 @@ export default function ForgotPassword() {
       setOtp("");
       setNewPassword("");
       setConfirmPassword("");
-      navigate("/auth/login");
+      navigate("/");
     },
     onError: (err: any) => {
       toast.error("Failed to reset password.");

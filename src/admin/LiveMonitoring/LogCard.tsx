@@ -5,33 +5,9 @@ import { API_BASE_URL } from "../../lib/client";
 // import { DownloadLogs } from "./DownloadLogs";
 import JSZip from "jszip";
 import saveAs from "file-saver";
-
+import {convertToIST} from '../../lib/index'
 // Utility function to convert timestamp to Indian Standard Time (IST)
-export const convertToIST = (timeString: string): string => {
-  if (!timeString || typeof timeString !== 'string') return "Invalid Time";
 
-  try {
-    // Assuming the source time is in UTC or a compatible format
-    const date = new Date(timeString.replace(' ', 'T') + 'Z');
-
-    // Add 5 hours and 30 minutes for IST offset
-    date.setHours(date.getHours() + 5);
-    date.setMinutes(date.getMinutes() + 30);
-
-    // Format the date back to a readable string
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} IST`;
-  } catch (error) {
-    console.error("Error converting time:", error);
-    return timeString; // Return original string on error
-  }
-};
 
 
 // Session storage caching utilities
@@ -73,6 +49,217 @@ const imageToBase64 = (url: string): Promise<string> =>
   // Helper for consistent portrait image style
 const portraitImgClass = "object-contain w-full h-80 rounded-lg shadow-sm";
 
+// export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
+//   const [showDetails, setShowDetails] = useState(false);
+//   const [imageCache, setImageCache] = useState<Record<string, string>>({});
+//   const [_, setLoadingImages] = useState<Set<string>>(new Set());
+//   const [preloadingProgress, setPreloadingProgress] = useState(0);
+//   const [isPreloading, setIsPreloading] = useState(false);
+
+//   // Collect all image URLs from both desktop and phone logs
+//   const imageUrls = logs.flatMap(log => {
+//     const urls: string[] = [];
+//     if (log.img_log)
+//       urls.push(`${API_BASE_URL.replace(/\/$/, "")}/${log.img_log.replace(/^\/+/, "")}`);
+//     if (log.external_img)
+//       urls.push(`${API_BASE_URL.replace(/\/$/, "")}/${log.external_img.replace(/^\/+/, "")}`);
+//     return urls;
+//   });
+
+//   // Preload images
+//   useEffect(() => {
+//     const preload = async () => {
+//       if (!imageUrls.length) return;
+//       setIsPreloading(true);
+//       setPreloadingProgress(0);
+//       const cache: Record<string, string> = {};
+//       const loading = new Set<string>();
+
+//       for (let i = 0; i < imageUrls.length; i++) {
+//         const url = imageUrls[i];
+//         const cached = getImageFromCache(url);
+//         if (cached) {
+//           cache[url] = cached;
+//           setPreloadingProgress(((i + 1) / imageUrls.length) * 100);
+//           continue;
+//         }
+
+//         try {
+//           loading.add(url);
+//           setLoadingImages(new Set(loading));
+//           const base64 = await imageToBase64(url);
+//           cache[url] = base64;
+//           setImageInCache(url, base64);
+//           loading.delete(url);
+//           setLoadingImages(new Set(loading));
+//         } catch (err) {
+//           console.error(`Failed to preload image: ${url}`, err);
+//           loading.delete(url);
+//           setLoadingImages(new Set(loading));
+//         }
+
+//         setPreloadingProgress(((i + 1) / imageUrls.length) * 100);
+//       }
+
+//       setImageCache(cache);
+//       setIsPreloading(false);
+//     };
+
+//     preload();
+//   }, [logs]);
+
+
+
+//   if (!logs || logs.length === 0)
+//     return (
+//       <div className="p-6 mb-6 bg-white border shadow-lg rounded-2xl border-slate-200">
+//         <div className="flex items-center justify-between mb-4">
+//           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
+//           <div className="px-3 py-1 text-sm rounded-full bg-slate-100 text-slate-600">0 logs</div>
+//         </div>
+//         <div className="py-8 text-center">
+//           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100">
+//             <FaRegEye className="w-8 h-8 text-slate-400" />
+//           </div>
+//           <p className="italic text-slate-500">No logs available</p>
+//         </div>
+//       </div>
+//     );
+
+//   return (
+//     <div className="p-6 mb-6 bg-white border shadow-lg rounded-2xl border-slate-200">
+//       <div className="flex items-center justify-between mb-4">
+//         <div className="flex items-center gap-3">
+//           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
+//           <div className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">
+//             {logs.length} logs
+//           </div>
+//         </div>
+//         <button
+//           onClick={() => setShowDetails(!showDetails)}
+//           className="flex items-center gap-2 px-4 py-2 text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 hover:shadow-xl"
+//         >
+//           {showDetails ? "Hide Details" : "Show Details"}
+//         </button>
+//       </div>
+
+//       {isPreloading && imageUrls.length > 0 && (
+//         <div className="p-3 mb-4 border border-blue-200 rounded-lg bg-blue-50">
+//           <div className="flex items-center justify-between mb-2">
+//             <span className="text-sm font-medium text-blue-700">Preloading images...</span>
+//             <span className="text-sm text-blue-600">{Math.round(preloadingProgress)}%</span>
+//           </div>
+//           <div className="w-full h-2 bg-blue-200 rounded-full">
+//             <div
+//               className="h-2 transition-all duration-300 bg-blue-500 rounded-full"
+//               style={{ width: `${preloadingProgress}%` }}
+//             />
+//           </div>
+//         </div>
+//       )}
+
+//       {showDetails && (
+//         <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
+//           {logs.map((log, index) => (
+//             <div key={index} className="p-4 border bg-slate-50 rounded-xl border-slate-200 hover:shadow-md">
+//               {/* Desktop log */}
+//               {log.img_log && (
+//                 <div className="relative mb-4">
+//                   <img
+//                     src={imageCache[`${API_BASE_URL}/${log.img_log}`] || `${API_BASE_URL}/${log.img_log}`}
+//                     alt="Desktop log"
+//                     className={portraitImgClass}
+
+//                   />
+//                 </div>
+//               )}
+
+//               {/* Phone log */}
+//               {/* {log.external_img && (
+//                 <div className="relative mb-4">
+//                   <img
+//                     src={imageCache[`${API_BASE_URL}/${log.external_img}`] || `${API_BASE_URL}/${log.external_img}`}
+//                     alt="Phone log"
+//                   className={portraitImgClass}
+
+//                   />
+//                 </div>
+//               )} */}
+
+//               {/* Log details */}
+//               <div className="space-y-3">
+//                 <div className="flex items-center gap-2 text-sm text-slate-600">
+//                   <FaClock className="w-3 h-3" />
+//                   <span className="font-medium">{convertToIST(log.log_time)}</span>
+//                 </div>
+
+//                 <div className="flex items-center gap-2 text-sm">
+//                   <FaUser className="w-3 h-3" />
+//                   <span className="text-slate-600">Person:</span>
+//                   {log.person_status > 0 ? (
+//                     <span className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+//                       Detected
+//                     </span>
+//                   ) : (
+//                     <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+//                       Not Detected
+//                     </span>
+//                   )}
+//                 </div>
+
+//                 <div className="flex items-center gap-2 text-sm">
+//                   <FaMobile className="w-3 h-3" />
+//                   <span className="text-slate-600">Phone:</span>
+//                   {log.phone_detection ? (
+//                     <span className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+//                       Detected
+//                     </span>
+//                   ) : (
+//                     <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+//                       Not Detected
+//                     </span>
+//                   )}
+//                 </div>
+
+//                 <div className="flex items-center gap-2 text-sm text-slate-600">
+//                   <FaRegEye className="w-3 h-3" />
+//                   <span>Eyes:</span>
+//                   <span className="font-medium">{log.user_movements_eyes}</span>
+//                 </div>
+
+//                 <div className="flex items-center gap-2 text-sm text-slate-600">
+//                   <FaUser className="w-3 h-3" />
+//                   <span>Head:</span>
+//                   <span className="font-medium">{log.user_movements_updown}</span>
+//                 </div>
+
+//                 <div className="flex items-center gap-2 text-sm">
+//                   <FaMicrophone className="w-3 h-3" />
+//                   <span className="text-slate-600">Voice DB:</span>
+//                   {log.voice_db < 10 ? (
+//                     <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+//                       Normal
+//                     </span>
+//                   ) : log.voice_db < 20 ? (
+//                     <span className="px-2 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">
+//                       Little Disturbance
+//                     </span>
+//                   ) : (
+//                     <span className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+//                       More Disturbance
+//                     </span>
+//                   )}
+//                 </div>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
   const [showDetails, setShowDetails] = useState(false);
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
@@ -81,16 +268,11 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
   const [isPreloading, setIsPreloading] = useState(false);
 
   // Collect all image URLs from both desktop and phone logs
-  const imageUrls = logs.flatMap(log => {
-    const urls: string[] = [];
-    if (log.img_log)
-      urls.push(`${API_BASE_URL.replace(/\/$/, "")}/${log.img_log.replace(/^\/+/, "")}`);
-    if (log.external_img)
-      urls.push(`${API_BASE_URL.replace(/\/$/, "")}/${log.external_img.replace(/^\/+/, "")}`);
-    return urls;
-  });
+   const imageUrls = logs
+    .filter(log => log.img_log)
+    .map(log => `${API_BASE_URL.replace(/\/$/, "")}/${log.img_log.replace(/^\/+/, "")}`);
 
-  // Preload images
+  // Preload external images
   useEffect(() => {
     const preload = async () => {
       if (!imageUrls.length) return;
@@ -132,7 +314,15 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
     preload();
   }, [logs]);
 
-  if (!logs || logs.length === 0)
+  // console.log("logs 🚀🚀🚀🚀🚀" , logs)
+  // Filter logs that actually have an external_img
+  const filteredLogs = logs.filter(log => log.img_log);
+  // console.log("🚨🚨🚨🚨🚨" , filteredLogs)
+
+
+
+
+  if (!filteredLogs)
     return (
       <div className="p-6 mb-6 bg-white border shadow-lg rounded-2xl border-slate-200">
         <div className="flex items-center justify-between mb-4">
@@ -154,7 +344,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
         <div className="flex items-center gap-3">
           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
           <div className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">
-            {logs.length} logs
+            {filteredLogs.length} logs
           </div>
         </div>
         <button
@@ -182,7 +372,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
 
       {showDetails && (
         <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
-          {logs.map((log, index) => (
+          {filteredLogs.map((log, index) => (
             <div key={index} className="p-4 border bg-slate-50 rounded-xl border-slate-200 hover:shadow-md">
               {/* Desktop log */}
               {log.img_log && (
@@ -197,7 +387,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
               )}
 
               {/* Phone log */}
-              {log.external_img && (
+              {/* {log.external_img && (
                 <div className="relative mb-4">
                   <img
                     src={imageCache[`${API_BASE_URL}/${log.external_img}`] || `${API_BASE_URL}/${log.external_img}`}
@@ -206,7 +396,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
 
                   />
                 </div>
-              )}
+              )} */}
 
               {/* Log details */}
               <div className="space-y-3">
@@ -280,6 +470,7 @@ export function CardWithLogs({ title, logs }: { title: string; logs: any[] }) {
     </div>
   );
 }
+
 
 export function ExternalLogs({ title, logs }: { title: string; logs: any[] }) {
   const [showDetails, setShowDetails] = useState(false);
@@ -361,16 +552,19 @@ export function ExternalLogs({ title, logs }: { title: string; logs: any[] }) {
   return (
     <div className="p-6 mb-6 bg-white border shadow-lg rounded-2xl border-slate-200">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-semibold text-slate-800">Mobile Logs</h4>
+        <div className="flex items-center gap-3">
+          <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
+          <div className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">
+            {filteredLogs.length} logs
+          </div>
+        </div>
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+          className="flex items-center gap-2 px-4 py-2 text-white bg-blue-500 rounded-lg shadow-lg hover:bg-blue-600 hover:shadow-xl"
         >
           {showDetails ? "Hide Details" : "Show Details"}
         </button>
       </div>
-
-      
 
       {/* Preloading progress bar */}
       {isPreloading && imageUrls.length > 0 && (
@@ -681,7 +875,7 @@ export const WarningCountLogs = ({
 
   // Only warnings (phone detected or focus loss)
   const warningLogs = logs.filter(
-    (log) => log.phone_detection || log.final_focus?.includes("Incorrect Position")
+    (log) => log.phone_detection || log.person_status > 0 || log.final_focus?.includes("Incorrect Position")
   );
 
   // Download logs with images
@@ -696,7 +890,7 @@ export const WarningCountLogs = ({
         convertToIST(log.log_time),
         log.final_focus || "",
         log.phone_detection ? "Yes" : "No",
-        log.person_status || 0,
+        log.person_status > 0,
         ["img_log", "external_img"]
           .map((key) => (log[key] ? log[key].split("/").pop() : ""))
           .filter(Boolean)
@@ -868,11 +1062,11 @@ export const WarningCountLogs = ({
               })}
 
               <div className="space-y-2 text-sm text-slate-600">
-                {log.final_focus && <p>⚠️ Focus: {log.final_focus}</p>}
-                {log.focus_loss_count > 0 && <p>⚠️ Focus Loss Count: {log.focus_loss_count}</p>}
+                {/* {log.final_focus && <p>⚠️ Focus: {log.final_focus}</p>} */}
+                {/* {log.focus_loss_count > 0 && <p>⚠️ Focus Loss Count: {log.focus_loss_count}</p>} */}
                 {log.phone_detection && <p>📱 Phone detected</p>}
                 {log.person_status > 0 && (
-                  <p>👤 Person Detected ({log.person_status > 0})</p>
+                  <p>👤 Person Detected </p>
                 )}
                 <p className="text-xs text-slate-500">{convertToIST(log.log_time)}</p>
               </div>
@@ -962,9 +1156,6 @@ export function PersonDetectionLogs({
       <div className="p-6 mb-6 bg-white border shadow-lg rounded-2xl border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-lg font-semibold text-slate-800">{title}</h4>
-          <div className="px-3 py-1 text-sm rounded-full bg-slate-100 text-slate-600">
-            0 detections
-          </div>
         </div>
         <div className="py-8 text-center">
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100">

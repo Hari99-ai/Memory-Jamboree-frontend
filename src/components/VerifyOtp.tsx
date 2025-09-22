@@ -148,7 +148,7 @@ export default function VerifyOtp() {
       setAuthState((prev) => ({ ...prev, otp: Array(5).fill("") }));
       setNewPassword("");
       setConfirmPassword("");
-      navigate("/auth/login");
+      navigate("/");
     } catch (error: any) {
       toast.error("Failed to reset password.");
       console.error(error);

@@ -2,7 +2,7 @@ import { createBrowserRouter, Outlet} from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Loader2 from "../components/Loader2";
 import Loader from "../components/Loader";
-const Home = lazy(() => import("../Home/HomePage"));
+// const Home = lazy(() => import("../Home/HomePage"));
 const Login = lazy(() => import("../components/Login"));
 const Stepper = lazy(() => import("../components/Stepper"));
 const SubscriptionPlans = lazy(() => import( "../admin/Settings/SubscriptionPlans"));
@@ -29,6 +29,7 @@ const ResultsCertificate = lazy(() => import("../components/ui/ResultsCertificat
 import NotFound from "../components/NotFound";
 import { mobileOnlyRoutes } from ".";
 import { DesktopOnlyRoute } from "./DesktopRoute";
+const ParacticeReport = lazy(() => import( "../admin/components/ParacticeReport"));
 // import { DesktopOnlyRoute } from "./DesktopRoute";
 // import { mobileOnlyRoutes } from ".";
 // import { DesktopOnlyRoute } from "./DesktopRoute";
@@ -71,13 +72,12 @@ const EventForm = lazy(() => import("../admin/Events/EventForm"));
 const ViewEvents = lazy(() => import("../admin/Events/EventsList/ViewEvents"));
 
 
-
 export const router = createBrowserRouter([
   {
     path: "/",
     element: (
       <Suspense fallback={<Loader2/>}>
-        <Home />
+        <Login/>
       </Suspense>
     ),
   },
@@ -281,6 +281,14 @@ export const router = createBrowserRouter([
             )
           },
           {
+            path:"paractice-report",
+            element: (
+              <Suspense>
+                <ParacticeReport/>
+              </Suspense>
+            )
+          },
+          {
             path: "users/add",
             element: (
               <Suspense fallback={<Loader2 />}>
@@ -445,14 +453,14 @@ export const router = createBrowserRouter([
       // </DesktopOnlyRoute>
     ),
     children: [
-      {
-        path: "login",
-        element: (
-          <Suspense fallback={<Loader2 />}>
-            <Login />
-          </Suspense>
-        ),
-      },
+      // {
+      //   path: "login",
+      //   element: (
+      //     <Suspense fallback={<Loader2 />}>
+      //       <Login />
+      //     </Suspense>
+      //   ),
+      // },
       {
         path: "first-register",
         element: (

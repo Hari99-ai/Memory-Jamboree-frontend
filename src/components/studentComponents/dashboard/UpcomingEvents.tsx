@@ -127,34 +127,34 @@ export default function UpcomingEvents() {
 
   const formatDateRange = (startStr: string, endStr: string) => {
     if (!startStr || !endStr) return "";
-    
+
     const start = new Date(startStr);
     const end = new Date(endStr);
-    
+
     const startDate = start.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
       timeZone: "Asia/Kolkata"
     });
-    
+
     const startTime = start.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       timeZone: "Asia/Kolkata"
     });
-    
+
     const endDate = end.toLocaleDateString("en-GB", {
-      day: "numeric", 
+      day: "numeric",
       month: "short",
       timeZone: "Asia/Kolkata"
     });
-    
+
     const endTime = end.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       timeZone: "Asia/Kolkata"
     });
-    
+
     if (startDate === endDate) {
       return `${startDate}, ${startTime} - ${endTime}`;
     } else {
@@ -307,41 +307,31 @@ export default function UpcomingEvents() {
       </div>
     );
 
-  if (eventsError)
-    return (
-      <div className="p-8 text-center">
-        <div className="max-w-md p-6 mx-auto border border-red-200 bg-red-50 rounded-xl">
-          <div className="mb-2 text-lg font-semibold text-red-600">
-            Error loading events
-          </div>
-          <p className="text-red-500">Please try again later.</p>
-        </div>
-      </div>
-    );
+  // 🚨 Hide section if no events exist
+  if (!events || events.length === 0) {
+    return null; // don't render anything
+  }
 
   return (
     <div className="bg-[#f4f6f7] min-h-screen flex flex-col items-center justify-center py-0 -mt-24">
       <div className="relative flex flex-col items-center w-full max-w-6xl mx-auto">
-        {/* Navigation buttons - enabled/disabled based on data availability */}
         <button
           onClick={goLeft}
           disabled={!canGoLeft()}
-          className={`absolute z-40 p-4 transition -translate-y-1/2 rounded-full shadow-xl left-4 top-1/2 ${
-            canGoLeft() 
-              ? 'bg-white hover:scale-110 cursor-pointer' 
+          className={`absolute z-40 p-4 transition -translate-y-1/2 rounded-full shadow-xl left-4 top-1/2 ${canGoLeft()
+              ? 'bg-white hover:scale-110 cursor-pointer'
               : 'bg-gray-300 cursor-not-allowed opacity-50'
-          }`}
+            }`}
         >
           <ChevronLeft className={`w-7 h-7 ${canGoLeft() ? 'text-yellow-500' : 'text-gray-400'}`} />
         </button>
         <button
           onClick={goRight}
           disabled={!canGoRight()}
-          className={`absolute z-40 p-4 transition -translate-y-1/2 rounded-full shadow-xl right-4 top-1/2 ${
-            canGoRight() 
-              ? 'bg-white hover:scale-110 cursor-pointer' 
+          className={`absolute z-40 p-4 transition -translate-y-1/2 rounded-full shadow-xl right-4 top-1/2 ${canGoRight()
+              ? 'bg-white hover:scale-110 cursor-pointer'
               : 'bg-gray-300 cursor-not-allowed opacity-50'
-          }`}
+            }`}
         >
           <ChevronRight className={`w-7 h-7 ${canGoRight() ? 'text-yellow-500' : 'text-gray-400'}`} />
         </button>
@@ -349,15 +339,15 @@ export default function UpcomingEvents() {
         <div className="relative w-full h-[420px] flex items-center justify-center overflow-visible mx-auto" style={{ maxWidth: "1400px" }}>
           {displayCards.map((event, idx) => {
             const { className, style } = getCardStyle(idx);
-            const isLive = event.event_start && event.event_end && 
+            const isLive = event.event_start && event.event_end &&
               new Date(event.event_start) <= new Date() && new Date(event.event_end) >= new Date();
             const isPlaceholder = event.isPlaceholder;
 
             return (
-              <div 
-                key={event.event_id} 
-                className={className} 
-                style={style} 
+              <div
+                key={event.event_id}
+                className={className}
+                style={style}
                 onClick={() => !isPlaceholder && setCurrentIndex(idx)}
               >
                 <div className="w-full h-full flex flex-col rounded-[22px] shadow-2xl overflow-hidden relative">
@@ -383,7 +373,7 @@ export default function UpcomingEvents() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent from-0% via-transparent via-70% to-black/20"></div>
                         <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-white from-10% via-white/80 via-40% to-transparent"></div>
-                        
+
                         <div className="absolute top-4 right-4">
                           {event.estatus === 1 ? (
                             <span className="px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-full">
@@ -452,7 +442,7 @@ export default function UpcomingEvents() {
             );
           })}
         </div>
-        
+
         {/* MODIFICATION: Updated Registration Modal */}
         {showModal && selectedEvent && !selectedEvent.isPlaceholder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -488,7 +478,7 @@ export default function UpcomingEvents() {
                       Eligible Categories
                     </h5>
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      {selectedEvent.category.map((cat:any) => (
+                      {selectedEvent.category.map((cat: any) => (
                         <span
                           key={cat.cat_id}
                           className="px-3 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full"
@@ -499,7 +489,7 @@ export default function UpcomingEvents() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="pt-6 border-t border-gray-200">
                   <button
                     onClick={handleRegistrationAction}

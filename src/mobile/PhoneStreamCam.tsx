@@ -70,8 +70,8 @@ export default function PhoneStreamCam() {
       if (verifyData.wstatus === 1 || verifyData.status === 1 || verifyData.msg === "Session not found") {
         StopPhoneMonitoring();
         setIsStopped(true);
-        setShowInstructions(false); // Hide instructions
-        setShowWarning(false);      // Hide warnings
+        setShowInstructions(false);
+        setShowWarning(false);      
         return;
       }
 

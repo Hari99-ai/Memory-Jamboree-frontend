@@ -15,7 +15,7 @@
 export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 
 // export const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
-// // export const API_BASE_URL = "https://aidev.memoryjamboree.com:5000"
+// export const API_BASE_URL = "https://aidev.memoryjamboree.com:5000"
 // // export const API_BASE_URL = "http://192.168.29.88:8000"
 
 // export const eventImg = "https://aidev.gravitinfosystems.com:5000/uploads/events"
@@ -96,7 +96,7 @@ api.interceptors.response.use(
       if (!refreshToken) {
         // If no refresh token, logout the user
         sessionStorage.clear();
-        window.location.href = '/auth/login';
+        window.location.href = '/';
         return Promise.reject(error);
       }
 
@@ -125,7 +125,7 @@ api.interceptors.response.use(
         // If the refresh token is also invalid, logout the user
         console.error("Refresh token failed:", refreshError);
         sessionStorage.clear();
-        window.location.href = '/auth/login';
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }

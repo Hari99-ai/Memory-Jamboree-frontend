@@ -13,8 +13,8 @@ import {
   PersonDetectionLogs,
   ExternalLogs,
   WarningCountLogs,
-  convertToIST,
 } from "./LogCard";
+import {convertToIST} from '../../lib/index'
 import { KeyboardEventData, WindowData } from "../../types";
 import { SkeletonCard } from "../components/SkeletonCard";
 import { AUDIO_BASE_URL } from "../../lib/client";
@@ -604,10 +604,7 @@ export default function Monitorings() {
                   title="Phone Detection Logs"
                   logs={userLogs}
                 />
-                <ExternalLogs
-                  title="External Camera Image Logs"
-                  logs={userLogs}
-                />
+                
                 <VoiceLogs
                   title="Voice Detection Logs"
                   logs={userLogs.filter(
@@ -622,9 +619,15 @@ export default function Monitorings() {
                   title="Keyboard Detection Logs"
                   kdata={keys_log || []}
                 />
+
+                <ExternalLogs
+                  title="External Camera Image Logs"
+                  logs={userLogs}
+                />
+                
                 {/* MODIFIED: Total Logs card is now at the bottom */}
                 <CardWithLogs
-                  title="Total Logs"
+                  title="Desktop Logs"
                   logs={userLogs}
                 />
               </div>
@@ -670,8 +673,10 @@ function VoiceLogs({ title, logs }: { title: string; logs: any[] }) {
       {showTable && (
         <div className="p-6">
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
-            {logs.map((log, i) => (
-              <div
+            {logs.map((log, i) => {
+              console.log("log" , log)
+              return (
+                <div
                 key={i}
                 className="p-4 border rounded-lg bg-slate-50 border-slate-200"
               >
@@ -699,7 +704,8 @@ function VoiceLogs({ title, logs }: { title: string; logs: any[] }) {
                   )}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

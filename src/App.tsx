@@ -10,7 +10,7 @@ function App() {
       <RouterProvider router={router}></RouterProvider>
       <Toaster />
     </>
-  
   );
 }
+
 export default App;

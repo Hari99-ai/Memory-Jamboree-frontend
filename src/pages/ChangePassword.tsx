@@ -88,7 +88,7 @@ const ChangePassword: React.FC = () => {
         setTimeout(() => {
           setToast(null);
           // window.location.href = "https://aidev.memoryjamboree.com"; // Redirect to the base URL
-          navigate('/auth/login')
+          navigate('/')
         }, 2000);
       } else {
         setError(data.message || data.error || "Failed to change password.");

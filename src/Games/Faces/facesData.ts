@@ -1,244 +1,77 @@
 const firstNames = [
-  // Scientists
-  "Albert",
-  "Isaac",
-  "Charles",
-  "Nikola",
-  "Stephen",
-  "Galileo",
-  "Leonardo",
-  "Thomas",
-  "Alexander",
-  "Louis",
-  "Marie",
-  "Alan",
-  "Richard",
-  "Carl",
-  "Neil",
-
-  // Sports Persons
-  "Michael",
-  "Lionel",
-  "Cristiano",
-  "LeBron",
-  "Tom",
-  "Usain",
-  "Muhammad",
-  "Tiger",
-  "Roger",
-  "Kobe",
-  "Serena",
-  "Michael",
-  "Wayne",
-  "Pelé",
-  "Diego",
-
-  // Fictional Characters
-  "Sherlock",
-  "Harry",
-  "Clark",
-  "Bruce",
-  "Peter",
-  "Tony",
-  "Steve",
-  "Luke",
-  "Anakin",
-  "Gandalf",
-  "Frodo",
-  "James",
-  "Indiana",
-  "John",
-  "Neo",
-
-  // Book Characters
-  "Atticus",
-  "Jay",
-  "Holden",
-  "Winston",
-  "Jean",
-  "Ahab",
-  "Robinson",
-  "Don",
-  "Hamlet",
-  "King",
-  "Macbeth",
-  "Romeo",
-  "Othello",
-  "Huckleberry",
-  "Tom",
-
-  // Cartoon Characters
-  "Mickey",
-  "Donald",
-  "Bugs",
-  "Daffy",
-  "Porky",
-  "Tweety",
-  "Sylvester",
-  "Tom",
-  "Jerry",
-  "Scooby",
-  "Fred",
-  "Barney",
-  "George",
-  "Elroy",
-  "Yogi",
-  "Boo",
-  "Huckleberry",
-  "Quick",
-  "Snagglepuss",
-  "Top",
-
-  // Additional Famous Names
-  "Winston",
-  "Abraham",
-  "George",
-  "John",
-  "Martin",
-  "Nelson",
-  "Mahatma",
-  "Benjamin",
-  "Theodore",
-  "Benjamin",
-  "Thomas",
-  "Alexander",
-  "Napoleon",
-  "Julius",
-  "Cleopatra",
-  "Alexander",
-  "Genghis",
-  "Marco",
-  "Christopher",
-  "Ernest",
-]
+  // Easy to Moderate Names
+  "Albert", "Isaac", "Charles", "Nikola", "Stephen", "Thomas", "Alexander", "Louis", "Marie", "Alan",
+  "Richard", "Carl", "Neil", "Michael", "Lionel", "LeBron", "Tom", "Usain", "Muhammad", "Tiger",
+  "Roger", "Kobe", "Serena", "Wayne", "Harry", "Clark", "Bruce", "Peter", "Tony", "Steve", "Luke",
+  "James", "John", "Neo", "Jay", "Winston", "George", "Don", "King", "Romeo", "Mickey", "Donald",
+  "Bugs", "Jerry", "Scooby", "Fred", "Barney", "Yogi", "Martin", "Nelson", "Benjamin", "Marco", "Ernest",
+];
 
 const lastNames = [
-  // Scientists
-  "Einstein",
-  "Newton",
-  "Darwin",
-  "Tesla",
-  "Hawking",
-  "Galilei",
-  "da Vinci",
-  "Edison",
-  "Fleming",
-  "Pasteur",
-  "Curie",
-  "Turing",
-  "Feynman",
-  "Sagan",
-  "Tyson",
+  // Easy to Moderate Names
+  "Einstein", "Newton", "Darwin", "Tesla", "Hawking", "Edison", "Fleming", "Curie", "Turing", "Sagan",
+  "Jordan", "Messi", "James", "Brady", "Bolt", "Ali", "Woods", "Federer", "Bryant", "Williams", "Phelps",
+  "Holmes", "Potter", "Kent", "Wayne", "Parker", "Stark", "Rogers", "Bond", "Jones", "Finch", "Smith",
+  "Prince", "Lear", "Mouse", "Duck", "Bunny", "Pig", "Bird", "Cat", "Doo", "Bear", "Lion", "Churchill",
+  "Lincoln", "Washington", "Kennedy", "King", "Mandela", "Gandhi", "Franklin", "Roosevelt", "Hamilton",
+];
 
-  // Sports Persons
-  "Jordan",
-  "Messi",
-  "Ronaldo",
-  "James",
-  "Brady",
-  "Bolt",
-  "Ali",
-  "Woods",
-  "Federer",
-  "Bryant",
-  "Williams",
-  "Phelps",
-  "Gretzky",
-  "Santos",
-  "Maradona",
+// Fisher-Yates shuffle algorithm for true randomness
+function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
 
-  // Fictional Characters
-  "Holmes",
-  "Potter",
-  "Kent",
-  "Wayne",
-  "Parker",
-  "Stark",
-  "Rogers",
-  "Skywalker",
-  "Vader",
-  "Grey",
-  "Baggins",
-  "Bond",
-  "Jones",
-  "McClane",
-  "Anderson",
-
-  // Book Characters
-  "Finch",
-  "Gatsby",
-  "Caulfield",
-  "Smith",
-  "Valjean",
-  "Ahab",
-  "Crusoe",
-  "Quixote",
-  "Prince",
-  "Lear",
-  "Macbeth",
-  "Montague",
-  "Othello",
-  "Finn",
-  "Sawyer",
-
-  // Cartoon Characters
-  "Mouse",
-  "Duck",
-  "Bunny",
-  "Duck",
-  "Pig",
-  "Bird",
-  "Cat",
-  "Cat",
-  "Mouse",
-  "Doo",
-  "Flintstone",
-  "Rubble",
-  "Jetson",
-  "Jetson",
-  "Bear",
-  "Bear",
-  "Hound",
-  "McGraw",
-  "Lion",
-  "Cat",
-
-  // Additional Famous Names
-  "Churchill",
-  "Lincoln",
-  "Washington",
-  "Kennedy",
-  "King",
-  "Mandela",
-  "Gandhi",
-  "Franklin",
-  "Roosevelt",
-  "Franklin",
-  "Jefferson",
-  "Hamilton",
-  "Bonaparte",
-  "Caesar",
-  "VII",
-  "Great",
-  "Khan",
-  "Polo",
-  "Columbus",
-  "Hemingway",
-]
+interface NamePair {
+  firstName: string;
+  lastName: string;
+}
 
 export default function generateFacesData(count: number) {
-  const shuffledFirstNames = [...firstNames].sort(() => Math.random() - 0.5)
-  const shuffledLastNames = [...lastNames].sort(() => Math.random() - 0.5)
+  // 1. Create a pool of all possible unique name pairs
+  const allNamePairs: NamePair[] = [];
+  for (const firstName of firstNames) {
+    for (const lastName of lastNames) {
+      // This prevents combinations where first and last names are the same (e.g., "James James")
+      if (firstName !== lastName) {
+        allNamePairs.push({ firstName, lastName });
+      }
+    }
+  }
 
+  // 2. Shuffle the entire pool of name pairs to get a random order
+  const shuffledNamePairs = shuffleArray(allNamePairs);
+
+  if (count > shuffledNamePairs.length) {
+    console.warn(`Requested ${count} faces, but only ${shuffledNamePairs.length} unique name combinations are available. Names will start repeating.`);
+  }
+
+  // 3. Create a pool of unique image indices
+  const maxPortraits = 99; // API has portraits 0-98 for men
+  if (count > maxPortraits) {
+    console.warn(`Requested ${count} faces, but only ${maxPortraits} unique male portraits are available. Images will start repeating.`);
+  }
+
+  const portraitIndices = Array.from({ length: maxPortraits }, (_, i) => i);
+  const shuffledIndices = shuffleArray(portraitIndices);
+
+  // 4. Generate the final data using the unique, shuffled pools
   return Array.from({ length: count }, (_, i) => {
-    const firstName = shuffledFirstNames[i % shuffledFirstNames.length]
-    const lastName = shuffledLastNames[i % shuffledLastNames.length]
+    // Pick the next available unique name pair. Modulo is a fallback for when count > available pairs.
+    const namePair = shuffledNamePairs[i % shuffledNamePairs.length];
+    
+    // Pick the next available unique image. Modulo is a fallback for when count > available images.
+    const portraitId = shuffledIndices[i % shuffledIndices.length];
 
     return {
-      firstName,
-      lastName,
-      name: `${firstName} ${lastName}`, // Combined name for display
-      image: `https://randomuser.me/api/portraits/men/${i % 99}.jpg`, // Cycle through available portraits
+      firstName: namePair.firstName,
+      lastName: namePair.lastName,
+      name: `${namePair.firstName} ${namePair.lastName}`,
+      image: `https://randomuser.me/api/portraits/men/${portraitId}.jpg`,
     }
   })
 }

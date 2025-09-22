@@ -43,7 +43,7 @@ export default function Navbar() {
             <Link to="/" className="hover:text-primary-1 transition-colors">Contact</Link>
           </div>
           <div className="hidden md:flex space-x-2">
-            <Link to="/auth/login" className="px-5 py-2 text-[16px] hover:text-white hover:bg-[#245cab] cursor-pointer bg-transparent border-2 border-[#245cab] text-[#245cab] rounded-full transition">Login</Link>
+            <Link to="/" className="px-5 py-2 text-[16px] hover:text-white hover:bg-[#245cab] cursor-pointer bg-transparent border-2 border-[#245cab] text-[#245cab] rounded-full transition">Login</Link>
             <Link to="/auth/first-register" className="px-5 py-2 text-[16px] hover:text-[#245cab] hover:bg-transparent hover:border-2 hover:border-[#245cab] cursor-pointer bg-[#245cab] text-white rounded-full transition">Register</Link>
           </div>
 
@@ -83,7 +83,7 @@ export default function Navbar() {
           <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-gray-800 hover:text-primary-1">Contact</Link>
 
           <div className="flex flex-col items-center space-y-4 pt-8 w-4/5 max-w-xs">
-            <Link to="/auth/login" onClick={() => setIsMenuOpen(false)} className="px-8 py-2 text-lg border-2 border-[#245cab] text-[#245cab] rounded-full transition w-full text-center">Login</Link>
+            <Link to="/" onClick={() => setIsMenuOpen(false)} className="px-8 py-2 text-lg border-2 border-[#245cab] text-[#245cab] rounded-full transition w-full text-center">Login</Link>
             <Link to="/auth/first-register" onClick={() => setIsMenuOpen(false)} className="px-8 py-2 text-lg bg-[#245cab] text-white rounded-full transition w-full text-center">Register</Link>
           </div>
         </div>

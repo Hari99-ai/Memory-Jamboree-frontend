@@ -29,14 +29,14 @@ export const useAutoLogout = () => {
         setToken(null);
         sessionStorage.clear();
         localStorage.clear();
-        navigate("/auth/login", { replace: true });
+        navigate("/", { replace: true });
       } else {
         // Set a timer to logout exactly when token expires
         logoutTimer = setTimeout(() => {
           setToken(null);
           sessionStorage.clear();
           localStorage.clear();
-          navigate("/auth/login", { replace: true });
+          navigate("/", { replace: true });
         }, timeLeft * 100);
       }
     } catch (error) {
@@ -44,7 +44,7 @@ export const useAutoLogout = () => {
       setToken(null);
       sessionStorage.clear();
       localStorage.clear();
-      navigate("/auth/login", { replace: true });
+      navigate("/", { replace: true });
     }
 
     return () => {

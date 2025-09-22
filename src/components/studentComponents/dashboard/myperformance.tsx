@@ -12,16 +12,17 @@ import {
 import { Skeleton } from "../../../components/ui/skeleton";
 import { API_BASE_URL } from "../../../lib/client";
 
-type TimePeriod = "daily" | "weekly" | "monthly" | "custom";
+type TimePeriod = "all" | "last30" | "last60" | "last365" | "custom";
+
 
 export default function MyPerformance() {
   const [disciplines, setDisciplines] = useState<{ name: string; id: number }[]>([]);
   const [allScores, setAllScores] = useState<any[]>([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState<{ name: string; id: number } | null>(null);
   const [disciplineScores, setDisciplineScores] = useState<{ date: string; score: number }[]>([]);
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("weekly");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("last30");
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for custom date range
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -85,15 +86,15 @@ export default function MyPerformance() {
 
   useEffect(() => {
     if (!selectedDiscipline || allScores.length === 0) {
-        setDisciplineScores([]);
-        return;
+      setDisciplineScores([]);
+      return;
     };
 
     const filteredScores = allScores
       .filter((item) => item.discipline_name === selectedDiscipline.name)
       .map((item) => {
         const originalDate = new Date(item.createdat);
-        const offsetInMs = (5 * 60 + 30) * 60 * 1000;
+        const offsetInMs = (5 * 60 + 30) * 60 * 1000; // adjust timezone if needed
         const adjustedDate = new Date(originalDate.getTime() + offsetInMs);
         return {
           date: adjustedDate,
@@ -101,108 +102,74 @@ export default function MyPerformance() {
         };
       });
 
-    // Helper function to aggregate scores by day (highest score per day)
+    // Aggregate scores by day (highest score per day)
     const aggregateScoresByDay = (
-        scores: { date: Date; score: number }[], 
-        rangeStart: Date, 
-        rangeEnd: Date
+      scores: { date: Date; score: number }[],
+      rangeStart: Date,
+      rangeEnd: Date
     ) => {
-        const scoreMap = new Map<string, number>();
+      const scoreMap = new Map<string, number>();
 
-        scores.forEach(({ date, score }) => {
-            if (date >= rangeStart && date <= rangeEnd) {
-                const key = formatDate(date);
-                if (!scoreMap.has(key) || score > scoreMap.get(key)!) {
-                    scoreMap.set(key, score);
-                }
-            }
-        });
-
-        return Array.from(scoreMap.entries())
-            .map(([dateStr, score]) => {
-                const [day, month, year] = dateStr.split("/");
-                return {
-                    date: `${day}/${month}`,
-                    score,
-                    fullDate: new Date(`${year}-${month}-${day}`),
-                };
-            })
-            .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
-    };
-
-    const processDailyScores = (scores: { date: Date; score: number }[]) => {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      const todayScores = scores.filter((item) => {
-        const d = item.date;
-        return (
-          d.getFullYear() === today.getFullYear() &&
-          d.getMonth() === today.getMonth() &&
-          d.getDate() === today.getDate()
-        );
+      scores.forEach(({ date, score }) => {
+        if (date >= rangeStart && date <= rangeEnd) {
+          const key = formatDate(date);
+          if (!scoreMap.has(key) || score > scoreMap.get(key)!) {
+            scoreMap.set(key, score);
+          }
+        }
       });
 
-      return todayScores
-        .map((item) => ({
-          date: item.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          score: item.score,
-          timestamp: item.date.getTime(),
-        }))
-        .sort((a, b) => a.timestamp - b.timestamp);
+      return Array.from(scoreMap.entries())
+        .map(([dateStr, score]) => {
+          const [day, month, year] = dateStr.split("/");
+          return {
+            date: `${day}/${month}`,
+            score,
+            fullDate: new Date(`${year}-${month}-${day}`),
+          };
+        })
+        .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
     };
 
-    const processWeeklyScores = (scores: { date: Date; score: number }[]) => {
+    const processLastNDays = (scores: { date: Date; score: number }[], days: number) => {
       const now = new Date();
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
-      
-      return aggregateScoresByDay(scores, startOfWeek, endOfWeek);
-    };
-
-    const processMonthlyScores = (scores: { date: Date; score: number }[]) => {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      endOfMonth.setHours(23, 59, 59, 999);
-
-      return aggregateScoresByDay(scores, startOfMonth, endOfMonth);
+      const start = new Date(now);
+      start.setDate(start.getDate() - days);
+      start.setHours(0, 0, 0, 0);
+      return aggregateScoresByDay(scores, start, now);
     };
 
     const processCustomScores = (scores: { date: Date; score: number }[], start: string, end: string) => {
-        if (!start || !end) return [];
-
-        const customStartDate = new Date(start);
-        customStartDate.setHours(0, 0, 0, 0);
-        const customEndDate = new Date(end);
-        customEndDate.setHours(23, 59, 59, 999);
-
-        if (customStartDate > customEndDate) return []; // Invalid range
-
-        return aggregateScoresByDay(scores, customStartDate, customEndDate);
+      if (!start || !end) return [];
+      const customStartDate = new Date(start);
+      customStartDate.setHours(0, 0, 0, 0);
+      const customEndDate = new Date(end);
+      customEndDate.setHours(23, 59, 59, 999);
+      if (customStartDate > customEndDate) return [];
+      return aggregateScoresByDay(scores, customStartDate, customEndDate);
     };
 
     let processedScores: { date: string; score: number }[] = [];
 
     switch (timePeriod) {
-      case "daily":
-        processedScores = processDailyScores(filteredScores);
+      case "last30":
+        processedScores = processLastNDays(filteredScores, 30);
         break;
-      case "weekly":
-        processedScores = processWeeklyScores(filteredScores);
+      case "last60":
+        processedScores = processLastNDays(filteredScores, 60);
         break;
-      case "monthly":
-        processedScores = processMonthlyScores(filteredScores);
+      case "last365":
+        processedScores = processLastNDays(filteredScores, 365);
         break;
       case "custom":
         processedScores = processCustomScores(filteredScores, startDate, endDate);
         break;
+      case "all":
+      default:
+        processedScores = aggregateScoresByDay(filteredScores, new Date("1970-01-01"), new Date());
+        break;
     }
+
 
     setDisciplineScores(processedScores);
   }, [selectedDiscipline, allScores, timePeriod, startDate, endDate]);
@@ -229,31 +196,32 @@ export default function MyPerformance() {
               className="border rounded px-3 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               disabled={noDataAvailable}
             >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="custom">Custom</option>
+              <option value="all">All Time</option>
+              <option value="last30">Last 30 Days</option>
+              <option value="last60">Last 60 Days</option>
+              <option value="last365">Last 1 Year</option>
+              <option value="custom">Custom Range</option>
             </select>
-            
+
             {timePeriod === "custom" && (
-                <div className="flex items-center gap-2">
-                    <input 
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={noDataAvailable}
-                    />
-                    <span className="text-gray-500 text-sm">to</span>
-                     <input 
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={noDataAvailable}
-                        min={startDate} // Ensures end date is not before start date
-                    />
-                </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={noDataAvailable}
+                />
+                <span className="text-gray-500 text-sm">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={noDataAvailable}
+                  min={startDate}
+                />
+              </div>
             )}
 
             <select
@@ -329,7 +297,7 @@ export default function MyPerformance() {
                       dataKey="date"
                       tick={{ fontSize: 10, fill: "#6b7280" }}
                       label={{
-                        value: timePeriod === "daily" ? "Time" : "Date",
+                        value: "Date",
                         position: "insideBottom",
                         offset: -5,
                       }}

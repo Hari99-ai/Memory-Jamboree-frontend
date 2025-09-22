@@ -168,15 +168,16 @@ export function useMonitoring(config: MonitoringData, enabled = true) {
       raiseViolation("Phone detected");
     }
 
-    if (data.warning?.multiple_person == 1 || data.person_count > 0 || data.person_status == 1) {
+    if (data.warning?.multiple_person == 1 || data.person_count > 1 || data.person_status == 1) {
       raiseViolation("Multiple people detected");
     }
 
-    if (alertSource === "desktop" || data.warning?.active_person < 1) {
-      console.log("Active person 🤖🤖🤖🤖🤖🤖🤖" , data.active_person)
-      raiseViolation("No person found");
-    }
-    
+    // if (alertSource === "desktop" || data.person_count < 1) {
+    //   console.log("Active person 🤖🤖🤖🤖🤖🤖🤖" , data.active_person)
+    //   raiseViolation("No person found");
+    // }
+
+  
     if (
       data.final_focus &&
       (data.final_focus.includes("Incorrect Position (Distracted)") ||
