@@ -227,26 +227,26 @@ const ModernImageGallery = () => {
   const currentImages = images.slice(start, start + IMAGES_PER_PAGE)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br rounded-lg from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl text-center text-[#245cab] ">Image Gallery</h1>
-          <p className="text-slate-600">Upload and manage your images with ease</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl text-center text-[#245cab]">Image Gallery</h1>
+          <p className="text-sm sm:text-base text-slate-600">Upload and manage your images with ease</p>
         </div>
 
         {/* Upload Section */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <CloudUpload className="w-5 h-5 text-[#245cab]" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <CloudUpload className="w-4 h-4 sm:w-5 sm:h-5 text-[#245cab]" />
               Upload Images
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6">
             {/* Drag and Drop Zone */}
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${
+              className={`relative border-2 border-dashed rounded-xl p-4 sm:p-6 lg:p-8 transition-all duration-300 ${
                 dragActive
                   ? "border-blue-500 bg-blue-50 scale-[1.02]"
                   : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/50"
@@ -256,14 +256,14 @@ const ModernImageGallery = () => {
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-3 sm:space-y-4">
                
                 <div>
                  
                   
                   <div className="flex items-center justify-center gap-4">
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <label htmlFor="file-upload" className="cursor-pointer w-full sm:w-auto">
+                      <div className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto">
                         <Plus className="w-4 h-4" />
                         Choose Images
                       </div>
@@ -284,12 +284,13 @@ const ModernImageGallery = () => {
 
             {newUploadImages.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5" />
-                    Selected Images
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-700 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Selected Images</span>
+                    <span className="sm:hidden">Selected</span>
                   </h3>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 px-3 py-1">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 text-xs sm:text-sm">
                     {newUploadImages.length} selected
                   </Badge>
                 </div>
@@ -324,17 +325,19 @@ const ModernImageGallery = () => {
                 <Button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 sm:py-4 text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Uploading {newUploadImages.length} images...
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                      <span className="hidden sm:inline">Uploading {newUploadImages.length} images...</span>
+                      <span className="sm:hidden">Uploading...</span>
                     </>
                   ) : (
                     <>
-                      <Upload className="w-5 h-5 mr-2" />
-                      Upload {newUploadImages.length} Images
+                      <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      <span className="hidden sm:inline">Upload {newUploadImages.length} Images</span>
+                      <span className="sm:hidden">Upload ({newUploadImages.length})</span>
                     </>
                   )}
                 </Button>
@@ -345,14 +348,15 @@ const ModernImageGallery = () => {
 
         {/* Gallery Section */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <ImageIcon className="w-5 h-5 text-green-600" />
-                Image Gallery
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-0">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                <span className="hidden sm:inline">Image Gallery</span>
+                <span className="sm:hidden">Gallery</span>
                 {images.length > 0 && (
-                  <Badge variant="outline" className="ml-2">
-                    {images.length} images
+                  <Badge variant="outline" className="ml-1 sm:ml-2 text-xs sm:text-sm">
+                    {images.length}
                   </Badge>
                 )}
               </CardTitle>
@@ -361,19 +365,19 @@ const ModernImageGallery = () => {
                 size="sm"
                 onClick={refreshImages}
                 disabled={fetchingImages}
-                className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 bg-transparent"
+                className="flex items-center gap-1 sm:gap-2 hover:bg-green-50 hover:border-green-300 bg-transparent text-xs sm:text-sm px-2 sm:px-3"
               >
-                <RefreshCw className={`w-4 h-4 ${fetchingImages ? "animate-spin" : ""}`} />
-                Refresh
+                <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${fetchingImages ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {fetchingImages ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  <span className="ml-2 text-slate-600">Loading images...</span>
+                <div className="flex items-center justify-center py-6 sm:py-8">
+                  <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-sm sm:text-base text-slate-600">Loading images...</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {Array.from({ length: 10 }).map((_, i) => (
@@ -382,12 +386,12 @@ const ModernImageGallery = () => {
                 </div>
               </div>
             ) : images.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <ImageIcon className="w-10 h-10 text-gray-400" />
+              <div className="text-center py-8 sm:py-12">
+                <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                  <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-slate-600 mb-2">No images found</h3>
-                <p className="text-slate-500">Upload some images to get started</p>
+                <h3 className="text-base sm:text-lg font-medium text-slate-600 mb-2">No images found</h3>
+                <p className="text-sm sm:text-base text-slate-500">Upload some images to get started</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -413,17 +417,18 @@ const ModernImageGallery = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200 flex-wrap">
                     <Button
                       variant="outline"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-6"
+                      className="px-3 sm:px-6 text-xs sm:text-sm"
                     >
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
+                      <span className="sm:hidden">Prev</span>
                     </Button>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                      <span className="text-xs sm:text-sm text-slate-600 bg-slate-100 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
                         Page {currentPage} of {totalPages}
                       </span>
                     </div>
@@ -431,7 +436,7 @@ const ModernImageGallery = () => {
                       variant="outline"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-6"
+                      className="px-3 sm:px-6 text-xs sm:text-sm"
                     >
                       Next
                     </Button>

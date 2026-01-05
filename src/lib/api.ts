@@ -588,3 +588,48 @@ export const capture_request = async(
   const res = await api.post(`/request-capture/${event_id}/${disc_id}/${user_id}`)
   return res.data
 }
+
+// Exam Proctoring APIs
+export const verifyFaceForExam = async (formData: FormData) => {
+  try {
+    const res = await api.post("/video_feed", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error("Face verification failed:", error);
+    throw new Error(error.response?.data?.message || "Face verification failed");
+  }
+};
+
+export const startExamMonitoring = async () => {
+  try {
+    const res = await api.post("/start-monitoring");
+    return res.data;
+  } catch (error: any) {
+    console.error("Failed to start monitoring:", error);
+    throw new Error(error.response?.data?.message || "Failed to start monitoring");
+  }
+};
+
+export const stopExamMonitoring = async () => {
+  try {
+    const res = await api.post("/stop-monitoring");
+    return res.data;
+  } catch (error: any) {
+    console.error("Failed to stop monitoring:", error);
+    throw new Error(error.response?.data?.message || "Failed to stop monitoring");
+  }
+};
+
+export const monitorFaceDuringExam = async (formData: FormData) => {
+  try {
+    const res = await api.post("/monitor-face", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error("Face monitoring error:", error);
+    throw new Error(error.response?.data?.message || "Face monitoring failed");
+  }
+};

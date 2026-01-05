@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { verifyFaceForExam, startExamMonitoring, stopExamMonitoring, monitorFaceDuringExam } from '../lib/api';
 
 export default function ExamPage() {
   const [verified, setVerified] = useState(false);
@@ -29,8 +29,8 @@ export default function ExamPage() {
     formData.append('face', blob);
 
     try {
-      const res = await axios.post('http://localhost:5000/video_feed', formData);
-      if (res.data.verified) {
+      const res = await verifyFaceForExam(formData);
+      if (res.verified) {
         setVerified(true);
         console.log('Face verified!');
       } else {
@@ -38,6 +38,7 @@ export default function ExamPage() {
       }
     } catch (err) {
       console.error('Face verification failed', err);
+      alert('Face verification failed. Please try again.');
     }
   };
 
@@ -49,28 +50,29 @@ export default function ExamPage() {
     }
 
     try {
-      await axios.post('http://localhost:5000/start-monitoring');
+      await startExamMonitoring();
       setStarted(true);
       console.log('Monitoring started');
     } catch (err) {
       console.error('Monitoring start failed:', err);
+      alert('Failed to start exam monitoring. Please try again.');
     }
   };
 
   // Stop Exam
- // When stopping the exam, you might get the final score from server:
-const stopExam = async () => {
-  try {
-    const response = await axios.post('http://localhost:5000/stop-monitoring');
-    console.log('Monitoring stopped');
-    if (response.data.score !== undefined) {
-      setScore(response.data.score); // <-- now setScore is used
+  const stopExam = async () => {
+    try {
+      const response = await stopExamMonitoring();
+      console.log('Monitoring stopped');
+      if (response.score !== undefined) {
+        setScore(response.score);
+      }
+      setStarted(false);
+    } catch (err) {
+      console.error('Monitoring stop failed:', err);
+      alert('Failed to stop exam monitoring.');
     }
-    setStarted(false);
-  } catch (err) {
-    console.error('Monitoring stop failed:', err);
-  }
-};
+  };
 
   // Monitor Face during Exam
   useEffect(() => {
@@ -83,20 +85,19 @@ const stopExam = async () => {
 
       ctx.drawImage(videoRef.current, 0, 0, 320, 240);
 
-      canvasRef.current.toBlob((blob) => {
+      canvasRef.current.toBlob(async (blob) => {
         if (!blob) return;
         const formData = new FormData();
         formData.append('frame', blob);
 
-        axios.post('http://localhost:5000/monitor-face', formData)
-          .then((res) => {
-            if (res.data.event) {
-              console.log(res.data.event);
-            }
-          })
-          .catch((err) => {
-            console.error('Monitoring error:', err);
-          });
+        try {
+          const res = await monitorFaceDuringExam(formData);
+          if (res.event) {
+            console.log(res.event);
+          }
+        } catch (err) {
+          console.error('Monitoring error:', err);
+        }
       }, 'image/jpeg');
     }, 10000); // every 10 seconds
 

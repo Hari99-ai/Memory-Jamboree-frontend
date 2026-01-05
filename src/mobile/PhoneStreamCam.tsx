@@ -22,7 +22,7 @@ export default function PhoneStreamCam() {
   const [showInstructions, setShowInstructions] = useState(true); 
   const [cameraMode, setCameraMode] = useState<"user" | "environment">("user");
   // const [monitoringActive, setMonitoringActive] = useState(false)
-  const [showWarning, setShowWarning] = useState(false)
+  const [, setShowWarning] = useState(false)
   const [isStoped , setIsStopped] = useState(false)
 
   const { captureAndSend } = usePhoneCaptured({

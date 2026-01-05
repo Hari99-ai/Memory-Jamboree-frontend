@@ -99,7 +99,7 @@ const ChangePassword: React.FC = () => {
   const isMatching = newPassword && confirmPassword && newPassword === confirmPassword;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen  rounded-lg bg-gray-100 flex items-center justify-center p-4">
       {toast && <Toast message={toast} />}
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
         <button

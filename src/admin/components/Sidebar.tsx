@@ -275,9 +275,10 @@ const EnhancedSingleLink = ({
 interface SidebarProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  isMobile?: boolean;
 }
 
-export default function AdminSidebar({ open, setOpen }: SidebarProps) {
+export default function AdminSidebar({ open, setOpen, isMobile = false }: SidebarProps) {
   const [openDropdowns, setOpenDropdowns] = useState(new Set());
   const location = useLocation();
 
@@ -341,22 +342,35 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
       <Sidebar open={open} setOpen={setOpen}>
         <SidebarBody className="flex flex-col h-full overflow-hidden">
           <div className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
-            {/* TOP: Logo + App Name */}
-            <Link
-              to="/admin"
-              className="flex items-center px-1 py-2 border-b border-white/20"
-            >
-              <img
-                src="/Landing/memoryChampion_2.png"
-                alt="Memory Jamboree Logo"
-                className="object-contain w-24 h-24"
-              />
-              {open && (
-                <span className="text-xl font-bold tracking-tight text-white">
-                  Memory jamboree
-                </span>
+            {/* TOP: Logo + App Name + Hamburger (Desktop) */}
+            <div className="flex items-center justify-between px-1 py-2 border-b border-white/20">
+              <Link
+                to="/admin"
+                className="flex items-center"
+              >
+                <img
+                  src="/Landing/memoryChampion_2.png"
+                  alt="Memory Jamboree Logo"
+                  className="object-contain w-24 h-24"
+                />
+                {open && (
+                  <span className="text-xl font-bold tracking-tight text-white">
+                    Memory jamboree
+                  </span>
+                )}
+              </Link>
+              
+              {/* Hamburger button for desktop - only show when sidebar is expanded */}
+              {!isMobile && open && (
+                <button
+                  onClick={() => setOpen(false)}
+                  className="p-1 text-white transition-colors hover:bg-white/10 rounded"
+                  aria-label="Close sidebar"
+                >
+                  <PanelLeftClose className="w-5 h-5" />
+                </button>
               )}
-            </Link>
+            </div>
 
             {/* MAIN MENU SECTION: Dynamic rendering */}
             <div className="flex flex-col flex-1 px-4 mt-4 space-y-2">
@@ -370,38 +384,40 @@ export default function AdminSidebar({ open, setOpen }: SidebarProps) {
                 <LogoutDialogButton />
               </div>
 
-              {/* NEW: COLLAPSE BUTTON IN FOOTER */}
-              <div className="pt-2 mt-2 border-t border-white/20">
-                <button
-                  onClick={() => setOpen(!open)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md py-2 px-2 text-[12px] font-semibold text-white transition-all duration-200 hover:bg-white/10",
-                    !open && "justify-center"
-                  )}
-                  aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-                >
-                  <span>
-                    {open ? (
-                      <PanelLeftClose className="w-5 h-5 shrink-0" />
-                    ) : (
-                      <PanelLeftOpen className="w-5 h-5 shrink-0" />
+              {/* NEW: COLLAPSE BUTTON IN FOOTER - Hidden on mobile */}
+              {!isMobile && (
+                <div className="pt-2 mt-2 border-t border-white/20">
+                  <button
+                    onClick={() => setOpen(!open)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md py-2 px-2 text-[12px] font-semibold text-white transition-all duration-200 hover:bg-white/10",
+                      !open && "justify-center"
                     )}
-                  </span>
-                  <AnimatePresence>
-                    {open && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: "auto" }}
-                        exit={{ opacity: 0, width: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="truncate"
-                      >
-                        Collapse
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
-              </div>
+                    aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+                  >
+                    <span>
+                      {open ? (
+                        <PanelLeftClose className="w-5 h-5 shrink-0" />
+                      ) : (
+                        <PanelLeftOpen className="w-5 h-5 shrink-0" />
+                      )}
+                    </span>
+                    <AnimatePresence>
+                      {open && (
+                        <motion.span
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: "auto" }}
+                          exit={{ opacity: 0, width: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="truncate"
+                        >
+                          Collapse
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </SidebarBody>

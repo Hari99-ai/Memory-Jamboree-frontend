@@ -38,7 +38,7 @@ interface GameConfig {
 }
 
 export default function PracticeTestSection() {
-  const desiredOrder = [9, 25, 11, 14, 15, 12]
+  const desiredOrder = [9, 25,18,22,26, 11, 14, 15, 12]
 
   const {
     data: disciplines,
@@ -103,7 +103,7 @@ export default function PracticeTestSection() {
 
   useEffect(() => {
     if (testStarted && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {})
+      document.documentElement.requestFullscreen().catch(() => { })
     }
   }, [testStarted])
 
@@ -176,16 +176,14 @@ export default function PracticeTestSection() {
                       {/* Status */}
                       <div className="mb-6 flex-1">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            allowedDisciplines.includes(discipline.discipline_name)
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${allowedDisciplines.includes(discipline.discipline_name)
                               ? "bg-green-100 text-green-800 border border-green-200"
                               : "bg-gray-100 text-gray-600 border border-gray-200"
-                          }`}
+                            }`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full mr-2 ${
-                              allowedDisciplines.includes(discipline.discipline_name) ? "bg-green-500" : "bg-gray-400"
-                            }`}
+                            className={`w-2 h-2 rounded-full mr-2 ${allowedDisciplines.includes(discipline.discipline_name) ? "bg-green-500" : "bg-gray-400"
+                              }`}
                           />
                           {allowedDisciplines.includes(discipline.discipline_name) ? "Active" : "InActive"}
                         </span>
@@ -195,11 +193,10 @@ export default function PracticeTestSection() {
                       <button
                         onClick={() => handleContinue(discipline.discipline_name)}
                         disabled={!allowedDisciplines.includes(discipline.discipline_name)}
-                        className={`w-full py-3 px-6 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                          allowedDisciplines.includes(discipline.discipline_name)
+                        className={`w-full py-3 px-6 rounded-xl text-sm font-semibold transition-all duration-300 ${allowedDisciplines.includes(discipline.discipline_name)
                             ? "bg-indigo-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98]"
                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        }`}
+                          }`}
                       >
                         {allowedDisciplines.includes(discipline.discipline_name) ? "Start " : "Coming Soon"}
                       </button>

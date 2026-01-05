@@ -3,25 +3,33 @@ import React, { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../../lib/client";
-import Backbutton from "../../components/Backbutton";
+import { 
+  UploadCloud, 
+  FileSpreadsheet, 
+  Trash2, 
+  AlertCircle,  
+  Loader2, 
+  ArrowLeft, 
+  Save 
+} from "lucide-react";
+import { Button } from "../../../components/ui/button"; 
 
 export default function ImportUserExcel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [placeholder, setPlaceholder] = useState(
-    "Choose a file or drag it here"
-  );
   const [tableData, setTableData] = useState<any[]>([]);
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const [userObjects, setUserObjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // Required fields validation
   const requiredFields = ["fname", "email", "password", "birth_date"];
+
+  // --- Event Handlers ---
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,93 +49,65 @@ export default function ImportUserExcel() {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) {
-      validateAndSetFile(file);
-    }
+    if (file) validateAndSetFile(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      validateAndSetFile(file);
-    }
+    if (file) validateAndSetFile(file);
   };
 
   const validateAndSetFile = (file: File) => {
-    // Check file type
     const validTypes = [
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "text/csv",
-      ".xls",
-      ".xlsx",
-      ".csv",
     ];
-
+    
+    // Fallback check for extensions
     const fileExtension = file.name.toLowerCase().split(".").pop();
-    const isValidType = validTypes.some(
-      (type) =>
-        file.type === type || fileExtension === type.replace(".", "")
-    );
+    const allowedExtensions = ["xls", "xlsx", "csv"];
+
+    const isValidType = validTypes.includes(file.type) || (fileExtension && allowedExtensions.includes(fileExtension));
 
     if (!isValidType) {
-      toast.error(
-        "Please upload a valid Excel (.xls, .xlsx) or CSV (.csv) file"
-      );
+      toast.error("Please upload a valid Excel (.xls, .xlsx) or CSV (.csv) file");
       return;
     }
 
-    // Check file size (optional - e.g., max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast.error(
-        "File size is too large. Please upload a file smaller than 10MB"
-      );
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+      toast.error("File size is too large. Max 10MB allowed.");
       return;
     }
 
     setSelectedFile(file);
-    setPlaceholder(file.name);
     parseFile(file);
-  };
-
-  const handleClick = () => {
-    fileInputRef.current?.click();
   };
 
   const deleteFile = () => {
     setSelectedFile(null);
-    setPlaceholder("Choose a file or drag it here");
     setTableData([]);
     setTableHeaders([]);
     setUserObjects([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // --- Parsing Logic ---
+
   const validateExcelStructure = (headers: string[], data: any[][]) => {
-    // Check if required headers are present
     const missingHeaders = requiredFields.filter(
-      (field) =>
-        !headers.some(
-          (header) => header.toLowerCase().trim() === field.toLowerCase()
-        )
+      (field) => !headers.some((header) => header.toLowerCase().trim() === field.toLowerCase())
     );
 
     if (missingHeaders.length > 0) {
-      toast.error(
-        `Missing required columns: ${missingHeaders.join(
-          ", "
-        )}. Please ensure your file has the correct format.`
-      );
+      toast.error(`Missing columns: ${missingHeaders.join(", ")}`);
       return false;
     }
 
-    // Check if there's any data
     if (data.length === 0) {
-      toast.error("File is empty. Please provide data to import.");
+      toast.error("File is empty.");
       return false;
     }
-
     return true;
   };
 
@@ -138,10 +118,7 @@ export default function ImportUserExcel() {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        if (!data) {
-          toast.error("Failed to read file. Please try again.");
-          return;
-        }
+        if (!data) return;
 
         let jsonData: any[];
 
@@ -151,29 +128,22 @@ export default function ImportUserExcel() {
           jsonData = lines.map((line) => line.split(","));
         } else {
           const workbook = XLSX.read(data, { type: "binary" });
-
           if (!workbook.SheetNames.length) {
-            toast.error(
-              "Excel file contains no sheets. Please provide a valid Excel file."
-            );
+            toast.error("Invalid Excel file.");
             return;
           }
-
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         }
 
         if (jsonData.length === 0) {
-          toast.error("File is empty. Please provide data to import.");
+          toast.error("File is empty.");
           return;
         }
 
-        const headers = jsonData[0].map((header: any) =>
-          String(header).trim()
-        );
+        const headers = jsonData[0].map((header: any) => String(header).trim());
         const dataRows = jsonData.slice(1);
 
-        // Validate file structure
         if (!validateExcelStructure(headers, dataRows)) {
           deleteFile();
           return;
@@ -183,12 +153,7 @@ export default function ImportUserExcel() {
         setTableData(dataRows);
 
         const objects = dataRows
-          .filter((row) => {
-            // Check if at least one non-empty field exists
-            return row.some(
-              (cell: undefined) => cell !== undefined && String(cell).trim() !== ""
-            );
-          })
+          .filter((row) => row.some((cell: any) => cell !== undefined && String(cell).trim() !== ""))
           .map((row) => {
             const obj: any = {};
             headers.forEach((key: string, idx: number) => {
@@ -198,20 +163,12 @@ export default function ImportUserExcel() {
           });
 
         setUserObjects(objects);
-        toast.success(
-          `File parsed successfully. Found ${objects.length} users to import.`
-        );
+        toast.success(`Parsed ${objects.length} records successfully.`);
       } catch (error) {
-        console.error("Error parsing file:", error);
-        toast.error(
-          "Failed to parse file. Please ensure it's a valid format."
-        );
+        console.error("Parsing error", error);
+        toast.error("Failed to parse file.");
         deleteFile();
       }
-    };
-
-    reader.onerror = () => {
-      toast.error("Error reading file. Please try again.");
     };
 
     if (fileExtension === "csv") {
@@ -223,93 +180,53 @@ export default function ImportUserExcel() {
 
   const validateUserData = (user: any) => {
     const errors: string[] = [];
-
-    // Check required fields
     requiredFields.forEach((field) => {
-      if (!user[field] || String(user[field]).trim() === "") {
-        errors.push(`Missing ${field}`);
-      }
+      if (!user[field] || String(user[field]).trim() === "") errors.push(`Missing ${field}`);
     });
 
-    // Validate email format
     if (user.email && (!user.email.includes("@") || !user.email.includes("."))) {
-      errors.push("Invalid email format");
+      errors.push("Invalid email");
     }
 
-    // Validate password strength
     if (user.password) {
-      const isValid =
-        user.password.length >= 6 &&
-        /[0-9]/.test(user.password) &&
-        /[a-z]/.test(user.password) &&
-        /[A-Z]/.test(user.password);
-
-      if (!isValid) {
-        errors.push(
-          "Weak password (must include number, uppercase, lowercase & min 6 chars)"
-        );
-      }
+      const isValid = user.password.length >= 6 && /[0-9]/.test(user.password) && /[a-z]/.test(user.password) && /[A-Z]/.test(user.password);
+      if (!isValid) errors.push("Weak password");
     }
 
-    // Validate date format (allows DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, YYYY/MM/DD)
-    if (
-      user.birth_date &&
-      !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(user.birth_date) &&
-      !/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(user.birth_date)
-    ) {
-      errors.push(
-        "Invalid birth_date format (expected DD-MM-YYYY or YYYY-MM-DD)"
-      );
+    if (user.birth_date && !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(user.birth_date) && !/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(user.birth_date)) {
+      errors.push("Invalid date format");
     }
 
     return errors;
   };
 
   const handleSubmit = async () => {
-    if (userObjects.length === 0) {
-      toast.error("No users to import. Please upload a valid file first.");
-      return;
-    }
-
+    if (userObjects.length === 0) return;
     setLoading(true);
-    let successCount = 0;
-    let errorCount = 0;
-    const errors: string[] = [];
 
-    for (let i = 0; i < userObjects.length; i++) {
-      const user = { ...userObjects[i] };
-
-      // Validate user data
+    for (const userObj of userObjects) {
+      const user = { ...userObj };
       const validationErrors = validateUserData(user);
+      
       if (validationErrors.length > 0) {
-        const errorMsg = `(${
-          user.fname || "Unknown"
-        }): ${validationErrors.join(", ")}`;
-        errors.push(errorMsg);
-        toast.error(errorMsg);
-        errorCount++;
+        toast.error(`${user.fname || "Unknown"}: ${validationErrors[0]}`);
         continue;
       }
 
-      // Standardize birth_date to YYYY-MM-DD for the API
+      // Date normalization
       if (user.birth_date) {
-        // Replace slashes with hyphens to simplify parsing
-        const sanitizedDate = user.birth_date.replace(/\//g, "-");
-        // If the format is DD-MM-YYYY, convert it to YYYY-MM-DD
-        if (/^\d{2}-\d{2}-\d{4}$/.test(sanitizedDate)) {
-          const [dd, mm, yyyy] = sanitizedDate.split("-");
+        const sanitized = user.birth_date.replace(/\//g, "-");
+        if (/^\d{2}-\d{2}-\d{4}$/.test(sanitized)) {
+          const [dd, mm, yyyy] = sanitized.split("-");
           user.birth_date = `${yyyy}-${mm}-${dd}`;
         } else {
-          // It's already YYYY-MM-DD, so just ensure hyphens
-          user.birth_date = sanitizedDate;
+          user.birth_date = sanitized;
         }
       }
 
       const formData = new FormData();
       Object.entries(user).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-          formData.append(key, String(value));
-        }
+        if (value) formData.append(key, String(value));
       });
 
       try {
@@ -320,199 +237,174 @@ export default function ImportUserExcel() {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-
-        toast.success(`User ${user.fname} registered successfully`);
-        successCount++;
+        toast.success(`Registered: ${user.fname}`);
       } catch (error: any) {
-        errorCount++;
-        let errorMessage = ` `;
-
-        // Log the full error for debugging
-        console.error(`Error for user ${user.fname}:`, {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-
-        // Check for various error indicators
-        const errorData = error.response?.data;
-        const errorMsg =
-          errorData?.message || errorData?.error || error.message || "";
-        const statusCode = error.response?.status;
-
-        // Check for user already exists scenarios
-        if (
-          statusCode === 409 ||
-          statusCode === 400 ||
-          statusCode === 422 ||
-          errorMsg.toLowerCase().includes("already") ||
-          errorMsg.toLowerCase().includes("exists") ||
-          errorMsg.toLowerCase().includes("duplicate") ||
-          (errorMsg.toLowerCase().includes("email") &&
-            errorMsg.toLowerCase().includes("taken")) ||
-          errorMsg.toLowerCase().includes("unique constraint") ||
-          errorMsg.toLowerCase().includes("violation")
-        ) {
-          errorMessage +=
-            "User already registered (duplicate email or user data)";
-        } else if (statusCode === 400) {
-          if (errorMsg.toLowerCase().includes("validation")) {
-            errorMessage += "Validation failed - check data format";
-          } else {
-            errorMessage += errorMsg || "Bad request - invalid data format";
-          }
-        } else if (statusCode === 422) {
-          errorMessage += "Invalid data format provided";
-        } else if (statusCode === 500) {
-          errorMessage += "Server error - please try again later";
-        } else if (statusCode === 401) {
-          errorMessage += "Authentication failed - please login again";
-        } else if (statusCode === 403) {
-          errorMessage += `user ${user.fname} Already registered`;
-        } else {
-          // Fallback - try to extract meaningful error message
-          if (errorMsg) {
-            errorMessage += errorMsg;
-          } else {
-            errorMessage += "Failed to register user - unknown error";
-          }
-        }
-
-        errors.push(errorMessage);
-        toast.error(errorMessage);
+        const msg = error.response?.data?.message || "Failed";
+        toast.error(`Error (${user.fname}): ${msg}`);
       }
     }
-
     setLoading(false);
   };
 
   return (
-    <div className="max-w-2xl p-6 mx-auto bg-white shadow-lg rounded-xl">
-      <Backbutton label="Back To Dashboard" />
-      <h1 className="mb-2 text-2xl font-bold text-center text-gray-800">
-        Import Users from Excel or CSV
-      </h1>
-      <div className="flex justify-center gap-2 mb-6">
-        <div className="w-10 h-1 bg-pink-500 rounded" />
-        <div className="w-10 h-1 bg-yellow-400 rounded" />
-      </div>
-
-      {/* Required format info */}
-      <div className="p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50">
-        <h3 className="font-semibold text-blue-800">Required File Format:</h3>
-        <p className="text-sm text-blue-700">
-          Your file must contain these columns:{" "}
-          <strong>fname, email, password, birth_date</strong>
-        </p>
-        <p className="mt-1 text-xs text-blue-600">
-          • Date format: DD-MM-YYYY or DD/MM/YYYY (e.g., 15-03-1990 or
-          15/03/2001)
-          <br />
-          • Password: Min 6 chars with uppercase, lowercase & number
-          <br />• File types: .xls, .xlsx, or .csv only
-        </p>
-      </div>
-
-      <div
-        className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors duration-300 cursor-pointer ${
-          dragOver ? "bg-blue-50 border-blue-400" : "bg-gray-50 border-gray-300"
-        }`}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onClick={handleClick}
-      >
-        {selectedFile ? (
-          <>
-            <p className="font-medium text-blue-700">{placeholder}</p>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteFile();
-              }}
-              className="mt-2 text-sm text-red-600 hover:underline"
-            >
-              Remove File
-            </button>
-          </>
-        ) : (
-          <>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-10 h-10 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 16.5V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18v-1.5M12 3v12m0 0l-3.75-3.75M12 15l3.75-3.75"
-              />
-            </svg>
-            <p className="mt-2 text-sm text-gray-500">{placeholder}</p>
-          </>
-        )}
-        <input
-          type="file"
-          accept=".xls,.xlsx,.csv"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-
-      {/* Table Preview */}
-      {tableHeaders.length > 0 && (
-        <div className="mt-6 max-h-[60vh] overflow-y-auto border border-gray-300 rounded-md shadow-sm">
-          <table className="min-w-full text-sm text-gray-700 table-auto">
-            <thead className="sticky top-0 bg-gray-100 shadow-sm">
-              <tr>
-                {tableHeaders.map((header, idx) => (
-                  <th
-                    key={idx}
-                    className="px-4 py-2 font-medium text-left border-b border-gray-300"
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((row, rowIdx) => (
-                <tr key={rowIdx} className="hover:bg-gray-50">
-                  {tableHeaders.map((_, colIdx) => (
-                    <td
-                      key={colIdx}
-                      className="px-4 py-2 text-left border-b border-gray-200"
-                    >
-                      {row[colIdx]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Sticky Submit Button */}
-      {tableHeaders.length > 0 && (
-        <div className="relatives z-10 py-4 text-center bg-white shadow-md">
-          <button
-            className="px-6 py-2 text-white transition duration-300 bg-blue-600 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            onClick={async (e) => {
-              e.preventDefault();
-              await handleSubmit();
-            }}
-            disabled={loading}
+    <div className="min-h-screen rounded-lg p-4 sm:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Button 
+            variant="ghost" 
+            className="text-slate-500 hover:text-blue-600 pl-0 gap-2"
+            onClick={() => navigate("/admin/users/add")}
           >
-            {loading ? "Submitting..." : `Submit ${userObjects.length} Users`}
-          </button>
+            <ArrowLeft size={18} /> Back to Options
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+            Bulk User Import
+          </h1>
+          <div className="w-24 hidden sm:block"></div>
         </div>
-      )}
+
+        {/* Info Card */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex gap-4 items-start shadow-sm">
+          <div className="bg-blue-100 p-2 rounded-lg text-blue-600 mt-1">
+            <AlertCircle size={24} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-blue-900">Required File Format</h3>
+            <p className="text-sm text-blue-700 leading-relaxed">
+              Ensure your Excel or CSV file includes the following columns exactly as written:
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {requiredFields.map((field) => (
+                <span key={field} className="px-2 py-1 bg-white border border-blue-200 text-blue-800 text-xs font-mono rounded">
+                  {field}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              * Dates must be DD-MM-YYYY or YYYY-MM-DD. Passwords require min 6 chars, 1 upper, 1 lower, 1 number.
+            </p>
+          </div>
+        </div>
+
+        {/* Upload Zone */}
+        {!selectedFile ? (
+          <div
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`
+              relative flex flex-col items-center justify-center p-12 
+              border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer group
+              ${dragOver 
+                ? "border-blue-500 bg-blue-50/50 scale-[1.01]" 
+                : "border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50"
+              }
+            `}
+          >
+            <input
+              type="file"
+              accept=".xls,.xlsx,.csv"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            
+            <div className={`p-4 rounded-full mb-4 transition-colors ${dragOver ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500"}`}>
+              <UploadCloud size={40} />
+            </div>
+            
+            <h3 className="text-lg font-semibold text-slate-700 mb-1">
+              Click to upload or drag and drop
+            </h3>
+            <p className="text-slate-500 text-sm">
+              Excel (.xlsx, .xls) or CSV files (Max 10MB)
+            </p>
+          </div>
+        ) : (
+          /* File Selected State */
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-100 p-3 rounded-xl text-green-600">
+                  <FileSpreadsheet size={28} />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800 text-lg">{selectedFile.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {(selectedFile.size / 1024).toFixed(1)} KB • {userObjects.length} records found
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={deleteFile}
+                className="gap-2"
+              >
+                <Trash2 size={16} /> Remove
+              </Button>
+            </div>
+
+            {/* Data Preview Table */}
+            {tableHeaders.length > 0 && (
+              <div className="border rounded-xl overflow-hidden bg-slate-50">
+                <div className="max-h-[400px] overflow-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 uppercase bg-slate-100 sticky top-0 z-10">
+                      <tr>
+                        {tableHeaders.map((header, idx) => (
+                          <th key={idx} className="px-6 py-3 font-semibold border-b border-slate-200">
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-100">
+                      {tableData.slice(0, 50).map((row, rowIdx) => (
+                        <tr key={rowIdx} className="hover:bg-slate-50 transition-colors">
+                          {tableHeaders.map((_, colIdx) => (
+                            <td key={colIdx} className="px-6 py-3 whitespace-nowrap text-slate-700">
+                              {row[colIdx] || "-"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {tableData.length > 50 && (
+                  <div className="px-6 py-2 bg-slate-50 text-xs text-slate-500 text-center border-t border-slate-200">
+                    Showing first 50 rows of {tableData.length}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Footer */}
+            <div className="mt-6 flex justify-end pt-4 border-t border-slate-100">
+              <Button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 h-auto text-base gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} /> Processing...
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} /> Upload {userObjects.length} Users
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

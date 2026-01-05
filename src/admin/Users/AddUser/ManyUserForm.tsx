@@ -16,7 +16,26 @@ import { z } from "zod";
 import { toast } from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { X, ArrowLeft } from "lucide-react";
+import {
+  X,
+  ArrowLeft,
+  School,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Lock,
+  Users,
+  Building2,
+  Globe,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Save,
+  ArrowRight,
+  MapPinned
+} from "lucide-react";
 import {
   getCountries,
   getCities,
@@ -29,31 +48,18 @@ import { CategoryMasterData } from "../../../types";
 
 // Schema for individual user
 const userSchema = z.object({
-  fname: z
-    .string()
-    .min(2, { message: "First name must be at least 2 characters." }),
+  fname: z.string().min(2, { message: "First name must be at least 2 characters." }),
   lname: z.string().optional(),
   gender: z.enum(["Male", "Female", "Other"], {
-    errorMap: () => ({
-      message: "Invalid gender value. Must be 'Male', 'Female', or 'Other'",
-    }),
+    errorMap: () => ({ message: "Invalid gender value." }),
   }),
   birth_date: z.string().min(1, { message: "Birth date is required." }),
   email: z.string().email({ message: "Invalid email address." }),
-  mobile: z
-    .string()
-    .min(10, { message: "Valid 10-digit phone number is required." }),
+  mobile: z.string().min(10, { message: "Valid 10-digit phone number is required." }),
   fa_name: z.string().optional(),
   fa_mobile: z.string().optional(),
-  fa_email: z
-    .string()
-    .email({ message: "Invalid father's email address." })
-    .optional()
-    .or(z.literal("")),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters." })
-    .optional(),
+  fa_email: z.string().email({ message: "Invalid father's email." }).optional().or(z.literal("")),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional(),
   address: z.string().optional(),
   pincode: z.string().optional(),
 });
@@ -71,18 +77,16 @@ type UserData = z.infer<typeof userSchema>;
 type FormData = z.infer<typeof formSchema>;
 
 function ManyUserForm() {
-const [countries, setCountries] = useState<any[]>([]);
-const [states, setStates] = useState<any[]>([]);
-const [cities, setCities] = useState<any[]>([]);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [activeTab, setActiveTab] = useState<"school" | "addUser">("school");
   const [addedUsers, setAddedUsers] = useState<UserData[]>([]);
   const [passwordValid, setPasswordValid] = useState(true);
-  const [currentlyProcessing, setCurrentlyProcessing] = useState<string | null>(
-    null
-  );
+  const [currentlyProcessing, setCurrentlyProcessing] = useState<string | null>(null);
   const [today, setToday] = useState("");
 
   const navigate = useNavigate();
@@ -90,25 +94,17 @@ const [cities, setCities] = useState<any[]>([]);
 
   const isOthersSelected = selectedClass?.startsWith("Others");
   const cleanedClass = isOthersSelected ? "Others" : null;
-
   const [, setSelectedCategoryName] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
-  const {
-    data,
-    isLoading: categorydata_loading,
-    refetch,
-  } = useOthersCategory(cleanedClass);
+  const { data, isLoading: categorydata_loading, refetch } = useOthersCategory(cleanedClass);
 
-  // Set today's date in YYYY-MM-DD format for the date input's max attribute
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);
 
   useEffect(() => {
-    if (isOthersSelected) {
-      refetch();
-    }
+    if (isOthersSelected) refetch();
   }, [isOthersSelected, refetch]);
 
   const {
@@ -139,16 +135,13 @@ const [cities, setCities] = useState<any[]>([]);
   };
 
   const formValues = watch();
+  const [currentUser, setCurrentUser] = useState<Partial<UserData>>({ gender: "Male" });
 
-  const [currentUser, setCurrentUser] = useState<Partial<UserData>>({
-    gender: "Male",
-  });
-
+  // Load Locations
   useEffect(() => {
     const loadCountries = async () => {
       try {
         const data = await getCountries();
-        // Sort countries alphabetically by name
         const sortedData = [...data].sort((a: any, b: any) => a.name.localeCompare(b.name));
         setCountries(sortedData);
       } catch (error) {
@@ -161,12 +154,10 @@ const [cities, setCities] = useState<any[]>([]);
 
   useEffect(() => {
     if (!formValues.country) return;
-
     const loadStates = async () => {
       setLoadingStates(true);
       try {
         const data = await getStates(formValues.country);
-        // Sort states alphabetically by name
         const sortedData = [...data].sort((a: any, b: any) => a.name.localeCompare(b.name));
         setStates(sortedData);
         setValue("state", "");
@@ -174,7 +165,6 @@ const [cities, setCities] = useState<any[]>([]);
         setCities([]);
       } catch (error) {
         console.error(error);
-        toast.error("Failed to load states");
       } finally {
         setLoadingStates(false);
       }
@@ -184,18 +174,15 @@ const [cities, setCities] = useState<any[]>([]);
 
   useEffect(() => {
     if (!formValues.country || !formValues.state) return;
-
     const loadCities = async () => {
       setLoadingCities(true);
       try {
         const data = await getCities(formValues.country, formValues.state);
-        // Sort cities alphabetically by name
         const sortedData = [...data].sort((a: any, b: any) => a.name.localeCompare(b.name));
         setCities(sortedData);
         setValue("city", "");
       } catch (error) {
         console.error(error);
-        toast.error("Failed to load cities");
       } finally {
         setLoadingCities(false);
       }
@@ -213,12 +200,10 @@ const [cities, setCities] = useState<any[]>([]);
         !currentUser.mobile ||
         !currentUser.password
       ) {
-        throw new Error(
-          "Please fill all required fields (Name, Email, Birth Date, Gender, Mobile, and Password)"
-        );
+        throw new Error("Please fill all required fields marked with *");
       }
       if (!passwordValid) {
-        toast.error("Please enter a valid password that meets all criteria.");
+        toast.error("Please enter a valid password.");
         return;
       }
       if (!/^\d{10}$/.test(currentUser.mobile)) {
@@ -242,7 +227,7 @@ const [cities, setCities] = useState<any[]>([]);
 
       setAddedUsers((prev) => [...prev, newUser]);
       setCurrentUser({ gender: "Male" });
-      toast.success("Student added successfully");
+      toast.success("Student added to list");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -276,18 +261,11 @@ const [cities, setCities] = useState<any[]>([]);
           });
           const result = await CreateUser(userFormData);
           results.push({ success: true, user, result });
-          toast.success(
-            `Student ${user.fname} ${user.lname || ""} registered successfully`
-          );
-          if (i < users.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
+          toast.success(`Student ${user.fname} registered!`);
+          if (i < users.length - 1) await new Promise((r) => setTimeout(r, 500));
         } catch (error: any) {
           results.push({ success: false, user, error });
-          const errorMsg =
-            error.response?.data?.message ||
-            `Failed to register ${user.fname}`;
-          toast.error(errorMsg);
+          toast.error(`Failed: ${user.fname}`);
         }
       }
       return { results };
@@ -295,10 +273,7 @@ const [cities, setCities] = useState<any[]>([]);
     onSuccess: ({ results }) => {
       setCurrentlyProcessing(null);
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      const failedUsers = results
-        .filter((result) => !result.success)
-        .map((result) => result.user);
-
+      const failedUsers = results.filter((r) => !r.success).map((r) => r.user);
       if (failedUsers.length === 0) {
         reset();
         setAddedUsers([]);
@@ -309,11 +284,7 @@ const [cities, setCities] = useState<any[]>([]);
     },
     onError: (error: any) => {
       setCurrentlyProcessing(null);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "An unexpected error occurred during registration.";
-      toast.error(errorMessage);
+      toast.error(error.message || "An unexpected error occurred.");
     },
   });
 
@@ -327,665 +298,426 @@ const [cities, setCities] = useState<any[]>([]);
   };
 
   const handleDateChange = (e: React.FocusEvent<HTMLInputElement>) => {
-    const enteredDateValue = e.target.value;
-    if (!enteredDateValue) return;
-
-    const enteredDate = new Date(enteredDateValue);
+    const enteredDate = new Date(e.target.value);
     const todayDate = new Date(today);
-
     if (enteredDate > todayDate) {
       toast.error("Birth date cannot be in the future.");
       setCurrentUser({ ...currentUser, birth_date: "" });
     }
   };
 
-  const inputStyles = `w-full px-3 py-2 text-sm border rounded-md transition-colors bg-transparent border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`;
+  const inputStyles = `w-full px-3 py-2 text-sm border rounded-lg transition-all duration-200 bg-white border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-slate-300`;
 
   return (
-    <div className="min-h-screen p-4 bg-slate-50 sm:p-6 lg:p-8">
-      <div className="max-w-6xl p-6 mx-auto bg-white rounded-xl shadow-lg md:p-8">
-        <button
-          className="flex items-center gap-2 mb-6 text-sm transition-colors duration-200 text-slate-600 hover:text-blue-600"
-          onClick={() => navigate("/admin/users/add")}
-        >
-          <ArrowLeft size={16} />
-          <span className="hover:underline">Back to Add User Options</span>
-        </button>
-
-        <h2 className="mb-8 text-3xl font-bold tracking-tight text-center text-slate-800">
-          Multiple Student Registration
-        </h2>
-
-        <div className="flex mb-8 border-b border-slate-200">
+    <div className="min-h-screen p-4 bg-slate-50/50 sm:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Header Section */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <button
-            className={`px-4 py-2 text-sm font-semibold transition-colors ${
-              activeTab === "school"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-            onClick={() => setActiveTab("school")}
+            className="flex items-center gap-2 text-sm font-medium transition-colors text-slate-500 hover:text-blue-600"
+            onClick={() => navigate("/admin/users/add")}
           >
-            1. School Information
+            <ArrowLeft size={18} />
+            <span>Back</span>
           </button>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+            Multiple Student Registration
+          </h2>
+          <div className="w-20 hidden sm:block"></div> {/* Spacer */}
+        </div>
+
+        {/* Stepper Navigation */}
+        <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+          <div
+            onClick={() => setActiveTab("school")}
+            className={`cursor-pointer flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
+              activeTab === "school"
+                ? "bg-white border-blue-500 shadow-md"
+                : "bg-slate-100 border-transparent hover:bg-white hover:border-slate-200"
+            }`}
+          >
+            <div className={`p-2 rounded-full ${activeTab === "school" ? "bg-blue-100 text-blue-600" : "bg-slate-200 text-slate-500"}`}>
+              <School size={24} />
+            </div>
+            <span className={`text-sm font-semibold ${activeTab === "school" ? "text-blue-700" : "text-slate-500"}`}>
+              1. School Info
+            </span>
+          </div>
+
           <button
-            className={`px-4 py-2 text-sm font-semibold transition-colors ${
-              activeTab === "addUser"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-slate-500 hover:text-slate-700"
-            } disabled:cursor-not-allowed disabled:text-slate-400`}
             onClick={() => setActiveTab("addUser")}
             disabled={!formValues.school_name || !formValues.school_class}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
+              activeTab === "addUser"
+                ? "bg-white border-blue-500 shadow-md"
+                : "bg-slate-100 border-transparent"
+            } ${(!formValues.school_name || !formValues.school_class) ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-white hover:border-slate-200"}`}
           >
-            2. Add Students
+            <div className={`p-2 rounded-full ${activeTab === "addUser" ? "bg-blue-100 text-blue-600" : "bg-slate-200 text-slate-500"}`}>
+              <Users size={24} />
+            </div>
+            <span className={`text-sm font-semibold ${activeTab === "addUser" ? "text-blue-700" : "text-slate-500"}`}>
+              2. Add Students
+            </span>
           </button>
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={(e) => e.preventDefault()} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          
+          {/* TAB 1: SCHOOL INFO */}
           {activeTab === "school" && (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <h3 className="pb-2 mb-4 text-lg font-semibold border-b text-slate-700 border-slate-200">
-                  Common School Information
-                </h3>
-              </div>
+            <div className="p-6 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+              {/* School Details */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <Building2 className="text-blue-600" size={20} />
+                  <h3 className="text-lg font-semibold text-slate-800">School Details</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="school_name">School Name <span className="text-red-500">*</span></Label>
+                    <input
+                      id="school_name"
+                      placeholder="Enter school name"
+                      className={`${inputStyles} ${errors.school_name ? "border-red-500" : ""}`}
+                      {...register("school_name")}
+                    />
+                    {errors.school_name && <p className="text-xs text-red-600">{errors.school_name.message}</p>}
+                  </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="school_name"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  School Name*
-                </Label>
-                <input
-                  id="school_name"
-                  placeholder="Enter school name"
-                  className={`${inputStyles} ${
-                    errors.school_name ? "border-red-500" : ""
-                  }`}
-                  {...register("school_name")}
-                />
-                {errors.school_name && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.school_name.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="school_class"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Class/Grade*
-                </Label>
-                <Select
-                  value={selectedClass}
-                  onValueChange={(value) => {
-                    setSelectedClass(value);
-                    setValue("school_class", value);
-                  }}
-                >
-                  <SelectTrigger
-                    id="school_class"
-                    className="w-full text-sm border-slate-300 text-slate-700 focus:ring-blue-500"
-                  >
-                    <SelectValue placeholder="Select Class/Grade" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {getAllClasses().map((className) => (
-                      <SelectItem
-                        key={className}
-                        value={className}
-                        className="text-sm"
-                      >
-                        {className}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isOthersSelected && (
-                  <div className="pt-3">
-                    <h3 className="mb-2 text-sm font-semibold">
-                      Others Categories (Select One):
-                    </h3>
-                    {categorydata_loading ? (
-                      <p className="text-xs">Loading categories...</p>
-                    ) : (
-                      <div className="space-y-1 text-sm text-gray-700">
-                        {data?.map((item: CategoryMasterData) => (
-                          <label
-                            key={item.cat_id}
-                            className="flex items-center space-x-2"
-                          >
-                            <input
-                              type="radio"
-                              name="others_category"
-                              checked={selectedCategory === item.cat_id}
-                              value={item.cat_id}
-                              onChange={() => {
-                                setSelectedCategory(item.cat_id);
-                                setSelectedCategoryName(item.category_name);
-                              }}
-                              className="accent-blue-500"
-                            />
-                            <span>{item.category_name}</span>
-                          </label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="school_class">Class/Grade <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={selectedClass}
+                      onValueChange={(value) => {
+                        setSelectedClass(value);
+                        setValue("school_class", value);
+                      }}
+                    >
+                      <SelectTrigger className="w-full bg-white border-slate-200">
+                        <SelectValue placeholder="Select Class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAllClasses().map((className) => (
+                          <SelectItem key={className} value={className}>{className}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {isOthersSelected && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <p className="text-xs font-semibold text-blue-700 mb-2">Select Category:</p>
+                        {categorydata_loading ? (
+                          <p className="text-xs text-blue-500">Loading...</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {data?.map((item: CategoryMasterData) => (
+                              <label key={item.cat_id} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="others_category"
+                                  checked={selectedCategory === item.cat_id}
+                                  value={item.cat_id}
+                                  onChange={() => {
+                                    setSelectedCategory(item.cat_id);
+                                    setSelectedCategoryName(item.category_name);
+                                  }}
+                                  className="accent-blue-600 w-4 h-4"
+                                />
+                                <span className="text-sm text-slate-700">{item.category_name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
 
-              <div className="pt-4 mt-4 mb-2 border-t md:col-span-2 border-slate-200">
-                <h3 className="pb-2 text-lg font-semibold text-slate-700">
-                  Location Information
-                </h3>
+              {/* Location Details */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <Globe className="text-blue-600" size={20} />
+                  <h3 className="text-lg font-semibold text-slate-800">Location</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-1.5">
+                    <Label>Country <span className="text-red-500">*</span></Label>
+                    <Select onValueChange={(v) => setValue("country", v)} value={formValues.country}>
+                      <SelectTrigger className="bg-white border-slate-200"><SelectValue placeholder="Country" /></SelectTrigger>
+                      <SelectContent>
+                        {countries.map((c: any) => (
+                          <SelectItem key={c.iso2} value={c.iso2}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>State <span className="text-red-500">*</span></Label>
+                    <Select onValueChange={(v) => setValue("state", v)} disabled={!formValues.country || loadingStates} value={formValues.state}>
+                      <SelectTrigger className="bg-white border-slate-200"><SelectValue placeholder={loadingStates ? "Loading..." : "State"} /></SelectTrigger>
+                      <SelectContent>
+                        {states.map((s: any) => (
+                          <SelectItem key={s.iso2} value={s.iso2}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>City <span className="text-red-500">*</span></Label>
+                    <Select onValueChange={(v) => setValue("city", v)} disabled={!formValues.state || loadingCities} value={formValues.city}>
+                      <SelectTrigger className="bg-white border-slate-200"><SelectValue placeholder={loadingCities ? "Loading..." : "City"} /></SelectTrigger>
+                      <SelectContent>
+                        {cities.map((c: any) => (
+                          <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="country"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Country*
-                </Label>
-                <Select
-                  onValueChange={(value) => setValue("country", value)}
-                  value={formValues.country}
-                >
-                  <SelectTrigger
-                    id="country"
-                    className="w-full text-sm border-slate-300 text-slate-700 focus:ring-blue-500"
-                  >
-                    <SelectValue placeholder="Select Country" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {countries.map((country: any) => (
-                      <SelectItem
-                        key={country.iso2}
-                        value={country.iso2}
-                        className="text-sm"
-                      >
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.country && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.country.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="state"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  State/Province*
-                </Label>
-                <Select
-                  onValueChange={(value) => setValue("state", value)}
-                  disabled={!formValues.country || loadingStates}
-                  value={formValues.state}
-                >
-                  <SelectTrigger
-                    id="state"
-                    className="w-full text-sm border-slate-300 text-slate-700 focus:ring-blue-500 disabled:bg-slate-50"
-                  >
-                    <SelectValue
-                      placeholder={
-                        loadingStates ? "Loading states..." : "Select State"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {states.map((state: any) => (
-                      <SelectItem
-                        key={state.iso2}
-                        value={state.iso2}
-                        className="text-sm"
-                      >
-                        {state.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.state && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.state.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="city"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  City*
-                </Label>
-                <Select
-                  onValueChange={(value) => setValue("city", value)}
-                  disabled={!formValues.state || loadingCities}
-                  value={formValues.city}
-                >
-                  <SelectTrigger
-                    id="city"
-                    className="w-full text-sm border-slate-300 text-slate-700 focus:ring-blue-500 disabled:bg-slate-50"
-                  >
-                    <SelectValue
-                      placeholder={
-                        loadingCities ? "Loading cities..." : "Select City"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {cities.map((city: any) => (
-                      <SelectItem
-                        key={city.id}
-                        value={city.name}
-                        className="text-sm"
-                      >
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.city && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.city.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex justify-end mt-6 md:col-span-2">
+              <div className="flex justify-end pt-4 border-t border-slate-100">
                 <Button
                   type="button"
                   onClick={() => setActiveTab("addUser")}
-                  disabled={
-                    !formValues.school_name ||
-                    !formValues.school_class ||
-                    !formValues.country ||
-                    !formValues.state ||
-                    !formValues.city
-                  }
-                  className="w-full bg-blue-600 sm:w-auto hover:bg-blue-700"
+                  disabled={!formValues.school_name || !formValues.school_class || !formValues.country || !formValues.state || !formValues.city}
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                 >
-                  Next: Add Students
+                  Next Step <ArrowRight size={16} className="ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
+          {/* TAB 2: ADD STUDENTS */}
           {activeTab === "addUser" && (
-            <div>
-              <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="fname"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    First Name*
-                  </Label>
-                  <input
-                    id="fname"
-                    placeholder="First Name"
-                    value={currentUser.fname || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, fname: e.target.value })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="lname"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Last Name
-                  </Label>
-                  <input
-                    id="lname"
-                    placeholder="Last Name"
-                    value={currentUser.lname || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, lname: e.target.value })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="gender"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Gender*
-                  </Label>
-                  <Select
-                    onValueChange={(value) =>
-                      setCurrentUser({ ...currentUser, gender: value as any })
-                    }
-                    value={currentUser.gender || ""}
-                  >
-                    <SelectTrigger
-                      id="gender"
-                      className="w-full text-sm border-slate-300 text-slate-700 focus:ring-blue-500"
-                    >
-                      <SelectValue placeholder="Select Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male" className="text-sm">
-                        Male
-                      </SelectItem>
-                      <SelectItem value="Female" className="text-sm">
-                        Female
-                      </SelectItem>
-                      <SelectItem value="Other" className="text-sm">
-                        Other
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="birth_date"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Birth Date*
-                  </Label>
-                  <input
-                    id="birth_date"
-                    type="date"
-                    value={currentUser.birth_date || ""}
-                    max={today}
-                    onBlur={handleDateChange}
-                    // Prevent manual typing
-                    onKeyDown={(e) => e.preventDefault()}
-                    onChange={(e) =>
-                      setCurrentUser({
-                        ...currentUser,
-                        birth_date: e.target.value,
-                      })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Email*
-                  </Label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="Email"
-                    value={currentUser.email || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, email: e.target.value })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="mobile"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Mobile Number*
-                  </Label>
-                  <input
-                    id="mobile"
-                    type="tel"
-                    maxLength={10}
-                    value={currentUser.mobile || ""}
-                    onChange={(e) => {
-                      if (/^\d*$/.test(e.target.value)) {
-                        setCurrentUser({
-                          ...currentUser,
-                          mobile: e.target.value,
-                        });
-                      }
-                    }}
-                    className={inputStyles}
-                    placeholder="10-digit mobile number"
-                  />
-                </div>
-
-                <div className="pt-4 mt-4 mb-2 border-t md:col-span-2 border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-700">
-                    Parent/Guardian Information
-                  </h3>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="fa_name"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Parent/Guardian Name
-                  </Label>
-                  <input
-                    id="fa_name"
-                    placeholder="Enter Name"
-                    value={currentUser.fa_name || ""}
-                    onChange={(e) =>
-                      setCurrentUser({
-                        ...currentUser,
-                        fa_name: e.target.value,
-                      })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="fa_mobile"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Parent/Guardian Mobile
-                  </Label>
-                  <input
-                    id="fa_mobile"
-                    placeholder="Enter Mobile"
-                    type="tel"
-                    maxLength={10}
-                    value={currentUser.fa_mobile || ""}
-                    onChange={(e) => {
-                      if (/^\d*$/.test(e.target.value)) {
-                        setCurrentUser({
-                          ...currentUser,
-                          fa_mobile: e.target.value,
-                        });
-                      }
-                    }}
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label
-                    htmlFor="fa_email"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Parent/Guardian Email
-                  </Label>
-                  <input
-                    id="fa_email"
-                    placeholder="Enter Email"
-                    type="email"
-                    value={currentUser.fa_email || ""}
-                    onChange={(e) =>
-                      setCurrentUser({
-                        ...currentUser,
-                        fa_email: e.target.value,
-                      })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="pt-4 mt-4 mb-2 border-t md:col-span-2 border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-700">
-                    Student's Address & Password
-                  </h3>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="address"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Address
-                  </Label>
-                  <input
-                    id="address"
-                    placeholder="Street address"
-                    value={currentUser.address || ""}
-                    onChange={(e) =>
-                      setCurrentUser({
-                        ...currentUser,
-                        address: e.target.value,
-                      })
-                    }
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="pincode"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Pincode/ZIP
-                  </Label>
-                  <input
-                    id="pincode"
-                    type="tel"
-                    maxLength={6}
-                    placeholder="Pincode/ZIP"
-                    value={currentUser.pincode || ""}
-                    onChange={(e) => {
-                      if (/^\d{0,6}$/.test(e.target.value)) {
-                        setCurrentUser({
-                          ...currentUser,
-                          pincode: e.target.value,
-                        });
-                      }
-                    }}
-                    className={inputStyles}
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Password*
-                  </Label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={currentUser.password || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setCurrentUser({ ...currentUser, password: value });
-                      setPasswordValid(checkPassword(value));
-                    }}
-                    className={inputStyles}
-                  />
-
-                  {!passwordValid && currentUser.password && (
-                    <div className="p-2 mt-1 text-xs text-red-700 bg-red-100 rounded-md">
-                      <li>At least 6 characters</li>
-                      <li>At least 1 number (0-9)</li>
-                      <li>At least 1 lowercase letter (a-z)</li>
-                      <li>At least 1 uppercase letter (A-Z)</li>
+            <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left Column: Form */}
+                <div className="lg:col-span-8 space-y-8">
+                  
+                  {/* Personal Info */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                      <User className="text-blue-600" size={20} />
+                      <h3 className="text-lg font-semibold text-slate-800">Student Details</h3>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-4 mb-8">
-                <Button
-                  type="button"
-                  onClick={handleAddUser}
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={
-                    !currentUser.fname ||
-                    !currentUser.email ||
-                    !currentUser.birth_date ||
-                    !currentUser.gender ||
-                    !currentUser.mobile
-                  }
-                >
-                  Save Student
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setActiveTab("school")}
-                  variant="outline"
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                >
-                  Back to School Info
-                </Button>
-              </div>
-
-              {addedUsers.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="pb-2 mb-4 text-lg font-semibold border-b text-slate-700 border-slate-200">
-                    Added Students ({addedUsers.length})
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {addedUsers.map((user, index) => (
-                      <div
-                        key={index}
-                        className="relative p-4 border rounded-lg bg-slate-50 border-slate-200"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => removeUser(index)}
-                          className="absolute text-slate-400 top-2 right-2 hover:text-red-600"
-                        >
-                          <X size={18} />
-                        </button>
-                        <h4 className="pr-6 font-semibold text-slate-800">
-                          {user.fname} {user.lname}
-                        </h4>
-                        <p className="text-sm truncate text-slate-600">
-                          {user.email}
-                        </p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>First Name <span className="text-red-500">*</span></Label>
+                        <input
+                          placeholder="First Name"
+                          value={currentUser.fname || ""}
+                          onChange={(e) => setCurrentUser({ ...currentUser, fname: e.target.value })}
+                          className={inputStyles}
+                        />
                       </div>
-                    ))}
+                      <div className="space-y-1.5">
+                        <Label>Last Name</Label>
+                        <input
+                          placeholder="Last Name"
+                          value={currentUser.lname || ""}
+                          onChange={(e) => setCurrentUser({ ...currentUser, lname: e.target.value })}
+                          className={inputStyles}
+                        />
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <Label>Gender <span className="text-red-500">*</span></Label>
+                        <Select onValueChange={(v) => setCurrentUser({ ...currentUser, gender: v as any })} value={currentUser.gender}>
+                          <SelectTrigger className="bg-white border-slate-200"><SelectValue placeholder="Gender" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5 relative">
+                        <Label>Birth Date <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={currentUser.birth_date || ""}
+                            max={today}
+                            onBlur={handleDateChange}
+                            onKeyDown={(e) => e.preventDefault()}
+                            onChange={(e) => setCurrentUser({ ...currentUser, birth_date: e.target.value })}
+                            className={`${inputStyles} pl-10`}
+                          />
+                          <Calendar className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" size={16} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 relative">
+                        <Label>Email <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            placeholder="student@email.com"
+                            value={currentUser.email || ""}
+                            onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
+                            className={`${inputStyles} pl-10`}
+                          />
+                          <Mail className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 relative">
+                        <Label>Mobile <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <input
+                            type="tel"
+                            maxLength={10}
+                            placeholder="10-digit number"
+                            value={currentUser.mobile || ""}
+                            onChange={(e) => /^\d*$/.test(e.target.value) && setCurrentUser({ ...currentUser, mobile: e.target.value })}
+                            className={`${inputStyles} pl-10`}
+                          />
+                          <Phone className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Parent Info */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                      <Users className="text-blue-600" size={20} />
+                      <h3 className="text-lg font-semibold text-slate-800">Parent/Guardian</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Name</Label>
+                        <input placeholder="Parent Name" value={currentUser.fa_name || ""} onChange={(e) => setCurrentUser({ ...currentUser, fa_name: e.target.value })} className={inputStyles} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Mobile</Label>
+                        <input type="tel" maxLength={10} placeholder="Parent Mobile" value={currentUser.fa_mobile || ""} onChange={(e) => /^\d*$/.test(e.target.value) && setCurrentUser({ ...currentUser, fa_mobile: e.target.value })} className={inputStyles} />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Email</Label>
+                        <input type="email" placeholder="Parent Email" value={currentUser.fa_email || ""} onChange={(e) => setCurrentUser({ ...currentUser, fa_email: e.target.value })} className={inputStyles} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address & Password */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                      <MapPinned className="text-blue-600" size={20} />
+                      <h3 className="text-lg font-semibold text-slate-800">Address & Security</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Address</Label>
+                        <input placeholder="Street Address" value={currentUser.address || ""} onChange={(e) => setCurrentUser({ ...currentUser, address: e.target.value })} className={inputStyles} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Pincode</Label>
+                        <input type="tel" maxLength={6} placeholder="ZIP Code" value={currentUser.pincode || ""} onChange={(e) => /^\d{0,6}$/.test(e.target.value) && setCurrentUser({ ...currentUser, pincode: e.target.value })} className={inputStyles} />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Password <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <input
+                            type="password"
+                            placeholder="Create Password"
+                            value={currentUser.password || ""}
+                            onChange={(e) => {
+                              setCurrentUser({ ...currentUser, password: e.target.value });
+                              setPasswordValid(checkPassword(e.target.value));
+                            }}
+                            className={`${inputStyles} pl-10`}
+                          />
+                          <Lock className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                        </div>
+                        {!passwordValid && currentUser.password && (
+                          <p className="text-xs text-red-500 mt-1">Min 6 chars, 1 number, 1 upper & lower case.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t border-slate-100">
+                     <Button variant="outline" type="button" onClick={() => setActiveTab("school")} className="flex-1">
+                      <ArrowLeft size={16} className="mr-2" /> Back to School
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleAddUser}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={!currentUser.fname || !currentUser.email || !currentUser.birth_date || !currentUser.gender || !currentUser.mobile}
+                    >
+                      <Plus size={18} className="mr-2" /> Add to List
+                    </Button>
                   </div>
                 </div>
-              )}
 
-              <div className="flex justify-center pt-6 mt-8 border-t border-slate-200">
-                <Button
-                  type="button"
-                  onClick={onSubmit}
-                  className="w-full px-8 py-3 text-base font-semibold text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 md:w-auto"
-                  disabled={addedUsers.length === 0 || isPending}
-                >
-                  {isPending && currentlyProcessing
-                    ? `Processing ${currentlyProcessing}...`
-                    : isPending
-                    ? "Submitting..."
-                    : `Submit ${addedUsers.length} Students`}
-                </Button>
+                {/* Right Column: List of Added Users */}
+                <div className="lg:col-span-4 bg-slate-50 rounded-xl p-4 border border-slate-200 h-fit lg:sticky lg:top-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+                      <CheckCircle2 size={18} className="text-green-600" />
+                      Ready to Submit ({addedUsers.length})
+                    </h3>
+                  </div>
+                  
+                  {addedUsers.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 border-2 border-dashed border-slate-200 rounded-lg bg-white">
+                      <User size={32} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No students added yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                      {addedUsers.map((user, index) => (
+                        <div key={index} className="group relative bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                          <button
+                            onClick={() => removeUser(index)}
+                            className="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors p-1"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <div className="font-medium text-slate-800 pr-6 truncate">
+                            {user.fname} {user.lname}
+                          </div>
+                          <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                          <div className="text-xs text-slate-400 mt-1 flex gap-2">
+                             <span>{user.gender}</span>
+                             <span>•</span>
+                             <span>{user.mobile}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-4 border-t border-slate-200">
+                    <Button
+                      type="button"
+                      onClick={onSubmit}
+                      disabled={addedUsers.length === 0 || isPending}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {isPending ? (currentlyProcessing ? "Processing..." : "Submitting...") : (
+                        <> <Save size={18} className="mr-2" /> Submit All </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
               </div>
             </div>
           )}

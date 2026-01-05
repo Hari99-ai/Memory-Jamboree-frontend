@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "../../../components/ui/button";
 import { Label } from "../../../components/ui/label";
-import { Input } from "../../../components/ui/input"; // Import the Input component
+import { Input } from "../../../components/ui/input";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card"; // Import Card components
-import { ArrowLeft } from "lucide-react";
+} from "../../../components/ui/card";
+import { ArrowLeft, Camera } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -105,7 +105,6 @@ const formSchema = z.object({
   image: z.any().optional(),
 });
 
-
 type FormField = z.infer<typeof formSchema>;
 
 function SingleUserForm() {
@@ -118,6 +117,7 @@ function SingleUserForm() {
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -150,9 +150,10 @@ function SingleUserForm() {
       city: "",
       mobile: "",
     },
-    mode: "onChange",
+    // Show errors only after submit, but then re-validate on every change
+    mode: "onSubmit", 
+    reValidateMode: "onChange",
   });
-
 
   useEffect(() => {
     const loadCountries = async () => {
@@ -206,7 +207,7 @@ function SingleUserForm() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue("image", file, { shouldValidate: true });
+      setValue("image", file, { shouldValidate: true, shouldDirty: true });
       const reader = new FileReader();
       reader.onload = () => {
         setPreviewImage(reader.result as string);
@@ -215,34 +216,23 @@ function SingleUserForm() {
     }
   };
 
+  const handleTriggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["admin-user-create-profile"],
     mutationFn: async (formData: FormData) => {
-      const formValues: Record<string, any> = {};
-      if (formData instanceof FormData) {
-        for (const [key, value] of formData.entries()) {
-          formValues[key] = value;
-        }
-      }
-      if (formValues.gender) {
-        formValues.gender = formValues.gender.charAt(0).toUpperCase() +
-          formValues.gender.slice(1).toLowerCase();
-      }
-      const processedFormData = new FormData();
-      Object.entries(formValues).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-          processedFormData.append(key, String(value));
-        }
-      });
-      return CreateUser(processedFormData);
+      return CreateUser(formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       toast.success("User registered successfully");
       reset();
       setPreviewImage(null);
+      if(fileInputRef.current) fileInputRef.current.value = "";
     },
     onError: (error: any) => {
       console.error("Registration error:", error);
@@ -270,10 +260,17 @@ function SingleUserForm() {
           }
         }
       });
+      
       if (!formData.has("fname")) formData.append("fname", "");
       if (!formData.has("gender")) formData.append("gender", "");
       if (!formData.has("birth_date")) formData.append("birth_date", "");
       if (!formData.has("email")) formData.append("email", "");
+      
+      const gender = formData.get("gender") as string;
+      if (gender) {
+        formData.set("gender", gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase());
+      }
+
       if (selectedCategory) formData.append('cat_id', selectedCategory.toString())
       if (selectedCategoryName) formData.append("category_name", selectedCategoryName)
 
@@ -287,91 +284,91 @@ function SingleUserForm() {
   };
 
   return (
-    <div className="max-w-4xl p-6 mx-auto bg-white rounded-lg">
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full max-w-5xl mx-auto p-4 md:p-6 lg:p-8 bg-white rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <button
-          className="flex items-center gap-2 text-sm text-blue-500 transition rounded hover:text-blue-700"
+          className="flex items-center gap-2 text-sm text-gray-600 transition hover:text-[#245cab] self-start sm:self-auto"
           onClick={() => navigate("/admin/users/add")}
           type="button"
         >
-          <ArrowLeft size={16} />
-          <span className="font-medium hover:underline">Back</span>
+          <ArrowLeft size={18} />
+          <span className="font-medium hover:underline">Back to List</span>
         </button>
-        <h1 className="text-2xl font-bold text-center text-[#245cab]">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#245cab] text-center">
           Student Profile Registration
         </h1>
+        <div className="w-[80px] hidden sm:block"></div>
       </div>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6"
+        className="space-y-8 "
         autoComplete="off"
       >
-        <div className="flex flex-col items-center gap-6 p-4 md:flex-row">
-          <div className="relative flex items-center justify-center flex-shrink-0 w-32 h-32">
-            <img
-              src={previewImage || defaultAvatar}
-              alt="Profile Avatar"
-              className="object-cover border-2 shadow-md w-28 h-28 rounded-full border-[#245cab] bg-gray-100"
-            />
+        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <div className="relative group">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-200">
+              <img
+                src={previewImage || defaultAvatar}
+                alt="Profile Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <button
               type="button"
               title="Change photo"
-              className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#245cab] shadow transition-all duration-200 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#245cab] text-white shadow-md transition-transform hover:scale-105 hover:bg-blue-700 z-10"
+              onClick={handleTriggerFileUpload}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="7" width="18" height="13" rx="2" ry="2"></rect>
-                <circle cx="12" cy="13.5" r="3.5"></circle>
-                <path d="M16.5 7v-2a2 2 0 0 0-2-2h-5a2 2 0 0 0-2 2v2"></path>
-              </svg>
+              <Camera size={18} />
             </button>
-            <Input
+            <input
               type="file"
               accept="image/*"
               className="hidden"
               onChange={handleImageChange}
               ref={fileInputRef}
-              id="image"
+              id="image-upload"
             />
           </div>
-          <div className="grid flex-1 w-full grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <div>
-              <Label htmlFor="fname" className="text-sm">First Name*</Label>
+
+          <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6 self-center">
+            <div className="space-y-2">
+              <Label htmlFor="fname">First Name <span className="text-red-500">*</span></Label>
               <Input
                 id="fname"
                 placeholder="First Name"
-                className={`mt-1 text-sm ${errors.fname ? "border-red-500" : ""}`}
+                className={`text-black ${errors.fname ? "border-red-500" : ""}`}
                 {...register("fname")}
               />
-              {errors.fname && <p className="mt-1 text-xs text-red-500">{errors.fname.message}</p>}
+              {errors.fname && <p className="text-xs text-red-500 font-medium">{errors.fname.message}</p>}
             </div>
-            <div>
-              <Label htmlFor="lname" className="text-sm">Last Name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="lname">Last Name</Label>
               <Input
                 id="lname"
                 placeholder="Last Name"
-                className={`mt-1 text-sm ${errors.lname ? "border-red-500" : ""}`}
+                className={`text-black ${errors.lname ? "border-red-500" : ""}`}
                 {...register("lname")}
               />
-              {errors.lname && <p className="mt-1 text-xs text-red-500">{errors.lname.message}</p>}
+              {errors.lname && <p className="text-xs text-red-500 font-medium">{errors.lname.message}</p>}
             </div>
           </div>
         </div>
 
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle className="text-xl text-gray-800">Personal Information</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <div>
-                <Label htmlFor="gender" className="text-sm">Gender</Label>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
                 <Select
                   onValueChange={value => setValue("gender", value as any, { shouldValidate: true })}
                   value={watch("gender") || ""}
                 >
-                  <SelectTrigger id="gender" className={`w-full text-sm mt-1 ${errors.gender ? "border-red-500" : ""}`}>
+                  <SelectTrigger id="gender" className={`text-black ${errors.gender ? "border-red-500" : ""}`}>
                     <SelectValue placeholder="Select Gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -381,88 +378,94 @@ function SingleUserForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="birth_date" className="text-sm">Birth Date*</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="birth_date">Birth Date <span className="text-red-500">*</span></Label>
                 <Input
                   id="birth_date"
                   type="date"
-                  className={`mt-1 text-sm ${errors.birth_date ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.birth_date ? "border-red-500" : ""}`}
                   {...register("birth_date")}
                 />
-                {errors.birth_date && <p className="mt-1 text-xs text-red-500">{errors.birth_date.message}</p>}
+                {errors.birth_date && <p className="text-xs text-red-500 font-medium">{errors.birth_date.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="mobile" className="text-sm">Mobile Number*</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile">Mobile Number <span className="text-red-500">*</span></Label>
                 <Input
                   type="tel"
                   maxLength={10}
                   inputMode="numeric"
-                  pattern="[0-9]*"
+                  placeholder="10-digit mobile number"
                   onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ""); }}
-                  className={`mt-1 text-sm ${errors.mobile ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.mobile ? "border-red-500" : ""}`}
                   {...register("mobile")}
                 />
-                {errors.mobile && <p className="mt-1 text-xs text-red-500">{errors.mobile.message}</p>}
+                {errors.mobile && <p className="text-xs text-red-500 font-medium">{errors.mobile.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="email" className="text-sm">Email*</Label>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Email"
-                  className={`mt-1 text-sm ${errors.email ? "border-red-500" : ""}`}
+                  placeholder="student@example.com"
+                  className={`text-black ${errors.email ? "border-red-500" : ""}`}
                   {...register("email")}
                 />
-                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+                {errors.email && <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="password" className="text-sm">Password*</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="Enter new password"
-                  className={`mt-1 text-sm ${errors.password ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.password ? "border-red-500" : ""}`}
                   {...register("password")}
                 />
-                {errors.password && (
-                  <div className="mt-1 text-xs text-red-600">
-                    Password must be at least 6 characters<br />
-                    Include 1 number, 1 lowercase, 1 uppercase.
+                {errors.password ? (
+                  <div className="text-xs text-red-600 font-medium">
+                    Password must be at least 6 characters, include 1 number, 1 lowercase, 1 uppercase.
                   </div>
+                ) : (
+                  <p className="text-xs text-gray-500">Min 6 chars, 1 number, 1 uppercase, 1 lowercase.</p>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>School Information</CardTitle>
+            <CardTitle className="text-xl text-gray-800">School Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <Label htmlFor="school_name" className="text-sm">School Name</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="school_name">School Name</Label>
                 <Input
                   id="school_name"
-                  placeholder="School Name"
-                  className={`mt-1 text-sm ${errors.school_name ? "border-red-500" : ""}`}
+                  placeholder="Enter School Name"
+                  className={`text-black ${errors.school_name ? "border-red-500" : ""}`}
                   {...register("school_name")}
                 />
-                {errors.school_name && <p className="mt-1 text-xs text-red-500">{errors.school_name.message}</p>}
+                {errors.school_name && <p className="text-xs text-red-500 font-medium">{errors.school_name.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="school_class" className="text-sm">Class/Grade*</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="school_class">Class/Grade <span className="text-red-500">*</span></Label>
                 <Select
                   value={selectedClass}
                   onValueChange={(value) => {
                     setSelectedClass(value);
-                    setValue("school_class", value);
+                    setValue("school_class", value, { shouldValidate: true });
                   }}
                 >
-                  <SelectTrigger id="school_class" className="w-full mt-1 text-sm">
+                  <SelectTrigger id="school_class" className={`text-black ${errors.school_class ? "border-red-500" : ""}`}>
                     <SelectValue placeholder="Select Class/Grade" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -471,15 +474,17 @@ function SingleUserForm() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.school_class && <p className="text-xs text-red-500 font-medium">{errors.school_class?.message}</p>}
+
                 {isOthersSelected && (
-                  <div className="mt-4">
-                    <h3 className="mb-2 text-sm font-semibold">Others Categories (Select One):</h3>
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <h3 className="mb-3 text-sm font-semibold text-blue-900">Select Specific Category:</h3>
                     {categorydata_loading ? (
-                      <p className="text-xs">Loading categories...</p>
+                      <p className="text-xs text-blue-600">Loading categories...</p>
                     ) : (
-                      <div className="space-y-1 text-xs text-gray-700">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                         {data?.map((item: CategoryMasterData) => (
-                          <label key={item.cat_id} className="flex items-center space-x-2">
+                          <label key={item.cat_id} className="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 p-1 rounded transition">
                             <input
                               type="radio"
                               name="others_category"
@@ -489,73 +494,71 @@ function SingleUserForm() {
                                 setSelectedCategory(item.cat_id);
                                 setSelectedCategoryName(item.category_name);
                               }}
-                              className="accent-blue-500"
+                              className="accent-[#245cab] h-4 w-4"
                             />
-                            <span>{item.category_name}</span>
+                            <span className="text-gray-700">{item.category_name}</span>
                           </label>
                         ))}
                       </div>
                     )}
                   </div>
                 )}
-                {errors.school_class && <p className="mt-1 text-xs text-red-500">{errors.school_class?.message}</p>}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Parent/Guardian Information</CardTitle>
+            <CardTitle className="text-xl text-gray-800">Parent/Guardian Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <div>
-                <Label htmlFor="fa_name" className="text-sm">Name</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="fa_name">Parent Name</Label>
                 <Input
                   id="fa_name"
                   placeholder="Enter Name"
-                  className={`mt-1 text-sm ${errors.fa_name ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.fa_name ? "border-red-500" : ""}`}
                   {...register("fa_name")}
                 />
-                {errors.fa_name && <p className="mt-1 text-xs text-red-500">{errors.fa_name.message}</p>}
+                {errors.fa_name && <p className="text-xs text-red-500 font-medium">{errors.fa_name.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="fa_mobile" className="text-sm">Mobile</Label>
+              <div className="space-y-2">
+                <Label htmlFor="fa_mobile">Parent Mobile</Label>
                 <Input
                   id="fa_mobile"
                   placeholder="Enter Mobile"
                   inputMode="numeric"
-                  pattern="[0-9]*"
                   onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ""); }}
-                  className={`mt-1 text-sm ${errors.fa_mobile ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.fa_mobile ? "border-red-500" : ""}`}
                   {...register("fa_mobile")}
                 />
-                {errors.fa_mobile && <p className="mt-1 text-xs text-red-500">{errors.fa_mobile.message}</p>}
+                {errors.fa_mobile && <p className="text-xs text-red-500 font-medium">{errors.fa_mobile.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="fa_email" className="text-sm">Email</Label>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <Label htmlFor="fa_email">Parent Email</Label>
                 <Input
                   id="fa_email"
                   type="email"
                   placeholder="Enter Email"
-                  className={`mt-1 text-sm ${errors.fa_email ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.fa_email ? "border-red-500" : ""}`}
                   {...register("fa_email")}
                 />
-                {errors.fa_email && <p className="mt-1 text-xs text-red-500">{errors.fa_email.message}</p>}
+                {errors.fa_email && <p className="text-xs text-red-500 font-medium">{errors.fa_email.message}</p>}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Address Information</CardTitle>
+            <CardTitle className="text-xl text-gray-800">Address Information</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-              <div>
-                <Label htmlFor="country" className="text-sm">Country</Label>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
                 <Select
                   onValueChange={value => {
                     setValue("country", value, { shouldValidate: true });
@@ -563,7 +566,7 @@ function SingleUserForm() {
                   }}
                   value={watch("country") || selectedCountry}
                 >
-                  <SelectTrigger id="country" className="w-full mt-1 text-sm">
+                  <SelectTrigger id="country" className="text-black">
                     <SelectValue placeholder="Select Country" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -573,8 +576,9 @@ function SingleUserForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="state" className="text-sm">State/Province</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="state">State/Province</Label>
                 <Select
                   onValueChange={value => {
                     setValue("state", value, { shouldValidate: true });
@@ -583,10 +587,8 @@ function SingleUserForm() {
                   disabled={!selectedCountry || loadingStates}
                   value={watch("state") || selectedState}
                 >
-                  <SelectTrigger id="state" className="w-full mt-1 text-sm">
-                    <SelectValue placeholder={
-                      loadingStates ? "Loading..." : "Select State"
-                    } />
+                  <SelectTrigger id="state" className="text-black">
+                    <SelectValue placeholder={loadingStates ? "Loading..." : "Select State"} />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     {states.map((state: any) => (
@@ -595,17 +597,16 @@ function SingleUserForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="city" className="text-sm">City</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
                 <Select
                   onValueChange={value => setValue("city", value, { shouldValidate: true })}
                   disabled={!selectedState || loadingCities}
                   value={watch("city")}
                 >
-                  <SelectTrigger id="city" className="w-full mt-1 text-sm">
-                    <SelectValue placeholder={
-                      loadingCities ? "Loading..." : "Select City"
-                    } />
+                  <SelectTrigger id="city" className="text-black">
+                    <SelectValue placeholder={loadingCities ? "Loading..." : "Select City"} />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
                     {cities.map((city: any) => (
@@ -614,43 +615,52 @@ function SingleUserForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="pincode" className="text-sm">Pincode/ZIP</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="pincode">Pincode/ZIP</Label>
                 <Input
                   id="pincode"
-                  placeholder="Pincode/ZIP"
+                  placeholder="Pincode"
                   inputMode="numeric"
-                  pattern="[0-9]*"
                   onInput={(e) => {
                     const input = e.target as HTMLInputElement;
                     input.value = input.value.replace(/\D/g, '').slice(0, 6);
                   }}
-                  className={`mt-1 text-sm ${errors.pincode ? "border-red-500" : ""}`}
+                  className={`text-black ${errors.pincode ? "border-red-500" : ""}`}
                   {...register("pincode")}
                 />
-                {errors.pincode && <p className="mt-1 text-xs text-red-500">{errors.pincode.message}</p>}
+                {errors.pincode && <p className="text-xs text-red-500 font-medium">{errors.pincode.message}</p>}
               </div>
             </div>
-            <div className="mt-4">
-              <Label htmlFor="address" className="text-sm">Address</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
-                placeholder="Street address"
-                className={`mt-1 text-sm ${errors.address ? "border-red-500" : ""}`}
+                placeholder="Street address, apartment, suite, etc."
+                className={`text-black ${errors.address ? "border-red-500" : ""}`}
                 {...register("address")}
               />
-              {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
+              {errors.address && <p className="text-xs text-red-500 font-medium">{errors.address.message}</p>}
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => navigate("/admin/users")}
+          >
+            Cancel
+          </Button>
           <Button
             type="submit"
-            className="w-full px-10 py-2 font-semibold text-white transition bg-[#245cab] hover:bg-blue-700 md:w-auto"
+            className="w-full sm:w-auto px-8 bg-[#245cab] hover:bg-blue-700 text-white font-semibold transition-colors shadow-sm"
             disabled={isSubmitting || isPending}
           >
-            {isSubmitting || isPending ? "Submitting..." : "Create Profile"}
+            {isSubmitting || isPending ? "Creating Profile..." : "Create Profile"}
           </Button>
         </div>
       </form>
