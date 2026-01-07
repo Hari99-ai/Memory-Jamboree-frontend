@@ -24,7 +24,7 @@ export function MyAchievementsCard() {
       try {
         const token = sessionStorage.getItem("auth_token") || localStorage.getItem("auth_token");
         if (!token) return;
-        const response = await fetch(`${API_BASE_URL}/paractice_test`, {
+        const response = await fetch(`${API_BASE_URL}/practice_test`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {

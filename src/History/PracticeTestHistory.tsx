@@ -72,7 +72,7 @@ export default function PracticeTestHistory() {
       const token = sessionStorage.getItem("auth_token") || localStorage.getItem("auth_token")
       if (!token) throw new Error("Authentication token not found. Please login again.")
 
-      const response = await fetch(`${API_BASE_URL}/paractice_test`, {
+      const response = await fetch(`${API_BASE_URL}/practice_test`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

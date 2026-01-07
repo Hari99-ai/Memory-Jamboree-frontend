@@ -14,4 +14,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'), 
     },
   },
+  base: './', // Important for Electron to load assets correctly
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
 })

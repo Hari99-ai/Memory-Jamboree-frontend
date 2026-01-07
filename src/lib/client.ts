@@ -1,3 +1,5 @@
+
+
 // import axios from "axios";
 
 // export const api = axios.create({
@@ -12,6 +14,7 @@
 // });
 
 // export const SocketURL = `wss://aidev.memoryjamboree.com:5000/ws`
+// export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 
 // export const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
@@ -46,7 +49,8 @@ export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 //   },
 // });
 
-const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
+//const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
+const API_BASE_URL = "http://192.168.29.2:8000"
 // const  API_BASE_URL = "https://aidev.memoryjamboree.com:5000"
 // export const API_BASE_URL = "http://127.0.0.1:8000"
 

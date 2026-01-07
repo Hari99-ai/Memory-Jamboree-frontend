@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 :root {
+  --font-Roboto : 'Roboto Slab', serif;
+  --font-Zalando : 'Zalando Sans Expanded', sans-serif;
+}
+
+:root {
   --base: #ffffff; /* Base (White) */
   --secondary-base: #f8fbfe; /* Secondary base (Grey) */
   --primary-1: #245cab; /* Primary1 (Blue) */

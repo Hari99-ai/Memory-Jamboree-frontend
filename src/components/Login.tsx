@@ -154,7 +154,7 @@ export default function Login() {
         <div className="flex flex-col justify-center items-center flex-1 px-4 sm:px-6 md:px-12">
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-xl md:text-2xl font-bold mb-0">Welcome to</h2>
+            <h2 className="text-xl font- md:text-2xl font-bold mb-0">Welcome to</h2>
             <h1 className="text-3xl md:text-5xl font-bold mt-0">Memory Jamboree</h1>
             <div className="text-right mt-2">
               <p className="text-xs md:text-sm font-medium">
