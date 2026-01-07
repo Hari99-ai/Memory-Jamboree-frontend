@@ -90,7 +90,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [globalFilter, setGlobalFilter] = useState("") // State for the combined search filter
+  const [globalFilter, setGlobalFilter] = useState("") 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -145,12 +145,12 @@ export function DataTable<TData extends Record<string, any>, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter, // Handle global filter changes
+    onGlobalFilterChange: setGlobalFilter, 
     getRowId: (row: any) => (row.id ?? row.user_id)?.toString(),
     state: {
       sorting,
       columnFilters,
-      globalFilter, // Pass global filter state to the table
+      globalFilter, 
       pagination,
       rowSelection,
     },
@@ -214,7 +214,6 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   }
 
   const handleDownloadExcel = () => {
-    // FIX: Use getFilteredRowModel() to download all data that matches the current filters
     const allFilteredData = table.getFilteredRowModel().rows.map((row) => row.original)
 
     const formattedData = allFilteredData.map((user) => ({
@@ -224,7 +223,6 @@ export function DataTable<TData extends Record<string, any>, TValue>({
       "School Name": user.school_name,
       Grade: user.school_class,
       City: user.city,
-      // FIX: Map state abbreviation to full name
       State: stateFullNameMap[user.state?.toUpperCase()] || user.state,
     }))
 
@@ -243,11 +241,9 @@ export function DataTable<TData extends Record<string, any>, TValue>({
       return
     }
 
-    // Create a map of discipline ID to name for easy lookup
     const disciplineMap = new Map(disciplines?.map((d) => [d.disc_id, d.discipline_name]) || [])
 
     const formattedData = resultData.map((user) => {
-      // Base user data and overall scores
       const rowData: { [key: string]: any } = {
         "Full Name": `${user.fname} ${user.lname || ""}`.trim(),
         Email: user.email,
@@ -260,7 +256,6 @@ export function DataTable<TData extends Record<string, any>, TValue>({
         "Overall Rank": user.event_overall_rank ?? "-",
       }
 
-      // Dynamically add columns for each discipline's scores
       user.scores?.forEach((score: any) => {
         const discName = disciplineMap.get(score.disc_id) || `Discipline ${score.disc_id}`
         const finalScoreValue = parseFloat(String(score.score))
@@ -278,16 +273,14 @@ export function DataTable<TData extends Record<string, any>, TValue>({
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, "Results")
 
-    // Auto-set column widths based on the generated data
     const columnWidths = Object.keys(formattedData[0] || {}).map((key) => {
-      // Set a default width, but make some columns wider
       if (key.toLowerCase().includes("email") || key.toLowerCase().includes("school name")) {
         return { wch: 30 }
       }
       if (key.toLowerCase().includes("full name")) {
         return { wch: 25 }
       }
-      return { wch: 18 } // Default width for score/rank columns
+      return { wch: 18 } 
     })
     worksheet["!cols"] = columnWidths
 
@@ -299,65 +292,76 @@ export function DataTable<TData extends Record<string, any>, TValue>({
 
   return (
     <div>
-      {/* FIX: Combined filters and buttons into a single, responsive row */}
-      <div className="flex items-center justify-between gap-2 py-4 flex-wrap  bg-white p-2 rounded">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* FIX: Combined name and email filter into a single global search input */}
+      {/* RESPONSIVE HEADER:
+        - flex-col on mobile (stack vertically), xl:flex-row on desktop.
+      */}
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 py-4 bg-white p-2 rounded">
+        
+        {/* FILTERS Group: Stacks inputs/selects on mobile */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full xl:w-auto">
+          {/* Search Input: Full width on mobile */}
           <Input
             placeholder="Search name, email..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-auto min-w-[250px] bg-slate-50 text-black"
+            className="w-full sm:w-[250px] bg-slate-50 text-black"
           />
 
-          {/* FIX: Made filter widths flexible and set background to white */}
-          <Select
-            value={gradeFilterValue ?? ""}
-            onValueChange={(value) => {
-              table.getColumn("school_class")?.setFilterValue(value === "__all__" ? undefined : value)
-            }}
-          >
-            <SelectTrigger className="w-auto min-w-[10px] bg-white">
-              {/* FIX: Show "Others..." when the long option is selected */}
-              <SelectValue placeholder="Filter Grade">
-                {gradeFilterValue === "Others (Adult / Senior Citizen)" ? "Others..." : gradeFilterValue}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="max-h-[250px] overflow-y-auto">
-              <SelectItem value="__all__">All Grades</SelectItem>
-              {gradeOptions.map((grade) => (
-                <SelectItem key={grade} value={grade}>
-                  {grade}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {/* Grade Select */}
+            <div className="flex-1 sm:w-auto min-w-[140px]">
+              <Select
+                value={gradeFilterValue ?? ""}
+                onValueChange={(value) => {
+                  table.getColumn("school_class")?.setFilterValue(value === "__all__" ? undefined : value)
+                }}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Filter Grade">
+                    {gradeFilterValue === "Others (Adult / Senior Citizen)" ? "Others..." : gradeFilterValue}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-[250px] overflow-y-auto">
+                  <SelectItem value="__all__">All Grades</SelectItem>
+                  {gradeOptions.map((grade) => (
+                    <SelectItem key={grade} value={grade}>
+                      {grade}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select
-            value={(table.getColumn("school_name")?.getFilterValue() as string) ?? ""}
-            onValueChange={(value) => {
-              table.getColumn("school_name")?.setFilterValue(value === "__all__" ? undefined : value)
-            }}
-          >
-            <SelectTrigger className="w-auto min-w-[200px] bg-white">
-              <SelectValue placeholder="Filter School" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Schools</SelectItem>
-              {schools?.map((school: SchoolsMasterData) => (
-                <SelectItem key={school.school_id} value={school.school_name}>
-                  {school.school_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {/* School Select */}
+            <div className="flex-1 sm:w-auto min-w-[200px]">
+              <Select
+                value={(table.getColumn("school_name")?.getFilterValue() as string) ?? ""}
+                onValueChange={(value) => {
+                  table.getColumn("school_name")?.setFilterValue(value === "__all__" ? undefined : value)
+                }}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Filter School" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Schools</SelectItem>
+                  {schools?.map((school: SchoolsMasterData) => (
+                    <SelectItem key={school.school_id} value={school.school_name}>
+                      {school.school_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* BUTTONS Group: Wraps buttons on very small screens */}
+        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {showDownloadResultButton ? (
             <button
               onClick={handleDownloadResultExcel}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 ease-in-out hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 whitespace-nowrap"
             >
               <Download className="h-4 w-4" />
               Download Results
@@ -366,7 +370,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
             !hideExcelButton && (
               <button
                 onClick={handleDownloadExcel}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 ease-in-out hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 whitespace-nowrap"
               >
                 <Download className="h-4 w-4" />
                 Download Userlist
@@ -374,11 +378,10 @@ export function DataTable<TData extends Record<string, any>, TValue>({
             )
           )}
 
-          {/* Destructive Action Button (Delete) */}
           <button
             onClick={handleDeleteSelected}
             disabled={table.getSelectedRowModel().rows.length === 0}
-            className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 ease-in-out hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
           >
             Delete Selected
           </button>
@@ -436,8 +439,10 @@ export function DataTable<TData extends Record<string, any>, TValue>({
       </div>
 
       {table.getPageCount() > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-6 py-4">
-          <div className="flex items-center sm:space-x-6 lg:space-x-8">
+        // RESPONSIVE PAGINATION: Flex-wrap allows controls to flow naturally on mobile
+        <div className="flex flex-wrap items-center justify-center gap-4 py-4 sm:flex-row sm:justify-between sm:gap-0">
+          
+          <div className='flex items-center w-full justify-center sm:w-auto sm:justify-start sm:space-x-6 lg:space-x-8'>
             <div className="flex items-center space-x-2">
               <p className="hidden text-sm font-medium sm:block">Rows per page</p>
               <Select
@@ -470,13 +475,13 @@ export function DataTable<TData extends Record<string, any>, TValue>({
           </Button>
 
           <div className="flex items-center space-x-1">
-            {simplifiedPageNumbers.map((page, i) =>
+            {simplifiedPageNumbers.map((page, i) => (
               page === "..." ? (
                 <Button
                   key={`ellipsis-${i}`}
                   variant="outline"
                   size="sm"
-                  className="h-8 w-8 p-0 bg-transparent"
+                  className="h-8 w-8 p-0"
                   disabled
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -491,8 +496,8 @@ export function DataTable<TData extends Record<string, any>, TValue>({
                 >
                   <span>{page}</span>
                 </Button>
-              ),
-            )}
+              )
+            ))}
           </div>
 
           <Button

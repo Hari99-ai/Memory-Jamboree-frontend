@@ -75,7 +75,7 @@ const PracticePerformance = () => {
     setSelectedUserId(null);
     setSelectedUserName("");
   };
-  
+
   const filteredUsers = useMemo(() => {
     return users
       .filter(
@@ -100,13 +100,14 @@ const PracticePerformance = () => {
   // If a user is selected, show their practice test history
   if (selectedUserId) {
     return (
-      <div className="p-6">
+      // Changed padding for mobile
+      <div className="p-4 md:p-6">
         <div className="mb-6">
           <Button variant="outline" onClick={handleBackToUsers} className="mb-4 flex items-center gap-2 bg-transparent">
             <ArrowLeft className="h-4 w-4" />
             Back to Users
           </Button>
-          <h2 className="text-2xl font-bold text-[#245cab] flex items-center gap-3">
+          <h2 className="text-xl md:text-2xl font-bold text-[#245cab] flex items-center gap-3">
             Practice Test History - {selectedUserName}
           </h2>
         </div>
@@ -117,9 +118,9 @@ const PracticePerformance = () => {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="text-3xl font-bold text-[#245cab] flex items-center gap-3">
-          <Users className="h-8 w-8" />
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="text-2xl md:text-3xl font-bold text-[#245cab] flex items-center gap-3">
+          <Users className="h-6 w-6 md:h-8 md:w-8" />
           Practice Performance
         </div>
         <Card>
@@ -130,7 +131,7 @@ const PracticePerformance = () => {
                 <TableHeader>
                   <TableRow>
                     {["User ID", "Name", "Email", "Class", "Action"].map((header) => (
-                      <TableHead key={header}><Skeleton className="h-4 w-24" /></TableHead>
+                      <TableHead key={header} className="whitespace-nowrap"><Skeleton className="h-4 w-24" /></TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -138,7 +139,7 @@ const PracticePerformance = () => {
                   {Array.from({ length: 5 }).map((_, rowIndex) => (
                     <TableRow key={rowIndex}>
                       {Array.from({ length: 6 }).map((_, colIndex) => (
-                        <TableCell key={colIndex}><Skeleton className="h-4 w-full" /></TableCell>
+                        <TableCell key={colIndex} className="whitespace-nowrap"><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -153,7 +154,7 @@ const PracticePerformance = () => {
 
   if (error) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[calc(100vh-100px)]">
+      <div className="p-4 md:p-6 flex items-center justify-center min-h-[calc(100vh-100px)]">
         <Card className="w-full max-w-md text-center p-6">
           <CardHeader className="flex flex-col items-center justify-center space-y-4">
             <AlertCircle className="h-16 w-16 text-red-500" />
@@ -169,10 +170,11 @@ const PracticePerformance = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-[#245cab] flex items-center gap-3">
-          <Users className="h-8 w-8" />
+    <div className="p-4 md:p-6 space-y-6">
+      {/* Responsive Header: Stack on mobile, Row on desktop */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#245cab] flex items-center gap-3">
+          <Users className="h-6 w-6 md:h-8 md:w-8" />
           Practice Performance
         </h1>
         <div className="text-sm text-gray-600">
@@ -181,8 +183,9 @@ const PracticePerformance = () => {
       </div>
 
       <Card>
+        {/* Responsive Card Header: Stack on mobile, Row on desktop */}
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg md:text-xl font-semibold flex items-center gap-2">
             <Users className="h-5 w-5" />
             All Users
           </CardTitle>
@@ -211,30 +214,31 @@ const PracticePerformance = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            // Added whitespace-nowrap to cells to prevent awkward wrapping on small screens
+            <div className="overflow-x-auto border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/50">
-                    <TableHead className="font-semibold">User ID</TableHead>
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Email</TableHead>
-                    <TableHead className="font-semibold">Class</TableHead>
-                    <TableHead className="font-semibold">Action</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">User ID</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Name</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Email</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Class</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentUsers.map((user) => (
                     <TableRow key={user.id} className="hover:bg-blue-50/50">
-                      <TableCell className="font-medium">#{user.id}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">#{user.id}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-[#245cab] rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#245cab] rounded-full shrink-0"></div>
                           <span className="font-medium">{user.fname} {user.lname}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.school_class || "N/A"}</TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                      <TableCell className="whitespace-nowrap">{user.school_class || "N/A"}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Button
                           size="sm"
                           onClick={() => handleViewPerformance(user.id, `${user.fname} ${user.lname}`)}
@@ -252,27 +256,28 @@ const PracticePerformance = () => {
           )}
         </CardContent>
         {totalPages > 1 && (
-          <CardFooter className="flex items-center justify-between pt-4 border-t">
+          // Responsive Footer: Stack controls on mobile
+          <CardFooter className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-4 border-t">
             <div className="text-sm text-gray-600">
-                Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+              Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
             </div>
             <div className="flex items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                >
-                    Next
-                </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
             </div>
           </CardFooter>
         )}

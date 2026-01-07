@@ -82,11 +82,15 @@ export default function EventCard({ event, onClick }: EventCardProps) {
   onClick={onClick}
 >
   {/* Image Section with Overlay */}
-  <div className="relative h-48 overflow-hidden">
+  <div className="relative h-48 overflow-hidden bg-gray-200">
     <img
-      src={`${eventImg}/${eimage}`}
+      src={eimage ? `${eventImg}/${eimage}` : "https://via.placeholder.com/800x600?text=Event+Image"}
       alt={ename}
       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.src = "https://via.placeholder.com/800x600?text=Event+Image";
+      }}
     />
     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
   </div>

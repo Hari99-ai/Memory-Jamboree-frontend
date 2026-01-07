@@ -231,34 +231,37 @@ export default function EventUsers() {
 
   return (
     <div className="container flex flex-col min-h-screen px-4 mx-auto">
-      <div className="bg-white border-b border-gray-200 rounded-lg shadow-sm">
-        <div className="container px-6 py-6 mx-auto">
+      <div className="bg-white border-b border-2 border-gray-200 rounded-lg shadow-sm">
+        <div className="container px-4 md:px-6 py-4 md:py-6 mx-auto">
           {/* Back Button with proper spacing */}
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <button
               onClick={() => navigate(-1)}
               className={`
         flex items-center gap-2 px-4 py-2
-        text-white text-sm font-medium
+        text-white text-xs md:text-sm font-medium
         bg-blue-600 hover:bg-blue-700
         transition-colors duration-200
-        focus:outline-none focus:ring-2 focus:ring-blue-300  rounded-full
+        focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full
       `}
               type="button"
             >
               <ArrowLeft size={16} />
               <span>Back to Event Details</span>
-            </button>          </div>
+            </button>
+          </div>
 
-          {/* Title and Status */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Event Users Management</h1>
+          {/* Title and Status: Stack on mobile, Row on desktop */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+              Event Users Management
+            </h1>
             {selectedUserIds.length > 0 && (
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="px-3 py-1 font-medium text-blue-800 bg-blue-100 rounded-full">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
+                <span className="px-3 py-1 font-medium text-blue-800 bg-blue-100 rounded-full whitespace-nowrap">
                   {selectedUserIds.length} user(s) selected
                 </span>
-                <span className="px-3 py-1 font-medium text-green-800 bg-green-100 rounded-full">
+                <span className="px-3 py-1 font-medium text-green-800 bg-green-100 rounded-full whitespace-nowrap">
                   {Object.values(monitoring).filter(Boolean).length} monitored
                 </span>
               </div>
@@ -267,10 +270,18 @@ export default function EventUsers() {
 
           {/* Alert Messages */}
           {successMessage && (
-            <div className="p-3 mb-4 text-green-700 bg-green-100 border-l-4 border-green-500 rounded-r">
+            <div className="p-3 mb-4 text-sm md:text-base text-green-700 bg-green-100 border-l-4 border-green-500 rounded-r">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 mr-2 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {successMessage}
               </div>
@@ -278,31 +289,52 @@ export default function EventUsers() {
           )}
 
           {errorMessage && (
-            <div className="p-3 mb-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r">
+            <div className="p-3 mb-4 text-sm md:text-base text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 mr-2 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {errorMessage}
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-
-
+          {/* Action Buttons: Vertical stack on mobile, Horizontal on Tablet+ */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
               onClick={handleUpdate}
               disabled={isUpdating || selectedUserIds.length === 0}
               variant="outline"
-              className="px-6 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-800"
+              className="w-full sm:w-auto px-6 py-2 font-medium transition-colors bg-green-500 rounded-lg hover:bg-green-800"
             >
               {isUpdating ? (
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Updating...
                 </div>
@@ -310,16 +342,32 @@ export default function EventUsers() {
                 `Update ${selectedUserIds.length} Users`
               )}
             </Button>
+
             <Button
               onClick={handleSubmit}
               disabled={isDeleting || selectedUserIds.length === 0}
-              className="px-6 py-2 font-medium text-white transition-colors bg-red-400 rounded-lg hover:bg-red-700"
+              className="w-full sm:w-auto px-6 py-2 font-medium text-white transition-colors bg-red-400 rounded-lg hover:bg-red-700"
             >
               {isDeleting ? (
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Deleting...
                 </div>
@@ -327,8 +375,9 @@ export default function EventUsers() {
                 `Delete ${selectedUserIds.length} Users`
               )}
             </Button>
+
             {selectedUserIds.length === 0 && (
-              <p className="text-sm italic text-gray-500">
+              <p className="text-sm italic text-gray-500 text-center sm:text-left">
                 Select users to enable actions
               </p>
             )}
@@ -349,7 +398,7 @@ export default function EventUsers() {
           )}
           data={users ?? []}
           isLoading={isLoading}
-          // onUpdate={handleUpdate}
+        // onUpdate={handleUpdate}
         />
       </div>
 

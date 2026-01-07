@@ -1,4 +1,3 @@
- 
 import {
   ColumnDef,
   SortingState,
@@ -33,7 +32,7 @@ import { SchoolsMasterData } from "../../../types";
 import { getSchools } from "../../../lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
- 
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -42,7 +41,7 @@ interface DataTableProps<TData, TValue> {
   rowSelection?: Record<number, boolean>;
   // onUpdate: (selectedUser: TData) => void;
 }
- 
+
 export function DataTable<TData extends { id: number }, TValue>({
   columns,
   data,
@@ -53,15 +52,12 @@ export function DataTable<TData extends { id: number }, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
- 
+
   const { data: schools } = useQuery({
     queryKey: ["schools"],
     queryFn: getSchools,
   });
 
-
-
- 
   const table = useReactTable({
     data,
     columns, // use columns as-is
@@ -80,7 +76,7 @@ export function DataTable<TData extends { id: number }, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
   });
- 
+
   // Notify parent component of selection changes
   useEffect(() => {
     if (onRowSelectionChange) {
@@ -91,68 +87,57 @@ export function DataTable<TData extends { id: number }, TValue>({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowSelection]);
- 
+
   // Pagination helper: simplified pagination display logic
   const getSimplifiedPagination = () => {
     const currentPage = table.getState().pagination.pageIndex + 1;
     const totalPages = table.getPageCount();
- 
+
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
- 
+
     const startPages = [1, 2, 3];
     const endPages = [totalPages - 2, totalPages - 1, totalPages];
     const middlePages: (number | "...")[] = [];
- 
+
     if (currentPage > 4) {
       middlePages.push("...");
     }
- 
+
     if (currentPage > 3 && currentPage < totalPages - 2) {
       middlePages.push(currentPage);
     }
- 
+
     if (currentPage < totalPages - 3) {
       middlePages.push("...");
     }
- 
+
     return [...startPages, ...middlePages, ...endPages].filter(
       (v, i, a) => a.indexOf(v) === i
     );
   };
- 
+
   const simplifiedPageNumbers = getSimplifiedPagination();
- 
+
   return (
     <div>
-      {/* Update Selected Button */}
-      {/* <div className="flex items-center justify-end mb-4 mr-2">
-        <Button
-          onClick={() => {
-            const selectedRows = table.getSelectedRowModel().rows;
-            if (selectedRows.length === 1) {
-              const selectedUser = selectedRows[0].original;
-              onUpdate(selectedUser)
-            } else {
-              alert("Please select exactly one user.");
-            }
-          }}
-          disabled={table.getSelectedRowModel().rows.length !== 1}
-          className="text-white bg-primary"
-        >
-          Update Selected
-        </Button>
-      </div> */}
+      {/* Update Selected Button - Commented out in original */}
+      {/* ... */}
 
-      <div className="flex items-center justify-between py-4 gap-x-2">
+      {/* RESPONSIVE FILTER SECTION: 
+         - flex-col on mobile (stack), md:flex-row on desktop.
+         - gap-4 for vertical spacing on mobile.
+      */}
+      <div className="flex flex-col md:flex-row items-center justify-between py-4 gap-4">
         <Input
           placeholder="Search Name..."
           value={(table.getColumn("fullName")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("fullName")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm text-black"
+          // Changed: w-full for mobile, max-w-sm for desktop
+          className="w-full md:max-w-sm text-black"
         />
         <Input
           placeholder="Search Emails..."
@@ -160,7 +145,8 @@ export function DataTable<TData extends { id: number }, TValue>({
           onChange={(event) =>
             table.getColumn("email")?.setFilterValue(event.target.value)
           }
-          className="max-w-md text-black"
+          // Changed: w-full for mobile, max-w-md for desktop
+          className="w-full md:max-w-md text-black"
         />
         <Select
           value={(table.getColumn("school_name")?.getFilterValue() as string) ?? ""}
@@ -170,7 +156,8 @@ export function DataTable<TData extends { id: number }, TValue>({
             );
           }}
         >
-          <SelectTrigger className="w-[200px]">
+          {/* Changed: w-full for mobile, w-[200px] for desktop */}
+          <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Filter School" />
           </SelectTrigger>
           <SelectContent>
@@ -183,9 +170,9 @@ export function DataTable<TData extends { id: number }, TValue>({
           </SelectContent>
         </Select>
       </div>
- 
-      {/* Table */}
-      <div className="border rounded-md">
+
+      {/* Table Wrapper: Added overflow-x-auto for horizontal scroll on mobile */}
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -234,7 +221,10 @@ export function DataTable<TData extends { id: number }, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -242,16 +232,17 @@ export function DataTable<TData extends { id: number }, TValue>({
           </TableBody>
         </Table>
       </div>
- 
-      {/* Footer */}
-      <div className="flex justify-between">
-        <div className="flex-1 hidden mt-6 text-sm text-muted-foreground sm:block">
+
+      {/* Footer: Stack on mobile (if text visible), adjust pagination wrapping */}
+      <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 py-4">
+        <div className="flex-1 hidden text-sm text-muted-foreground sm:block">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
- 
+
         {table.getPageCount() > 0 && (
-          <div className="flex items-center justify-center py-4 space-x-4">
+          // Used flex-wrap to handle small screens gracefully
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -262,7 +253,7 @@ export function DataTable<TData extends { id: number }, TValue>({
               <ChevronLeft className="w-4 h-4 mr-1" />
               Prev
             </Button>
- 
+
             <div className="flex items-center space-x-1">
               {simplifiedPageNumbers.map((page, i) => {
                 if (page === "...") {
@@ -278,7 +269,7 @@ export function DataTable<TData extends { id: number }, TValue>({
                     </Button>
                   );
                 }
- 
+
                 return (
                   <Button
                     key={`page-${page}`}
@@ -296,7 +287,7 @@ export function DataTable<TData extends { id: number }, TValue>({
                 );
               })}
             </div>
- 
+
             <Button
               variant="outline"
               size="sm"
@@ -313,6 +304,3 @@ export function DataTable<TData extends { id: number }, TValue>({
     </div>
   );
 }
- 
- 
- 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader } from "../../components/ui/card";
-import { X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Textarea } from "../../components/ui/textarea";
 import { toast } from "react-hot-toast";
 import {
@@ -14,6 +13,19 @@ import {
 import { Label } from "../../components/ui/label";
 import axios from "axios";
 import { API_BASE_URL } from "../../lib/client";
+import { 
+  BookOpen, 
+  Layers, 
+  Type, 
+  Plus, 
+  Save, 
+  Search, 
+  X, 
+  CheckCircle2, 
+  Grid,
+  Loader2,
+  Trash2
+} from "lucide-react";
 
 // Fetch helper function
 async function generateWordsData(level: string, count: number = 300): Promise<string[]> {
@@ -136,7 +148,6 @@ export default function Words() {
             "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
-          // Remove this line: withCredentials: true,
         }
       );
 
@@ -175,6 +186,7 @@ export default function Words() {
     }
     setLoading(false);
   };
+  
   // Combine fetched and posted words for the current tab
   const allWords = [
     ...postedWords.filter((w) => w.category === activeTab),
@@ -194,62 +206,74 @@ export default function Words() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-      {/* Form Section */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl text-[#245cab] mb-1">Add Words</h2>
-          <p className="text-gray-500 text-xs sm:text-sm mb-2">
-            Enter words and assign them to a category.
-          </p>
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-8 bg-slate-50/50 min-h-screen">
+      
+      {/* Header Section */}
+      <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+        <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+          <BookOpen className="w-8 h-8 text-white" />
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="flex-1">
-            <Label className="mb-1 block text-sm">Select Category</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Select category..." />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <Label className="mb-1 block text-sm">Select Type</Label>
-            <Select value={selectdType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Select type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {action_type.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Word Bank Manager</h1>
+          <p className="text-slate-500 text-sm">Curate and manage vocabulary for different difficulty levels.</p>
         </div>
       </div>
 
-      {/* Word Input Card */}
-      <Card>
-        <CardHeader />
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="flex-1">
-              <Textarea
-                placeholder="Enter a word"
+      {/* Input Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Input Form */}
+        <Card className="lg:col-span-2 border-slate-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
+              <Plus className="w-5 h-5 text-blue-500" />
+              Add New Words
+            </CardTitle>
+            <CardDescription>Configure difficulty and type, then add words to the staging list.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            
+            {/* Selectors Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-slate-600">
+                  <Layers className="w-4 h-4" /> Difficulty Level
+                </Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full bg-slate-50 border-slate-200 focus:ring-blue-500">
+                    <SelectValue placeholder="Select Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-slate-600">
+                  <Type className="w-4 h-4" /> Word Type
+                </Label>
+                <Select value={selectdType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-full bg-slate-50 border-slate-200 focus:ring-blue-500">
+                    <SelectValue placeholder="Select Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {action_type.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Input Area */}
+            <div className="flex flex-col md:flex-row gap-2 items-start">
+              <input
+                placeholder="Enter word here..."
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
-                maxLength={500}
-                minLength={1}
-                className="resize-none min-h-[80px] sm:min-h-[40px]"
+                className="flex-1 p-2 bg-slate-50 border-slate-200 focus-visible:ring-blue-500 resize-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -257,136 +281,179 @@ export default function Words() {
                   }
                 }}
               />
+              <Button
+                onClick={handleAddWord}
+                className="h-[50px] w-14 bg-slate-800 hover:bg-slate-700"
+                disabled={!word.trim() || selectedCategory === "Select" || selectdType === "Select"}
+                title="Add to list"
+              >
+                <Plus className="w-6 h-6" />
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Right Column: Staging Area */}
+        <Card className="border-slate-200 shadow-sm flex flex-col h-full bg-white">
+          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Staging Area
+              </CardTitle>
+              <span className="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                {words.length}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 p-4 overflow-y-auto max-h-[300px] lg:max-h-none">
+            {words.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {words.map((w, i) => (
+                  <div
+                    key={i}
+                    className="group flex items-center gap-1 pl-3 pr-1 py-1 bg-blue-50 text-blue-700 text-sm rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
+                  >
+                    <span className="max-w-[120px] truncate">{w}</span>
+                    <button
+                      onClick={() => handleDelete(i)}
+                      className="p-1 rounded-full hover:bg-blue-200 text-blue-400 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-10">
+                <Grid className="w-10 h-10 opacity-20" />
+                <p className="text-sm">No words queued.</p>
+              </div>
+            )}
+          </CardContent>
+          <div className="p-4 border-t border-slate-100 bg-slate-50/30">
             <Button
-              onClick={handleAddWord}
-              className="h-10 w-full sm:w-auto px-6 bg-green-600 hover:bg-green-700"
-              disabled={!word.trim() || selectedCategory === "Select"}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200"
+              onClick={handleSubmit}
+              disabled={words.length === 0 || loading}
             >
-              Add
+              {loading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" /> Upload Words</>
+              )}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
-      {/* Display entered words before upload */}
-      {words.length > 0 && (
-        <div className="bg-white rounded-md p-3 sm:p-4 shadow-sm border">
-          <Label className="block mb-2 text-sm sm:text-base text-gray-700">Words List</Label>
-          <ul className="flex flex-wrap gap-2">
-            {words.map((w, i) => (
-              <li
-                key={i}
-                className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 sm:px-4 py-1 text-xs sm:text-sm"
+      {/* Library Section */}
+      <div className="space-y-6 pt-6">
+        <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+          <div className="flex items-center gap-2">
+             <h2 className="text-xl font-bold text-slate-800">Word Library</h2>
+             <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md font-medium">{filteredWords.length} items</span>
+          </div>
+          
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search library..."
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+            />
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-slate-200">
+          <div className="flex overflow-x-auto scrollbar-hide gap-6">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setActiveTab(cat);
+                  setCurrentPage(1);
+                  setSearchTerm("");
+                }}
+                className={`pb-3 text-sm font-medium transition-all relative whitespace-nowrap ${
+                  activeTab === cat
+                    ? "text-blue-600"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
               >
-                <span className="break-all">{w}</span>
-                <button
-                  onClick={() => handleDelete(i)}
-                  className="ml-2 text-blue-500 hover:text-red-600 transition flex-shrink-0"
-                  aria-label="Remove word"
-                >
-                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                </button>
-              </li>
+                {cat}
+                {activeTab === cat && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-full" />
+                )}
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
-      )}
 
-      {/* Upload Button */}
-      <div className="flex justify-end">
-        <Button
-          className="w-full sm:w-auto px-6 sm:px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-          onClick={handleSubmit}
-          disabled={words.length === 0 || selectedCategory === "Select"}
-        >
-          {loading ? "Uploading..." : "Upload"}
-        </Button>
-      </div>
+        {/* Grid Display */}
+        {fetchingWords ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
+            <p className="text-sm font-medium">Loading library...</p>
+          </div>
+        ) : (
+          <>
+            <div className="min-h-[300px]">
+              {currentWords.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {currentWords.map((w, idx) => (
+                    <Card key={idx} className="group border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 bg-white">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <span className="font-medium text-slate-700 group-hover:text-blue-700 truncate">{w.word}</span>
+                        {/* If you had a per-word delete logic, the icon would go here. 
+                            Using a subtle decoration for now since logic wasn't provided for individual deletion of fetched words */}
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                  <Search className="w-12 h-12 text-slate-300 mb-2" />
+                  <p className="text-slate-500 font-medium">No words found in this category.</p>
+                  <p className="text-slate-400 text-sm">Try adjusting your search or add new words.</p>
+                </div>
+              )}
+            </div>
 
-      {/* Category Tabs */}
-      <div className="flex overflow-x-auto border-b border-gray-300 scrollbar-hide">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => {
-              setActiveTab(cat);
-              setCurrentPage(1);
-              setSearchTerm("");
-            }}
-            className={`flex-1 min-w-[80px] sm:min-w-0 text-center py-2 px-2 text-xs sm:text-sm font-semibold whitespace-nowrap ${activeTab === cat
-                ? "text-[#245cab] border-b-2 border-[#245cab]"
-                : "text-gray-500"
-              }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Search Input */}
-      <div className="mt-4 flex justify-end">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-          placeholder="Search word..."
-          className="border rounded-md px-3 py-2 w-full sm:w-64 md:w-1/3 text-sm focus:outline-none focus:ring-2 focus:ring-[#245cab]"
-        />
-      </div>
-
-      {/* Word Grid */}
-      {fetchingWords ? (
-        <div className="text-center text-gray-500 py-10">
-          <div className="animate-spin h-8 w-8 border-4 border-[#245cab] border-t-transparent rounded-full mx-auto mb-3" />
-          <p className="text-sm sm:text-base">Loading words...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mt-6">
-          {currentWords.length > 0 ? (
-            currentWords.map((w, idx) => (
-              <div
-                key={idx}
-                className="border rounded-md p-2 sm:p-3 bg-white shadow-sm text-xs sm:text-sm break-words hover:shadow-md transition-shadow"
-              >
-                {w.word}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-9 px-4 text-xs font-medium"
+                >
+                  Previous
+                </Button>
+                <span className="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-9 px-4 text-xs font-medium"
+                >
+                  Next
+                </Button>
               </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-400 col-span-full text-sm sm:text-base py-8">
-              No words found.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 sm:gap-4 pt-4 flex-wrap">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="px-3 sm:px-4 text-xs sm:text-sm"
-          >
-            Prev
-          </Button>
-          <span className="text-xs sm:text-sm text-gray-600">
-            Page {currentPage} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 sm:px-4 text-xs sm:text-sm"
-          >
-            Next
-          </Button>
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

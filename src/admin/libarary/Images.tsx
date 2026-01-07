@@ -38,6 +38,7 @@ const imagesPool = async (): Promise<ImageBase64[]> => {
 
 const ModernImageGallery = () => {
   const [images, setImages] = useState<ImageBase64[]>([])
+  
   const [newUploadImages, setNewUploadImages] = useState<ImageBase64[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchingImages, setFetchingImages] = useState(true)
