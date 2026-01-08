@@ -49,8 +49,18 @@ export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 //   },
 // });
 
+//hosted backend
 //const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
+
+// hari om's backend
+// const API_BASE_URL = "http://192.168.29.141:8000"
+
+//my backend
 const API_BASE_URL = "http://192.168.29.2:8000"
+
+
+
+
 // const  API_BASE_URL = "https://aidev.memoryjamboree.com:5000"
 // export const API_BASE_URL = "http://127.0.0.1:8000"
 
@@ -163,6 +173,6 @@ export { API_BASE_URL };
 // export const AUDIO_BASE_URL = "https://aidev.memoryjamboree.com:5000/uploads/events/audio-records/";
 
 
-export const eventImg = "https://aidev.gravitinfosystems.com:5000/uploads/events"
-export const ImgUrl = "https://aidev.gravitinfosystems.com:5000/uploads";
-export const AUDIO_BASE_URL = "https://aidev.gravitinfosystems.com:5000/uploads/events/audio-records/";
+export const eventImg = `${API_BASE_URL}/uploads/events`
+export const ImgUrl = `${API_BASE_URL}/uploads`;
+export const AUDIO_BASE_URL = `${API_BASE_URL}/uploads/events/audio-records/`;

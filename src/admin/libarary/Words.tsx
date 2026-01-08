@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
-import { Textarea } from "../../components/ui/textarea";
 import { toast } from "react-hot-toast";
 import {
   Select,
@@ -23,8 +22,7 @@ import {
   X, 
   CheckCircle2, 
   Grid,
-  Loader2,
-  Trash2
+  Loader2
 } from "lucide-react";
 
 // Fetch helper function

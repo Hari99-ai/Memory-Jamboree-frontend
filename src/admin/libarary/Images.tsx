@@ -22,9 +22,11 @@ const IMAGES_PER_PAGE = 20
 const CACHE_KEY = "cached_images"
 const CACHE_TIMESTAMP_KEY = "cache_timestamp"
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const MAX_FILE_SIZE = 100 * 1024 // 100KB in bytes
 
 const imagesPool = async (): Promise<ImageBase64[]> => {
   const response = await fetch(`${API_BASE_URL}/images`)
+  console.log("response",response);
   if (!response.ok) throw new Error("Failed to fetch images")
 
   const data: { filename: string }[] = await response.json()
@@ -44,6 +46,7 @@ const ModernImageGallery = () => {
   const [fetchingImages, setFetchingImages] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [dragActive, setDragActive] = useState(false)
+  const [sizeError, setSizeError] = useState<string | null>(null)
 
   // Load images from cache or fetch from server
   useEffect(() => {
@@ -116,15 +119,37 @@ const ModernImageGallery = () => {
   }
 
   const processFiles = async (files: File[]) => {
-    const imagesWithBase64: ImageBase64[] = await Promise.all(
-      files.map(async (file) => ({
-        file,
-        filename: file.name,
-        base64: await fileToBase64(file),
-      })),
-    )
+    // Filter files by size
+    const validFiles: File[] = []
+    const rejectedFiles: string[] = []
 
-    setNewUploadImages((prev) => [...prev, ...imagesWithBase64])
+    files.forEach((file) => {
+      if (file.size <= MAX_FILE_SIZE) {
+        validFiles.push(file)
+      } else {
+        rejectedFiles.push(file.name)
+      }
+    })
+
+    // Show error if any files were rejected
+    if (rejectedFiles.length > 0) {
+      const errorMsg = `${rejectedFiles.length} file(s) exceeded 100KB limit: ${rejectedFiles.slice(0, 3).join(", ")}${rejectedFiles.length > 3 ? "..." : ""}`
+      setSizeError(errorMsg)
+      setTimeout(() => setSizeError(null), 5000)
+    }
+
+    // Process only valid files
+    if (validFiles.length > 0) {
+      const imagesWithBase64: ImageBase64[] = await Promise.all(
+        validFiles.map(async (file) => ({
+          file,
+          filename: file.name,
+          base64: await fileToBase64(file),
+        })),
+      )
+
+      setNewUploadImages((prev) => [...prev, ...imagesWithBase64])
+    }
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -233,7 +258,7 @@ const ModernImageGallery = () => {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl text-center text-[#245cab]">Image Gallery</h1>
-          <p className="text-sm sm:text-base text-slate-600">Upload and manage your images with ease</p>
+          <p className="text-sm sm:text-base !text-slate-600">Upload and manage your images with ease</p>
         </div>
 
         {/* Upload Section */}
@@ -245,6 +270,16 @@ const ModernImageGallery = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6">
+            {/* Size Error Alert */}
+            {sizeError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-2">
+                <X className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Upload Error</p>
+                  <p className="text-sm mt-1">{sizeError}</p>
+                </div>
+              </div>
+            )}
             {/* Drag and Drop Zone */}
             <div
               className={`relative border-2 border-dashed rounded-xl p-4 sm:p-6 lg:p-8 transition-all duration-300 ${
@@ -353,10 +388,10 @@ const ModernImageGallery = () => {
             <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-0">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
                 <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                <span className="hidden sm:inline">Image Gallery</span>
-                <span className="sm:hidden">Gallery</span>
+                <span className="hidden !text-black sm:inline">Image Gallery</span>
+                <span className="sm:hidden !text-black">Gallery</span>
                 {images.length > 0 && (
-                  <Badge variant="outline" className="ml-1 sm:ml-2 text-xs sm:text-sm">
+                  <Badge variant="outline" className="ml-1 !text-black sm:ml-2 text-xs sm:text-sm">
                     {images.length}
                   </Badge>
                 )}

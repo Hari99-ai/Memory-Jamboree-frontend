@@ -296,7 +296,7 @@ const EventDetails = () => {
         className="max-w-7xl mx-auto bg-cover bg-center bg-slate-100 p-4 md:p-8 rounded-md shadow-md flex flex-col relative space-y-4"
         style={{
           backgroundImage: event?.eimage
-            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${eventImg}/${event.eimage}')`
+            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${API_BASE_URL}/uploads/events/${event.eimage}')`
             : `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://via.placeholder.com/1200x400?text=Event+Image')`,
           backgroundPosition: "center 30%",
         }}

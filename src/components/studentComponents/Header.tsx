@@ -15,9 +15,10 @@ import { defaultImg } from "../profileDetails/ProfileView";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 import { getUserById } from "../../lib/api";
-import { ImgUrl } from "../../lib/client";
+import { API_BASE_URL, ImgUrl } from "../../lib/client";
 import { useState, useEffect } from "react";
 import AlertMsgBox from "../AlertMsgBox";
+const dummyImage="https://plus.unsplash.com/premium_vector-1682269287900-d96e9a6c188b?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
 
 export default function Header() {
   // const id = sessionStorage.getItem('userId')
@@ -79,7 +80,7 @@ export default function Header() {
             >
               <Avatar className="h-12 w-12 rounded-full ring-1 object-cover dark:ring-gray-700 shadow-sm">
                 <AvatarImage
-                  src={image ? `${ImgUrl}/${image}` : defaultImg}
+                  src={`${API_BASE_URL}/uploads/profile/${user?.image}` || dummyImage}
                   alt={name}
                   className="object-cover w-full h-full  rounded-full "
                 />
@@ -92,7 +93,7 @@ export default function Header() {
             <div className="flex items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-400 transition">
               <Avatar className="h-12 w-12 overflow-hidden rounded-full">
                 <AvatarImage
-                  src={image ? `${ImgUrl}/${image}` : defaultImg}
+                  src={`${API_BASE_URL}/uploads/profile/${user?.image}` || dummyImage}
                   alt={name ? name.charAt(0) : "U"}
                   className="object-cover w-full h-full overflow-hidden"
                 />

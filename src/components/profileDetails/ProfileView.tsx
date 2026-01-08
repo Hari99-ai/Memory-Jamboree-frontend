@@ -1,5 +1,5 @@
 export const defaultImg =
-  "data:image/jpeg;base64,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";
+  "https://plus.unsplash.com/premium_vector-1682269287900-d96e9a6c188b?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -22,7 +22,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { getUserById, UpdateProfile } from "../../lib/api";
 import Loader2 from "../../components/Loader2";
-import { ImgUrl } from "../../lib/client";
+import { API_BASE_URL, ImgUrl } from "../../lib/client";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { formSchema, getAllClasses } from "../../types/schema";
 import z from "zod";
@@ -148,9 +148,7 @@ export default function ProfileView() {
       setSelectedCity(userData.city ?? "");
       setSelectedClass(userData.school_class ?? "");
       if (typeof userData?.image === "string" && userData.image) {
-        const fullImageUrl = userData.image.startsWith("http")
-          ? userData.image
-          : `${ImgUrl}/${userData.image}`;
+        const fullImageUrl = `${API_BASE_URL}/uploads/profile/${userData.image}`;
         setPreviewImage(fullImageUrl);
       }
     }
@@ -409,7 +407,7 @@ export default function ProfileView() {
       <div className="flex ml-6 mb-4 ">
         <div className="relative">
           <img
-            src={previewImage || "/images/aadmi.jpeg"}
+            src={previewImage ? previewImage : defaultImg}
             alt="Profile Avatar"
             loading="lazy"
             className="w-28 h-28 rounded-full object-cover border-b-4 border-[#245cab] shadow-md"

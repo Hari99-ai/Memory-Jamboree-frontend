@@ -71,6 +71,11 @@ export default function UpcomingEvents() {
     queryFn: getUserEvents,
   });
 
+
+  
+
+ 
+
   // Create display cards - always 3 cards
   const displayCards = (() => {
     const cards = [...events];
@@ -312,6 +317,8 @@ export default function UpcomingEvents() {
     return null; // don't render anything
   }
 
+  console.log(`${API_BASE_URL}/uploads/events/${events[0].eimage}`);
+
   return (
     <div className="bg-[#f4f6f7] min-h-screen flex flex-col items-center justify-center py-0 -mt-24">
       <div className="relative flex flex-col items-center w-full max-w-6xl mx-auto">
@@ -362,12 +369,12 @@ export default function UpcomingEvents() {
                     ) : (
                       <>
                         <img
-                          src={event.eimage ? `${eventImg}/${event.eimage}` : "/placeholder.svg"}
+                          src={`${API_BASE_URL}/uploads/events/${event.eimage}`}
                           alt={event.ename}
                           className="object-cover object-center w-full h-full"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.svg";
+                            target.src = "https://plus.unsplash.com/premium_photo-1668612078695-48b09fd23398?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw1fHx8ZW58MHx8fHx8";
                             target.onerror = null;
                           }}
                         />

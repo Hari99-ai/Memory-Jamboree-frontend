@@ -153,7 +153,7 @@ export const router = createBrowserRouter([
         <ExamPage />
       </Suspense>
       </ProtectedRoute>
-    ),
+    )
   },
   {
     path: "/practice-test/:discipline",
