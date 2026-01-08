@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import { defaultImg } from "../profileDetails/ProfileView";
+import { defaultImg } from "../profileDetails/ProfileViewc";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 import { getUserById } from "../../lib/api";
