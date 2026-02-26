@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { getUserById, UpdateProfile } from "../../lib/api";
 import Loader2 from "../../components/Loader2";
 import { API_BASE_URL, ImgUrl } from "../../lib/client";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Edit2, Globe, Mail, MapPin, Pencil, Phone, School, User, Users } from "lucide-react";
 import { formSchema, getAllClasses } from "../../types/schema";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -375,95 +375,101 @@ export default function ProfileView() {
     );
   }
 
-  const getCountryName = (iso2: string) =>
-    countries.find((c) => c.iso2 === iso2)?.name || iso2 || "NA";
-  const getStateName = (iso2: string) =>
-    states.find((s) => s.iso2 === iso2)?.name || iso2 || "NA";
-  const getCityName = (name: string) =>
-    cities.find((c) => c.name === name)?.name || name || "NA";
+  // const getCountryName = (iso2: string) =>
+  //   countries.find((c) => c.iso2 === iso2)?.name || iso2 || "NA";
+  // const getStateName = (iso2: string) =>
+  //   states.find((s) => s.iso2 === iso2)?.name || iso2 || "NA";
+  // const getCityName = (name: string) =>
+  //   cities.find((c) => c.name === name)?.name || name || "NA";
 
   return (
     <div className="max-w-5xl mx-auto pt-8 pb-4 px-4 md:pt-12 md:pb-8 md:px-8 bg-white rounded-lg shadow-lg">
-      <div className="mb-4 flex justify-between items-center">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center text-sm gap-2 text-[#245cab] hover:underline"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </button>
-        {!isEditMode && (
-          <button
-            onClick={() => setIsEditMode(true)}
-            className="flex text-sm text-[#245cab] bg-blue-100 border p-2 rounded-full hover:underline"
-          >
-            <Pencil className="mr-2 size-4" /> Edit
-          </button>
-        )}
-      </div>
-      <h2 className="text-3xl font-bold mb-2 text-center text-[#245cab]">
-        Profile
-      </h2>
-      <div className="flex ml-6 mb-4 ">
-        <div className="relative">
-          <img
-            src={previewImage ? previewImage : defaultImg}
-            alt="Profile Avatar"
-            loading="lazy"
-            className="w-28 h-28 rounded-full object-cover border-b-4 border-[#245cab] shadow-md"
-          />
-          <input
-            type="file"
-            id="image"
-            required
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageChange}
-            ref={fileInputRef}
-          />
-          {isEditMode && (
-            <>
-             
-              <button
-                type="button"
-                onClick={openFilePicker}
-                className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-md transition-colors"
-                aria-label="Upload image"
-                title="Upload image"
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <button className="group flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#245cab] transition-all duration-300">
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span  onClick={() => navigate("/dashboard")} className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
+            </button>
+            
+            {!isEditMode && (
+              <button 
+                onClick={() => setIsEditMode(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#245cab] text-[#245cab] hover:bg-[#245cab] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md font-medium text-sm"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
+                <Edit2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Edit Profile</span>
+                <span className="sm:hidden">Edit</span>
               </button>
-              {errors.image && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.image.message}
-                </p>
-              )}
-            </>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col justify-center py-3 items-center relative mb-8 rounded-3xl overflow-hidden shadow-2xl">
+        <h2 className="text-3xl font-bold mb-2 text-center text-[#245cab]">
+          Profile
+        </h2>
+        <div className=" flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 mt-4">
+          <div className="w-fit h-fit relative">
+            <img
+              src={previewImage ? previewImage : defaultImg}
+              alt="Profile Avatar"
+              loading="lazy"
+              className="w-28 h-28 relative rounded-full object-cover border-b-4 border-[#245cab] shadow-md"
+            />
+            <input
+              type="file"
+              id="image"
+              required
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+              ref={fileInputRef}
+            />
+            {isEditMode && (
+              <>
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-md transition-colors"
+                  aria-label="Upload image"
+                  title="Upload image"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </button>
+                {errors.image && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.image.message}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+
+          {isEditMode && (
+            <div className="text-xs text-gray-600 ml-10 self-center">
+              <p className="font-semibold mb-1">Image Guidelines:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>Image size must be between 10KB and 200KB.</li>
+                <li>Image should be clear and not blurry.</li>
+                <li>Please upload potrait/passport size picture(user face should clearly visible)</li>
+              </ul>
+            </div>
           )}
         </div>
-
-        {isEditMode && (
-          <div className="text-xs text-gray-600 ml-10 self-center">
-            <p className="font-semibold mb-1">Image Guidelines:</p>
-            <ul className="list-disc list-inside space-y-0.5">
-              <li>Image size must be between 10KB and 200KB.</li>
-              <li>Image should be clear and not blurry.</li>
-              <li>Please upload potrait/passport size picture(user face should clearly visible)</li>
-            </ul>
-          </div>
-        )}
       </div>
 
 
@@ -919,57 +925,83 @@ export default function ProfileView() {
         </form>
       ) : (
         // READ-ONLY MODE
-        <div>
-          {/* Personal Information Block */}
-          <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Personal Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">First Name:</span> <span className="ml-2">{userData?.fname || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Last Name:</span> <span className="ml-2">{userData?.lname || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Gender:</span> <span className="ml-2">{userData?.gender || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Birth Date:</span> <span className="ml-2">{formatBirthDate(String(userData?.birth_date)) || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.email || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Mobile Number:</span> <span className="ml-2">{userData?.mobile || "NA"}</span></div>
-            </div>
-          </div>
-          {/* School Information Block */}
-          <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">School Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">School Name:</span> <span className="ml-2">{userData?.school_name || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Class/Grade:</span> <span className="ml-2">{userData?.school_class || "NA"}</span></div>
-            </div>
-          </div>
-          {/* Parent/Guardian Information Block */}
-          <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Parents/Guardian Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">Name:</span> <span className="ml-2">{userData?.fa_name || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Mobile:</span> <span className="ml-2">{userData?.fa_mobile || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Email:</span> <span className="ml-2">{userData?.fa_email || "NA"}</span></div>
-              <div>
-                <span className="font-medium text-gray-600">Alternate Mobile:</span>
-                <span className="ml-2">
-                  {userData?.mo_mobile && userData.mo_mobile.trim().length > 0
-                    ? userData.mo_mobile
-                    : "NA"}
-                </span>
+        <div className="space-y-6">
+          {/* Personal Information Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <User className="w-5 h-5 text-[#245cab]" />
+                  Personal Information
+                </h2>
+              </div>
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <InfoItem label="First Name" value={userData?.fname} />
+                <InfoItem label="Last Name" value={userData?.lname} />
+                <InfoItem label="Gender" value={userData?.gender} />
+                <InfoItem label="Birth Date" value={userData?.birth_date} />
+                <InfoItem label="Email" value={userData?.email} icon={<Mail className="w-4 h-4" />} />
+                <InfoItem label="Mobile" value={userData?.mobile} icon={<Phone className="w-4 h-4" />} />
               </div>
             </div>
-          </div>
-          {/* Address Information Block */}
-          <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Address Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[15px]">
-              <div><span className="font-medium text-gray-600">Country:</span> <span className="ml-2">{getCountryName(String(userData?.country))}</span></div>
-              <div><span className="font-medium text-gray-600">State/Province:</span> <span className="ml-2">{getStateName(String(userData?.state))}</span></div>
-              <div><span className="font-medium text-gray-600">City:</span> <span className="ml-2">{getCityName(String(userData?.city))}</span></div>
-              <div><span className="font-medium text-gray-600">Address:</span> <span className="ml-2">{userData?.address || "NA"}</span></div>
-              <div><span className="font-medium text-gray-600">Pincode/ZIP:</span> <span className="ml-2">{userData?.pincode || "NA"}</span></div>
+          {/* School Information Block */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <School className="w-5 h-5 text-[#245cab]" />
+                  School Information
+                </h2>
+              </div>
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <InfoItem label="School Name" value={userData?.school_name} />
+                <InfoItem label="Class/Grade" value={userData?.school_class} />
+              </div>
             </div>
-          </div>
+          {/* Parent/Guardian Information Block */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#245cab]" />
+                  Guardian Information
+                </h2>
+              </div>
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <InfoItem label="Name" value={userData?.fa_name} />
+                <InfoItem label="Mobile" value={userData?.fa_mobile} icon={<Phone className="w-4 h-4" />} />
+                <InfoItem label="Email" value={userData?.fa_email} icon={<Mail className="w-4 h-4" />} />
+                <InfoItem label="Alternate Mobile" value={userData?.mo_mobile || "NA"} icon={<Phone className="w-4 h-4" />} />
+              </div>
+            </div>
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-[#245cab]" />
+                  Address Information
+                </h2>
+              </div>
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <InfoItem label="Country" value={userData?.country} icon={<Globe className="w-4 h-4" />} />
+                <InfoItem label="State/Province" value={userData?.state} />
+                <InfoItem label="City" value={userData?.city} />
+                <InfoItem label="Street Address" value={userData?.address} className="sm:col-span-2" />
+                <InfoItem label="Pincode/ZIP" value={userData?.pincode} />
+              </div>
+            </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+function InfoItem({ label, value, icon, className = "" }: { label: string; value?: string | number; icon?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`group ${className}`}>
+      <div className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">{label}</div>
+      <div className="flex items-center gap-2 text-gray-900 font-medium">
+        {icon && <span className="text-[#245cab]">{icon}</span>}
+        <span className="group-hover:text-[#245cab] transition-colors duration-200">{value || "NA"}</span>
+      </div>
     </div>
   );
 }

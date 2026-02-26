@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import { defaultImg } from "../profileDetails/ProfileViewc";
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 import { getUserById } from "../../lib/api";
@@ -80,7 +80,7 @@ export default function Header() {
             >
               <Avatar className="h-12 w-12 rounded-full ring-1 object-cover dark:ring-gray-700 shadow-sm">
                 <AvatarImage
-                  src={`${API_BASE_URL}/uploads/profile/${user?.image}` || dummyImage}
+                  src={`${API_BASE_URL}/uploads/profile/${image}` || dummyImage}
                   alt={name}
                   className="object-cover w-full h-full  rounded-full "
                 />
@@ -93,7 +93,7 @@ export default function Header() {
             <div className="flex items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-400 transition">
               <Avatar className="h-12 w-12 overflow-hidden rounded-full">
                 <AvatarImage
-                  src={`${API_BASE_URL}/uploads/profile/${user?.image}` || dummyImage}
+                  src={`${ImgUrl}/${user?.image}` || dummyImage}
                   alt={name ? name.charAt(0) : "U"}
                   className="object-cover w-full h-full overflow-hidden"
                 />

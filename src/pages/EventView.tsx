@@ -1,3 +1,5 @@
+
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -354,18 +356,22 @@ export default function EventView() {
   //   user_id: userId!
   // })
 
-  const { data: capturdata, isLoading:capturedLoading } = useQuery({
-    queryKey: ['captured-img', event_id, String(selectedDiscipline?.disc_id), userId],
-    queryFn: async () => {
-      const res = await api.get(
-        `/get-captured/${event_id}/${String(selectedDiscipline?.disc_id)}/${userId}`,
-        { responseType: "blob" } 
-      )
-      return URL.createObjectURL(res.data) // convert blob → URL for <img>
-    },
-    enabled: showPermissionModal,
-    refetchInterval: showPermissionModal ? 500 : false,  
-  })
+    const { data: capturdata, isLoading: capturedLoading } = useQuery({
+      queryKey: ['captured-img', event_id, selectedDiscipline?.disc_id, userId],
+      queryFn: async () => {
+        const res = await api.get(
+          `/get-captured/${event_id}/${selectedDiscipline?.disc_id}/${userId}`
+        )
+
+        if (!res.data?.captured_image) return null
+
+        return `https://aidev.gravitinfosystems.com:5000/${res.data.captured_image}`
+      },
+      enabled: showPermissionModal && isVerified,
+      refetchInterval: showPermissionModal && isVerified ? 1000 : false,
+
+    })
+
 
   console.log("captured data 🚀🚀" , capturdata)
 
@@ -870,7 +876,9 @@ export default function EventView() {
   })
 
   const handleCaptureSend = () => {
+    setIsVerified(false);
     sendCaptureRequest() 
+
   }
 
   const mutation = useMutation({
@@ -1834,18 +1842,23 @@ export default function EventView() {
                   <div className="w-full h-48 md:h-80 flex justify-center">
                     <div className="bg-black rounded-lg overflow-hidden relative h-full" style={{ aspectRatio: "9/16" }}>
                       {capturedLoading ? (
-                        <div className="text-center p-4 flex flex-col justify-center items-center h-full text-white">
-                          <Loader className="w-6 h-6 animate-spin mb-2" />
-                          <p>Waiting for phone camera...</p>
-                        </div>
-                      ) : (
-                        <img
-                          // src={`${API_BASE_URL}/${capturdata}`}
-                          src={capturdata}
-                          className="object-cover w-full h-full"
-                          alt="Phone stream"
-                        />
-                      )}
+  <div className="text-center p-4 flex flex-col justify-center items-center h-full text-white">
+    <Loader className="w-6 h-6 animate-spin mb-2" />
+    <p>Waiting for phone camera...</p>
+  </div>
+) : capturdata && isVerified ? (
+  <img
+    src={capturdata}
+    className="object-cover w-full h-full"
+    alt="Verified phone capture"
+  />
+) : (
+  <div className="text-white flex items-center justify-center h-full text-center px-4">
+    Capture & verify to see image
+  </div>
+)}
+
+                      {/* )} */}
                     </div>
                   </div>
                 </div>
@@ -2004,3 +2017,5 @@ export default function EventView() {
     </>
   );
 }
+
+

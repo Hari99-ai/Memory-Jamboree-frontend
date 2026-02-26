@@ -613,7 +613,8 @@ const EventDetails = () => {
                 <input
                   type="datetime-local"
                   name="event_start"
-                  value={formatForInput((event?.event_start || "").toString())}
+                  // value={formatForInput((event?.event_start || "").toString())}
+                  value={formData.event_start}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
@@ -628,7 +629,9 @@ const EventDetails = () => {
                 <input
                   type="datetime-local"
                   name="event_end"
-                  value={formatForInput(String(event?.event_end))}
+                  // value={formatForInput(String(event?.event_end))}
+                  value={formData.event_end}
+
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required

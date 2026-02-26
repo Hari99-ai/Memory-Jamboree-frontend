@@ -1,6 +1,6 @@
 
 
-// import axios from "axios";
+import axios from "axios";
 
 // export const api = axios.create({
 //   baseURL: "https://aidev.gravitinfosystems.com:5000",
@@ -49,14 +49,22 @@ export const SocketURL = `wss://aidev.gravitinfosystems.com:5000/ws`
 //   },
 // });
 
-//hosted backend
-//const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
+// //hosted backend
+const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000"
 
-// hari om's backend
+export const WS_BASE_URL = "wss://aidev.gravitinfosystems.com:5000"
+
+
+// // // hari om's backend
+// const API_BASE_URL = "http://127.0.0.1:8000"
+// export const WS_BASE_URL  = "ws://127.0.0.1:8000"
 // const API_BASE_URL = "http://192.168.29.141:8000"
 
+
 //my backend
-const API_BASE_URL = "http://192.168.29.2:8000"
+// const API_BASE_URL = "http://127.0.0.1:8000"
+
+// const API_BASE_URL = "http://192.168.29.141:8000"
 
 
 
@@ -77,9 +85,9 @@ const API_BASE_URL = "http://192.168.29.2:8000"
 //export const AUDIO_BASE_URL = "https://aidev.memoryjamboree.com:5000/uploads/events/audio-records/";
 // export const AUDIO_BASE_URL = "https://aidev.gravitinfosystems.com:5000/uploads/events/audio-records/";
 
-import axios from "axios";
+// import axios from "axios";
 
-//const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000";
+// const API_BASE_URL = "https://aidev.gravitinfosystems.com:5000";
 
 // --- Axios Instance Creation ---
 export const api = axios.create({
@@ -174,5 +182,13 @@ export { API_BASE_URL };
 
 
 export const eventImg = `${API_BASE_URL}/uploads/events`
-export const ImgUrl = `${API_BASE_URL}/uploads`;
+// export const ImgUrl = `${API_BASE_URL}/uploads`;
+
+
+
+export const IMG_BASE = `${API_BASE_URL}/uploads`;
+export const PROFILE_IMG_BASE = `${API_BASE_URL}/uploads/profile`;
 export const AUDIO_BASE_URL = `${API_BASE_URL}/uploads/events/audio-records/`;
+// export const ImgUrl = `${API_BASE_URL}/uploads/profile`;
+export const ImgUrl = PROFILE_IMG_BASE;
+

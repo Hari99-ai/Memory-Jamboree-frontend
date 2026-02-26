@@ -18,13 +18,14 @@ const getEventStatus = (etype: number): string => {
   }
 }
 
-export const useEventWebSocket = (event_id: string) => {
-  const setEventStatus = useSetRecoilState(eventStatusState(event_id));
+export const useEventWebSocket = (event_id?: string) => {
+  const setEventStatus = useSetRecoilState(eventStatusState(event_id ?? ""));
 
   // const response =  await api.post(`/update-event-status/${event_id}`)
   // return response.data
 
   useEffect(() => {
+    if (!event_id) return;
     const token = sessionStorage.getItem("auth_token")
 
     const fetchAndUpdateStatus = async () => {
@@ -79,3 +80,4 @@ export const useEventWebSocket = (event_id: string) => {
     };
   }, [event_id]);
 };
+

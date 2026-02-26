@@ -40,6 +40,8 @@ export default function WordsGame({
   const [phase, setPhase] = useState<"memorize" | "recall">("memorize")
   const [countdownStarted, setCountdownStarted] = useState(false)
   const [words, setWords] = useState<string[]>([])
+  console.log("Words:", words)
+
   const [recallAnswers, setRecallAnswers] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [_, setShowResultModal] = useState(false)
