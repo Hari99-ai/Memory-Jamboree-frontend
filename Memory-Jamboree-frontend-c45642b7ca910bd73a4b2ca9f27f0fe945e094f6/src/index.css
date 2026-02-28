@@ -1,0 +1,323 @@
+@tailwind base;
+
+@custom-variant dark (&:is(.dark *));
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-Roboto : 'Roboto Slab', serif;
+  --font-Zalando : 'Zalando Sans Expanded', sans-serif;
+}
+
+:root {
+  --base: #ffffff; /* Base (White) */
+  --secondary-base: #f8fbfe; /* Secondary base (Grey) */
+  --primary-1: #245cab; /* Primary1 (Blue) */
+  --primary-2: #e8c740;
+ /* Primary2 (Yellow) */
+  --text-1: #0f1114; /* Text 1 */
+  --text-2: #0F1114DE; /* Text 2 */
+  --highlight: #FF8B00; /* Highlight */
+   --primary-4: #ffd940a2;
+;
+
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+
+  /* Font sizes and weights */
+  --font-heading: 'EB Garamond', serif;
+  --font-main: 'Futura', 'Open Sans', sans-serif;
+
+  --h1-size: 56px;
+  --h1-weight: 700;
+  --h1-line-height: 56px;
+
+  --h2-size: 40px;
+  --h2-weight: 600;
+  --h2-line-height: 56px;
+
+  --h3-size: 32px;
+  --h3-weight: 500;
+  --h3-line-height: 42px;
+
+  --h4-size: 24px;
+  --h4-weight: 500;
+  --h4-line-height: 32px;
+
+  --main-text-size: 18px;
+  --main-text-weight: 400;
+  --main-text-line-height: 24px;
+
+  --sub-text-size: 16px;
+  --sub-text-weight: 300;
+  --sub-text-line-height: 24px;
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+/* ::-webkit-scrollbar {
+  display: none;
+} */
+
+/* Example usage */
+body {
+  background-color: var(--base);
+  color: var(--text-1);
+  font-family: var(--font-main);
+  font-size: var(--main-text-size);
+  font-weight: var(--main-text-weight);
+  line-height: var(--main-text-line-height);
+}
+
+h1 {
+  color: var(--primary-1);
+  font-family: var(--font-heading);
+  font-size: var(--h1-size);
+  font-weight: var(--h1-weight);
+  line-height: var(--h1-line-height);
+}
+
+h2 {
+  font-family: var(--font-heading);
+  font-size: var(--h2-size);
+  font-weight: var(--h2-weight);
+  line-height: var(--h2-line-height);
+}
+
+h3 {
+  font-family: var(--font-heading);
+  font-size: var(--h3-size);
+  font-weight: var(--h3-weight);
+  line-height: var(--h3-line-height);
+}
+
+h4 {
+  font-family: var(--font-heading);
+  font-size: var(--h4-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--h4-line-height);
+}
+
+p {
+  font-family: var(--font-main);
+  font-size: var(--main-text-size);
+  font-weight: var(--main-text-weight);
+  line-height: var(--main-text-line-height);
+}
+
+.sub-text {
+  font-family: var(--font-main);
+  font-size: var(--sub-text-size);
+  font-weight: var(--sub-text-weight);
+  line-height: var(--sub-text-line-height);
+}
+
+.highlight {
+  background-color: var(--highlight);
+  color: var(--base);
+}
+
+.dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    --sidebar: hsl(240 5.9% 10%);
+    --sidebar-foreground: hsl(240 4.8% 95.9%);
+    --sidebar-primary: hsl(224.3 76.3% 48%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(240 3.7% 15.9%);
+    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+    --sidebar-border: hsl(240 3.7% 15.9%);
+    --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  }
+
+  @layer base {
+    * {
+      @apply border-border;
+    }
+    body {
+      @apply bg-background text-foreground;
+    }
+  }/* Custom Scrollbar Styling */
+.scrollbar-custom {
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #6b7280 #e5e7eb; /* thumb and track colors */
+
+}
+
+/* Hide the scrollbar arrows in WebKit-based browsers (Chrome, Safari) */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 8px; /* Adjust width of the scrollbar */
+  height: 8px; /* For horizontal scrollbar, ensure width and height are equal */
+
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: #f3f4f6; /* Light grey track */
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: #4ade80; /* Green thumb */
+  border-radius: 10px;
+  border: 3px solid #f3f4f6; /* Add a border to the thumb for separation */
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background-color: #34d399; /* Darker green on hover */
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:active {
+  background-color: #16a34a; /* Even darker green when active */
+}
+
+/* Hide the scroll arrows (for Webkit browsers) */
+.scrollbar-custom::-webkit-scrollbar-button {
+  display: none; /* Hide both the up and down arrows */
+}
+
+/* Firefox specific styling (scrollbar-arrow) */
+.scrollbar-custom::-moz-scrollbar-button {
+  display: none; /* Hide arrows in Firefox */
+}
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+
+.dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  @layer base {
+    * {
+      @apply border-border;
+    }
+    body {
+      @apply bg-background text-foreground;
+    }
+  }/* Custom Scrollbar Styling */
+.scrollbar-custom {
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #6b7280 #e5e7eb; /* thumb and track colors */
+  
+}
+
+/* Hide the scrollbar arrows in WebKit-based browsers (Chrome, Safari) */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 8px; /* Adjust width of the scrollbar */
+  height: 8px; /* For horizontal scrollbar, ensure width and height are equal */
+  
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: #f3f4f6; /* Light grey track */
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: #4ade80; /* Green thumb */
+  border-radius: 10px;
+  border: 3px solid #f3f4f6; /* Add a border to the thumb for separation */
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background-color: #34d399; /* Darker green on hover */
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:active {
+  background-color: #16a34a; /* Even darker green when active */
+}
+
+/* Hide the scroll arrows (for Webkit browsers) */
+.scrollbar-custom::-webkit-scrollbar-button {
+  display: none; /* Hide both the up and down arrows */
+}
+
+/* Firefox specific styling (scrollbar-arrow) */
+.scrollbar-custom::-moz-scrollbar-button {
+  display: none; /* Hide arrows in Firefox */
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink {
+  animation: blink 1s step-start infinite;
+}

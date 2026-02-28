@@ -1,0 +1,252 @@
+"use client"
+
+import { useState } from "react"
+
+interface Props {
+  onStart: (config: {
+    grouping: number
+    drawEvery: number
+    highlightColor: string
+  }) => void
+}
+
+export default function ThirtyMinBinary({ onStart }: Props) {
+  const [formState, setFormState] = useState(() => {
+    const saved = localStorage.getItem("binaryGamePreferences")
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        // ignore parse errors
+      }
+    }
+    return {
+      grouping: "3",
+      highlightColor: "#facc15",
+      drawLines: false,
+    }
+  })
+
+  const handleChange = (key: string, value: string | boolean) => {
+    setFormState((prev: any) => ({ ...prev, [key]: value }))
+  }
+
+  const startGame = () => {
+    const grouping = Number.parseInt(formState.grouping)
+
+    if (isNaN(grouping) || grouping < 1 || grouping > 9) {
+      alert("Grouping must be a number between 1 and 9.")
+      return
+    }
+
+    const config = {
+      grouping,
+      drawEvery: formState.drawLines ? grouping : 0,
+      highlightColor: formState.highlightColor,
+    }
+
+    localStorage.setItem("binaryGamePreferences", JSON.stringify(formState))
+
+    onStart(config)
+  }
+
+  const presetColors = [
+    "#FF9999", // Darker Red
+    "#FF99B3", // Darker Pink
+    "#B3B3FF", // Darker Lavender
+    "#E5B3FF", // Darker Purple
+    "#99D6FF", // Darker Sky Blue
+    "#9999FF", // Darker Blue
+    "#99FF99", // Darker Green
+    "#FFB380", // Darker Orange/Peach
+  ]
+
+  const generatePreview = () => {
+    const grouping = Number.parseInt(formState.grouping)
+    const drawEvery = formState.drawLines ? grouping : 0
+    const sample = Array.from({ length: 12 }, (_, i) => i % 2)
+
+    const elements = []
+    for (let i = 0; i < sample.length; i++) {
+      const shouldDrawLine = drawEvery && i > 0 && i % drawEvery === 0
+      const isHighlighted = grouping && Math.floor(i / grouping) % 2 === 0
+
+      if (shouldDrawLine)
+        elements.push(
+          <span key={`sep-${i}`} className="mx-1">
+            |
+          </span>,
+        )
+
+      elements.push(
+        <span
+          key={i}
+          className="px-1"
+          style={{
+            backgroundColor: isHighlighted ? formState.highlightColor : "transparent",
+          }}
+        >
+          {sample[i]}
+        </span>,
+      )
+    }
+
+    return elements
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Instructions Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-blue-800 mb-3">📘 How to Play</h2>
+
+        <div className="space-y-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">🎯 Test Layout</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                Test consists of <span className="font-medium">3 pages</span>.
+              </li>
+              <li>
+                Each page shows <span className="font-medium">10 rows</span> with{" "}
+                <span className="font-medium">30 digits</span> per row.
+              </li>
+              <li>You can shift between the pages using the prev and next button.</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">🎯 Test Objective</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>You need to memorise as many binary digits as possible in the given time.</li>
+              <li>Memorize binary digits in the exact same order as shown.</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⏱ Test Phases</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Memorization (5 minutes):</span> You will see a grid of binary digits.
+                During this time, you will memorise the binary digits in order.
+              </li>
+              <li>
+                <span className="font-medium">Recall (15 minutes):</span> You will see empty text boxes on the screen.
+                During this time, you will recall the binary digits and fill them in the empty text boxes.
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">💯 Scoring System</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>Every row will be scored separately.</li>
+              <li>+1 point for Every correct binary digit.</li>
+              <li>+1 bonus point for every 10 consecutive correct binary digits in a row.</li>
+              <li>Scoring for a row stops at the first mistake found in the row.</li>
+              <li>Each row must start correctly to score points.</li>
+              <li>Final score will be the sum of all the scores in each row.</li>
+              <li>No negative marking.</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⚙️ Test Settings</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Grouping:</span> You may group the binary digit during memorisation phase (1-9).
+              </li>
+              <li>
+                <span className="font-medium">Visual Lines:</span> Option to add separator lines between groups.
+              </li>
+              <li>
+                <span className="font-medium">Highlight Colour:</span> Select your preferred colour for active groups during memorisation and recall phase.
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-blue-700 mb-2">⌨️ Keyboard Controls</h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>
+                <span className="font-medium">Arrow Keys:</span> Navigate between cells using all four arrow keys.
+              </li>
+              <li>
+                <span className="font-medium">Enter:</span> Move to next phase (memorization to recall / recall to submit).
+              </li>
+              <li>
+                <span className="font-medium">Backspace:</span> Clears the cell and moves to previous text box.
+              </li>
+              <li>
+                <span className="font-medium">Input answers:</span> Numbers 0 and 1.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Configuration Section */}
+      <div className="bg-white rounded-lg p-6 shadow-sm space-y-6">
+        <div className="flex items-center space-x-8">
+          <label className="flex items-center space-x-2">
+            <span className="font-medium">Grouping (1–9):</span>
+            <input
+              type="number"
+              min={1}
+              max={9}
+              value={formState.grouping}
+              onChange={(e) => handleChange("grouping", e.target.value)}
+              className="w-16 px-2 py-1 border rounded-md"
+            />
+          </label>
+
+          <span className="font-medium">Draw lines every grouping?</span>
+          <button
+            onClick={() => handleChange("drawLines", !formState.drawLines)}
+            className={`w-14 h-8 flex items-center rounded-full p-1 transition-colors duration-300 ${
+              formState.drawLines ? "bg-green-500" : "bg-gray-300"
+            }`}
+          >
+            <div
+              className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${
+                formState.drawLines ? "translate-x-6" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <div className="text-sm font-medium text-gray-600 mb-1">Preview</div>
+          <div className="flex space-x-1 text-lg">{generatePreview()}</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 block">Highlight Color</label>
+          <div className="flex space-x-2">
+            {presetColors.map((color) => (
+              <button
+                key={color}
+                onClick={() => handleChange("highlightColor", color)}
+                style={{
+                  backgroundColor: color,
+                  border: formState.highlightColor === color ? "2px solid black" : "2px solid white",
+                }}
+                className="w-10 h-10 rounded-full shadow-md hover:scale-110 transition-transform"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Start Button */}
+      <div className="flex justify-end pr-4">
+        <button
+          onClick={startGame}
+          className="w-[100px] mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Start
+        </button>
+      </div>
+    </div>
+  )
+}
