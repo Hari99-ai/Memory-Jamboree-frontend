@@ -63,10 +63,13 @@ export const ForgetPasswords = async(email:string) => {
   return response.data;
 }
 
-export const RefreshTokenAPI = async(formData: FormData) => {
-  const response = await api.post('/reset_password', formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+export const RefreshTokenAPI = async (payload: FormData | { refresh_token: string }) => {
+  const refresh_token =
+    payload instanceof FormData
+      ? String(payload.get("refresh_token") ?? "")
+      : String(payload.refresh_token ?? "");
+
+  const response = await api.post('/reset_password', { refresh_token });
   return response.data;
 }
 

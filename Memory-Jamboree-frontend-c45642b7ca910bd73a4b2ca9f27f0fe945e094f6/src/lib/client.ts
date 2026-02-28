@@ -106,9 +106,10 @@ api.interceptors.response.use(
   // 2. If the response has an error, this part runs
   async (error) => {
     const originalRequest = error.config;
+    const status = error?.response?.status;
 
     // Check if the error is 401 (Unauthorized) and if we haven't already retried this request
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true; // Mark that we are retrying this request
 
       const refreshToken = sessionStorage.getItem("refresh_token");
@@ -121,11 +122,14 @@ api.interceptors.response.use(
       }
 
       try {
-        const formData = new FormData();
-        formData.append('refresh_token', refreshToken);
-        
         // Use a direct axios call to avoid circular dependency issues with the 'api' instance
-        const response = await axios.post(`${API_BASE_URL}/reset_password`, formData);
+        const response = await axios.post(
+          `${API_BASE_URL}/reset_password`,
+          { refresh_token: refreshToken },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
         const { access_token, refresh_token } = response.data;
 
@@ -189,4 +193,3 @@ export const PROFILE_IMG_BASE = `${API_BASE_URL}/uploads/profile`;
 export const AUDIO_BASE_URL = `${API_BASE_URL}/uploads/events/audio-records/`;
 // export const ImgUrl = `${API_BASE_URL}/uploads/profile`;
 export const ImgUrl = PROFILE_IMG_BASE;
-

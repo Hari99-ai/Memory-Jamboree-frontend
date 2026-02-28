@@ -28,7 +28,6 @@ import {
   AlertTriangle,
   X,
   SendHorizontal,
-  Video,
   Smartphone,
   CheckCircle2,
   SearchCheckIcon,
@@ -50,6 +49,7 @@ import trophyImg from "../../public/Landing/memoryChampion_2.png";
 import { useRecoilValue } from "recoil";
 import { eventStatusState } from "../atoms/eventAtom";
 import { useEventWebSocket } from "../hooks/useEventStatusUpdate";
+import { useProctoringWebSocket } from "../hooks/useProctoringWebSocket";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../lib/client";
@@ -334,6 +334,8 @@ export default function EventView() {
   const [selectedDiscipline, setSelectedDiscipline] =
     useState<DisciplineData | null>(null);
   const [gameConfig, setGameConfig] = useState<Record<string, any>>({});
+  const [phoneReady, setPhoneReady] = useState(false);
+  const [phoneDisconnected, setPhoneDisconnected] = useState(false);
 
   // Add state for violation popup
   const [showViolationPopup, setShowViolationPopup] = useState(false);
@@ -718,6 +720,40 @@ export default function EventView() {
 
   useEventWebSocket(event_id!);
   const eventStatus = useRecoilValue(eventStatusState(event_id!));
+  const {
+    isConnected: isDesktopSocketConnected,
+    sendJson: sendDesktopSocketMessage,
+    disconnect: disconnectDesktopSocket,
+  } = useProctoringWebSocket({
+    role: "desktop",
+    disciplineId: String(selectedDiscipline?.disc_id ?? ""),
+    eventId: String(event_id ?? ""),
+    userId: String(userId ?? ""),
+    enabled: Boolean(selectedDiscipline?.disc_id && event_id && userId),
+    onOpen: () => {
+      setPhoneDisconnected(false);
+      sendDesktopSocketMessage({
+        type: "status_request",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onMessage: (payload) => {
+      if (payload?.type === "phone_ready") {
+        setPhoneReady(true);
+        setPhoneDisconnected(false);
+      } else if (payload?.type === "phone_disconnected") {
+        setPhoneReady(false);
+        setPhoneDisconnected(true);
+      } else if (payload?.type === "status_response") {
+        setPhoneReady(Boolean(payload.phone_ready));
+      } else if (payload?.type === "error" && payload?.message) {
+        toast.error(String(payload.message));
+      }
+    },
+    onClose: () => {
+      setPhoneReady(false);
+    },
+  });
 //   const [ws, setWs] = useState<WebSocket | null>(null);
 //   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 //   const manualDisconnectRef = useRef(false); // Only true when server sends disconnect
@@ -963,6 +999,8 @@ export default function EventView() {
     console.log("🎮 Starting discipline:", discipline.discipline_name);
 
     try {
+      setPhoneReady(false);
+      setPhoneDisconnected(false);
       // connectWebSocket(discipline);
 
       // 2. Continue with UI flow
@@ -1009,6 +1047,24 @@ export default function EventView() {
 
   const handlePermissionGranted = () => {
     console.log("🎥 Media permissions granted, starting countdown");
+    if (!isDesktopSocketConnected) {
+      toast.error("Desktop monitoring socket is not connected yet.");
+      return;
+    }
+
+    if (!phoneReady) {
+      sendDesktopSocketMessage({
+        type: "status_request",
+        timestamp: new Date().toISOString(),
+      });
+      toast.error("Phone is not ready yet. Connect and verify phone first.");
+      return;
+    }
+
+    sendDesktopSocketMessage({
+      type: "start_monitoring",
+      timestamp: new Date().toISOString(),
+    });
     setShowPermissionModal(false);
     setCountdownStarted(true);
 
@@ -1063,6 +1119,8 @@ export default function EventView() {
     setSelectedDiscipline(null);
     setGameConfig({});
     setIsInFullScreenFlow(false);
+    disconnectDesktopSocket(1000, "flow_closed");
+    setPhoneReady(false);
 
     if (document.fullscreenElement) {
       try {
@@ -1870,6 +1928,20 @@ export default function EventView() {
                   <em>Start</em> and <em>Capture</em> buttons as instructed.
                 </p>
               </div>
+              <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <p>
+                  Desktop Socket:{" "}
+                  <span className={isDesktopSocketConnected ? "text-green-700 font-semibold" : "text-amber-700 font-semibold"}>
+                    {isDesktopSocketConnected ? "Connected" : "Connecting"}
+                  </span>
+                </p>
+                <p>
+                  Phone State:{" "}
+                  <span className={phoneReady ? "text-green-700 font-semibold" : "text-red-700 font-semibold"}>
+                    {phoneReady ? "Ready" : phoneDisconnected ? "Disconnected" : "Not Ready"}
+                  </span>
+                </p>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Desktop Preview */}
@@ -2073,5 +2145,6 @@ export default function EventView() {
     </>
   );
 }
+
 
 
