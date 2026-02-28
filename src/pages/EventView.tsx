@@ -881,23 +881,79 @@ export default function EventView() {
 
   }
 
+  
   const mutation = useMutation({
+    
+
     mutationFn: async () => {
-      return await precheck_verification(event_id!, userId!, String(selectedDiscipline?.disc_id));
+      return await precheck_verification(
+        event_id!,
+        userId!,
+        String(selectedDiscipline?.disc_id)
+      );
     },
+
     onSuccess: (data) => {
-      if (data.verified) {
+      const details = data?.details || {};
+
+      if (data?.verified) {
         setIsVerified(true);
         toast.success("✅ Precheck passed! You can continue.");
-      } else {
-        setIsVerified(false);
-        toast.error("❌ Adjust your camera and try again.");
+        return;
       }
+
+      // ❌ Failed case
+      setIsVerified(false);
+
+      let reason = "";
+
+      // Smart reason detection
+      if (details.person_count !== 1) {
+        reason = "Exactly one person must be visible in camera.";
+      } 
+      else if (details.laptop_detected !== 1) {
+        reason = "Laptop must be clearly visible on the desk.";
+      } 
+      else if (details.mob_status === 1) {
+        reason = "Mobile phone detected. Remove it from exam area.";
+      } 
+      else if (details.multiple_people_count > 0) {
+        reason = "Multiple people detected. Only candidate should be present.";
+      } 
+      else if (details.warning_reason) {
+        reason = data.message || "Invalid exam environment detected.";
+      } 
+      else {
+        reason = "Adjust your camera and ensure proper exam setup.";
+      }
+
+      toast.error(`❌ ${reason}`);
     },
-    onError: () => {
-      toast.error("❌ Something went wrong. Please retry.");
+
+    onError: (error: any) => {
+      console.error("Precheck error:", error);
+      setIsVerified(false);
+      toast.error("❌ Verification failed. Please try again.");
     },
   });
+
+  // const mutation = useMutation({
+  //   mutationFn: async () => {
+  //     return await precheck_verification(event_id!, userId!, String(selectedDiscipline?.disc_id));
+  //   },
+  //   onSuccess: (data) => {
+  //     if (data.verified) {
+  //       setIsVerified(true);
+  //       toast.success("✅ Precheck passed! You can continue.");
+  //     } else {
+  //       setIsVerified(false);
+  //       toast.error("❌ Adjust your camera and try again.");
+  //     }
+  //   },
+  //   onError: () => {
+  //     toast.error("❌ Something went wrong. Please retry.");
+  //   },
+  // });
 
   const runPrecheck = () => {
     mutation.mutate();
